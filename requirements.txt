@@ -1,0 +1,10 @@
+google-api-python-client>=2.111.0
+youtube-transcript-api>=0.6.2
+pandas>=2.2.0
+python-dotenv>=1.0.0
+tiktoken>=0.5.0
+openai>=1.12.0
+faiss-cpu>=1.7.4
+numpy>=1.24.0
+streamlit>=1.30.0
+textstat>=0.7.3

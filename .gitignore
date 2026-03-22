@@ -1,0 +1,85 @@
+# Flipper Lite - Git Ignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Development folders not needed for Streamlit deployment
+_archive/
+_deletion_backups/
+_deletion_logs/
+captions_output/
+curr_reorg/
+data/
+data_pipeline/
+docs/
+images/
+Topic_Downloads/
+video_inventory/
+videos_to_delete/
+White Rose/
+WR_PDF/
+
+# State and temporary files
+extraction_state.json
+relevance_assessment_state.json
+search_history.json
+*.log
+*.tmp
+
+# Large CSVs not needed for Tier 1 deployment
+video_inventory.csv
+video_inventory_relevance_scores.csv
+audit_results.csv
+curriculum_quality_audit.csv
+curriculum_quality_audit.summary.txt
+
+# Development scripts not needed for deployment
+assess_math_relevance.py
+batch_curriculum_quality_audit.py
+delete_content.py
+export_video_inventory.py
+precompute_curriculum_recommendations.py
+query_embedder.py
+gui_main.py
+launch_gui*.bat
+launch_gui.py
+flipper.py

@@ -358,7 +358,7 @@ def main():
             
             st.markdown("#### Our goal:")
             st.markdown("""
-            Flipper School aims to support and augment maths learning by making it easier for educators 
+            Flipper School aims to support maths learning by making it easier for educators 
             everywhere to find the best instructional videos linked to highly regarded curriculum White Rose 
             based on the UK National Curriculum and Singapore Mastery learning (depth before speed) 
             Concrete → Pictorial → Abstract (CPA) progression. Via videos we aim to provide some context 

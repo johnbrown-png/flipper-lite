@@ -129,14 +129,11 @@ def load_precomputed_recommendations():
 
 @st.cache_data
 def load_video_inventory():
-    """Load video inventory with channel and duration metadata"""
-    try:
-        csv_path = project_root / 'video_inventory.csv'
-        df = pd.read_csv(csv_path)
-        return df[['video_id', 'channel', 'duration_formatted']]
-    except Exception as e:
-        st.error(f"Error loading video inventory: {e}")
-        return None
+    """
+    DEPRECATED: Channel and duration now included in precomputed_recommendations.csv
+    This function exists for backward compatibility but is no longer needed.
+    """
+    return None
 
 
 def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
@@ -207,12 +204,16 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
         # Get first match (should only be one per curriculum item)
         row = matches.iloc[0]
         
-        # Parse pipe-separated values (note: singular column names)
+        # Parse pipe-separated values
         video_ids = str(row['video_id']).split('|') if pd.notna(row['video_id']) else []
         video_titles = str(row['video_title']).split('|') if pd.notna(row['video_title']) else []
         semantic_scores = str(row['semantic_scores']).split('|') if pd.notna(row['semantic_scores']) else []
         instruction_scores = str(row['instruction_quality_scores']).split('|') if pd.notna(row['instruction_quality_scores']) else []
         combined_scores = str(row['combined_scores']).split('|') if pd.notna(row['combined_scores']) else []
+        
+        # Parse channel and duration (new columns)
+        channels = str(row.get('channel', '')).split('|') if pd.notna(row.get('channel')) else []
+        durations = str(row.get('duration_formatted', '')).split('|') if pd.notna(row.get('duration_formatted')) else []
         
         # Build result list (top 3)
         results = []
@@ -225,8 +226,8 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
                     'semantic_score': float(semantic_scores[i]) if i < len(semantic_scores) else 0.0,
                     'instruction_score': float(instruction_scores[i]) if i < len(instruction_scores) else 0.0,
                     'combined_score': float(combined_scores[i]) if i < len(combined_scores) else 0.0,
-                    'channel': '',  # Will be populated from video_inventory
-                    'duration': ''  # Will be populated from video_inventory
+                    'channel': channels[i] if i < len(channels) else '',
+                    'duration': durations[i] if i < len(durations) else ''
                 }
                 results.append(result)
         
@@ -395,13 +396,7 @@ def main():
         st.error("❌ Failed to load precomputed recommendations. Please run `precompute_curriculum_recommendations.py` first.")
         st.stop()
     
-    # Load video inventory for channel and duration metadata (optional for Tier 1 deployment)
-    video_inventory_df = load_video_inventory()
-    
-    if video_inventory_df is None:
-        st.warning("ℹ️ Running in lightweight mode (channel/duration info not available)")
-        # Create empty DataFrame with required columns so the app can continue
-        video_inventory_df = pd.DataFrame(columns=['video_id', 'channel', 'duration_formatted'])
+    # Note: video_inventory.csv no longer needed - channel & duration now in precomputed_recommendations.csv
     
     # Initialize curriculum assistant
     curriculum_path = project_root / "Curriculum" / "Maths" / "curriculum_22032026.csv"
@@ -461,16 +456,8 @@ def main():
             topic = text.get('topic')
             small_step = text.get('small_step')
             
-            # Lookup videos from precomputed CSV
+            # Lookup videos from precomputed CSV (includes channel & duration)
             results = lookup_videos_for_step(recommendations_df, year, term, difficulty, topic, small_step)
-            
-            # Enrich results with channel and duration from video inventory
-            for result in results:
-                vid_id = result['video_id']
-                match = video_inventory_df[video_inventory_df['video_id'] == vid_id]
-                if not match.empty:
-                    result['channel'] = match.iloc[0]['channel']
-                    result['duration'] = match.iloc[0]['duration_formatted']
             
             # Store results and update status
             st.session_state.display_results = results

@@ -284,10 +284,14 @@ def render_result_card(result):
             # Video title (without bold formatting)
             st.markdown(f"{result['title']}")
             
-            # Channel and duration (smaller font, same row)
-            channel = result.get('channel', 'Unknown').replace('_', ' ')
-            duration = format_duration(result.get('duration', 'N/A'))
-            st.markdown(f"<small>{channel} • {duration}</small>", unsafe_allow_html=True)
+            # Channel and duration (smaller font, same row) - only show if available
+            channel = result.get('channel', '')
+            duration = result.get('duration', '')
+            
+            if channel or duration:
+                channel_display = channel.replace('_', ' ') if channel else 'Unknown'
+                duration_display = format_duration(duration) if duration else 'N/A'
+                st.markdown(f"<small>{channel_display} • {duration_display}</small>", unsafe_allow_html=True)
             
             # Display scores as badges
             semantic_pct = int(result.get('semantic_score', 0) * 100)
@@ -391,12 +395,13 @@ def main():
         st.error("❌ Failed to load precomputed recommendations. Please run `precompute_curriculum_recommendations.py` first.")
         st.stop()
     
-    # Load video inventory for channel and duration metadata
+    # Load video inventory for channel and duration metadata (optional for Tier 1 deployment)
     video_inventory_df = load_video_inventory()
     
     if video_inventory_df is None:
-        st.error("❌ Failed to load video inventory.")
-        st.stop()
+        st.warning("ℹ️ Running in lightweight mode (channel/duration info not available)")
+        # Create empty DataFrame with required columns so the app can continue
+        video_inventory_df = pd.DataFrame(columns=['video_id', 'channel', 'duration_formatted'])
     
     # Initialize curriculum assistant
     curriculum_path = project_root / "Curriculum" / "Maths" / "curriculum_22032026.csv"

@@ -351,6 +351,21 @@ def main():
             </h1>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Subheading below banner
+        st.markdown("""
+        <p style="
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            color: #2c5f8d;
+            text-align: center;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 400;
+        ">
+            Select the learners age and pick term and topic to play the best education videos for each Small Step in the White Rose Maths curriculum
+        </p>
+        """, unsafe_allow_html=True)
     
     with col2:
         with st.popover("ℹ️", use_container_width=True):

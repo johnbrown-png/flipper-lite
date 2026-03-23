@@ -15,6 +15,7 @@ sys.path.insert(0, str(project_root))
 from search_app.curriculum_assistant import CurriculumAssistant
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 
 # Configure page
@@ -110,6 +111,18 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(30, 58, 95, 0.1);
         margin: 1rem 0;
+    }
+    
+    /* Watch tracking - subtle opacity for watched videos */
+    .video-card-watched {
+        opacity: 0.65;
+        filter: saturate(0.7);
+        transition: opacity 0.3s ease, filter 0.3s ease;
+    }
+    
+    .video-card-watched:hover {
+        opacity: 0.85;
+        filter: saturate(0.85);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -265,19 +278,23 @@ def format_duration(duration_str):
 def render_result_card(result):
     """Render a single video result card"""
     
-    # Create compact result card
+    # Get video ID for tracking
+    video_id = result['video_id']
+    
+    # Create compact result card with watch tracking
     with st.container():
         # Layout: thumbnail on left, title and info on right
         col_thumb, col_content = st.columns([1, 3])
         
         with col_thumb:
             # YouTube thumbnail with play link (yout-ube redirects without ads)
-            video_url = f"https://www.yout-ube.com/watch?v={result['video_id']}"
-            thumbnail_url = f"https://img.youtube.com/vi/{result['video_id']}/mqdefault.jpg"
+            video_url = f"https://www.yout-ube.com/watch?v={video_id}"
+            thumbnail_url = f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
             st.markdown(
-                f"<a href='{video_url}' target='_blank'>" 
+                f"<div class='video-card' data-video-id='{video_id}' id='video-card-{video_id}'>" 
+                f"<a href='{video_url}' target='_blank' class='video-link' data-video-id='{video_id}'>" 
                 f"<img src='{thumbnail_url}' style='width:100%; border-radius:8px; cursor:pointer;' />" 
-                f"</a>",
+                f"</a></div>",
                 unsafe_allow_html=True
             )
         
@@ -430,6 +447,8 @@ def main():
         st.session_state.display_results = []
     if 'display_step_name' not in st.session_state:
         st.session_state.display_step_name = ""
+    if 'curriculum_context' not in st.session_state:
+        st.session_state.curriculum_context = None
     
     # ==========================================
     # RESULTS SECTION (Always visible above the fold)
@@ -448,6 +467,35 @@ def main():
     elif st.session_state.display_status == 'complete':
         # Results state - show video cards
         if st.session_state.display_results:
+            # Display breadcrumb heading if curriculum context is available
+            if 'curriculum_context' in st.session_state and st.session_state.curriculum_context:
+                ctx = st.session_state.curriculum_context
+                
+                # Build breadcrumb with labeled sections
+                breadcrumb_parts = []
+                
+                if ctx.get('age'):
+                    breadcrumb_parts.append(f"Age: {ctx['age']}")
+                
+                if ctx.get('term'):
+                    breadcrumb_parts.append(f"Term: {ctx['term']}")
+                
+                # Add difficulty only if it has a value
+                difficulty = ctx.get('difficulty', '').strip()
+                if difficulty:
+                    breadcrumb_parts.append(f"Difficulty: {difficulty}")
+                
+                if ctx.get('topic'):
+                    breadcrumb_parts.append(f"Topic: {ctx['topic']}")
+                
+                if ctx.get('small_step'):
+                    breadcrumb_parts.append(f"Small Step: {ctx['small_step']}")
+                
+                # Display breadcrumb with smaller font and separators
+                if breadcrumb_parts:
+                    breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
+                    st.markdown(f"<p style='font-size: 0.9rem; margin-bottom: 1rem;'>{breadcrumb_text}</p>", unsafe_allow_html=True)
+            
             for result in st.session_state.display_results:
                 render_result_card(result)
         else:
@@ -463,6 +511,9 @@ def main():
             # Handle small step selection with CSV lookup
             st.session_state.display_status = 'loading'
             st.session_state.display_step_name = text.get('small_step', text['display_text'])
+            
+            # Store curriculum context for breadcrumb display
+            st.session_state.curriculum_context = text
             
             # Extract curriculum context
             year = text.get('year')
@@ -524,6 +575,121 @@ def main():
         All video recommendations are precomputed offline using semantic search 
         and AI-powered instruction quality scoring.
         """)
+
+    # Watch tracking JavaScript - using components.html for reliable execution
+    components.html("""
+    <script>
+    (function() {
+        const parentWindow = window.parent;
+        const parentDoc = parentWindow.document;
+        
+        // Get watched videos from localStorage
+        function getWatchedVideos() {
+            try {
+                const watched = localStorage.getItem('flipper_watched_videos');
+                return watched ? JSON.parse(watched) : [];
+            } catch (e) {
+                console.error('Error reading watched videos:', e);
+                return [];
+            }
+        }
+        
+        // Save watched videos to localStorage
+        function saveWatchedVideos(videos) {
+            try {
+                localStorage.setItem('flipper_watched_videos', JSON.stringify(videos));
+            } catch (e) {
+                console.error('Error saving watched videos:', e);
+            }
+        }
+        
+        // Mark a video as watched
+        function markVideoWatched(videoId) {
+            const watched = getWatchedVideos();
+            if (!watched.includes(videoId)) {
+                watched.push(videoId);
+                saveWatchedVideos(watched);
+                console.log('Marked as watched:', videoId);
+            }
+        }
+        
+        // Apply watched styling to videos in parent document
+        function applyWatchedStyling() {
+            const watched = getWatchedVideos();
+            console.log('Applying styling to', watched.length, 'watched videos');
+            watched.forEach(videoId => {
+                const card = parentDoc.getElementById('video-card-' + videoId);
+                if (card) {
+                    card.classList.add('video-card-watched');
+                }
+            });
+        }
+        
+        // Attach click handlers to video links
+        function attachClickHandlers() {
+            const videoLinks = parentDoc.querySelectorAll('a.video-link[data-video-id]');
+            videoLinks.forEach(link => {
+                // Remove existing listener if any
+                link.removeEventListener('click', handleVideoClick);
+                // Add new listener
+                link.addEventListener('click', handleVideoClick);
+            });
+        }
+        
+        function handleVideoClick(event) {
+            const videoId = this.getAttribute('data-video-id');
+            if (videoId) {
+                markVideoWatched(videoId);
+                // Apply styling immediately
+                const card = parentDoc.getElementById('video-card-' + videoId);
+                if (card) {
+                    card.classList.add('video-card-watched');
+                }
+            }
+        }
+        
+        // Initialize
+        function initialize() {
+            applyWatchedStyling();
+            attachClickHandlers();
+        }
+        
+        // Run initialization
+        initialize();
+        
+        // Re-run periodically to catch Streamlit updates
+        setInterval(function() {
+            applyWatchedStyling();
+            attachClickHandlers();
+        }, 500);
+        
+        // Watch for DOM changes
+        const observer = new MutationObserver(function(mutations) {
+            let needsUpdate = false;
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1 && 
+                        (node.classList?.contains('video-card') || 
+                         node.querySelector?.('.video-card'))) {
+                        needsUpdate = true;
+                    }
+                });
+            });
+            
+            if (needsUpdate) {
+                setTimeout(initialize, 100);
+            }
+        });
+        
+        observer.observe(parentDoc.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        console.log('Video watch tracker initialized');
+    })();
+    </script>
+    """, height=0)
 
     # Footer
     st.markdown("---")

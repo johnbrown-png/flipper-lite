@@ -363,7 +363,7 @@ def main():
             margin-bottom: 0.5rem;
             font-weight: 400;
         ">
-            Select the learners age, pick term and topic to play the best education videos for each Small Step in the White Rose Maths curriculum
+            Select the learners age, pick term and topic to play AI curated education videos for each Small Step in the White Rose Maths curriculum
         </p>
         """, unsafe_allow_html=True)
     

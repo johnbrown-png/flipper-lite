@@ -258,46 +258,50 @@ def format_duration(duration_str):
 def render_result_card(result):
     """Render a single video result card"""
     
-    # Get video ID for tracking
+    # Get video ID, topic, and small_step for tracking
     video_id = result['video_id']
-    
-    # Create compact result card with watch tracking
+    topic = result.get('topic', '')
+    small_step = result.get('small_step', '')
+
+    # Create a unique DOM id for this context
+    dom_id = f"video-card-{video_id}-{topic}-{small_step}".replace(' ', '_').replace('"', '').replace("'", '')
+
     with st.container():
         # Layout: thumbnail on left, title and info on right
         col_thumb, col_content = st.columns([1, 3])
-        
+
         with col_thumb:
             # YouTube thumbnail with play link (yout-ube redirects without ads)
             video_url = f"https://www.yout-ube.com/watch?v={video_id}"
             thumbnail_url = f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
             st.markdown(
-                f"<div class='video-card' data-video-id='{video_id}' id='video-card-{video_id}'>" 
-                f"<a href='{video_url}' target='_blank' class='video-link' data-video-id='{video_id}'>" 
-                f"<img src='{thumbnail_url}' style='width:100%; border-radius:8px; cursor:pointer;' />" 
+                f"<div class='video-card' data-video-id='{video_id}' data-topic='{topic}' data-small-step='{small_step}' id='{dom_id}'>"
+                f"<a href='{video_url}' target='_blank' class='video-link' data-video-id='{video_id}' data-topic='{topic}' data-small-step='{small_step}'>"
+                f"<img src='{thumbnail_url}' style='width:100%; border-radius:8px; cursor:pointer;' />"
                 f"</a></div>",
                 unsafe_allow_html=True
             )
-        
+
         with col_content:
             # Video title (without bold formatting)
             st.markdown(f"{result['title']}")
-            
+
             # Channel and duration (smaller font, same row) - only show if available
             channel = result.get('channel', '')
             duration = result.get('duration', '')
-            
+
             if channel or duration:
                 channel_display = channel.replace('_', ' ') if channel else 'Unknown'
                 duration_display = format_duration(duration) if duration else 'N/A'
                 st.caption(f"{channel_display} • {duration_display}")
-            
+
             # Display scores as badges
             semantic_pct = int(result.get('semantic_score', 0) * 100)
             instruction_pct = int(result.get('instruction_score', 0))
             combined_pct = int(result.get('combined_score', 0) * 100)
-            
+
             st.caption(f"🔍 Semantic: {semantic_pct}% | 📚 Instruction: {instruction_pct}% | ⭐ Combined: {combined_pct}%")
-        
+
         st.markdown("---")
 
 
@@ -556,14 +560,14 @@ def main():
         and AI-powered instruction quality scoring.
         """)
 
-    # Watch tracking JavaScript - using components.html for reliable execution
+    # Watch tracking JavaScript - unique per (video_id, topic, small_step)
     components.html("""
     <script>
     (function() {
         const parentWindow = window.parent;
         const parentDoc = parentWindow.document;
-        
-        // Get watched videos from localStorage
+
+        // Get watched videos from localStorage (array of objects)
         function getWatchedVideos() {
             try {
                 const watched = localStorage.getItem('flipper_watched_videos');
@@ -573,7 +577,7 @@ def main():
                 return [];
             }
         }
-        
+
         // Save watched videos to localStorage
         function saveWatchedVideos(videos) {
             try {
@@ -582,67 +586,74 @@ def main():
                 console.error('Error saving watched videos:', e);
             }
         }
-        
-        // Mark a video as watched
-        function markVideoWatched(videoId) {
+
+        // Mark a video as watched for a specific context
+        function markVideoWatched(videoId, topic, smallStep) {
             const watched = getWatchedVideos();
-            if (!watched.includes(videoId)) {
-                watched.push(videoId);
+            // Check if already present
+            const exists = watched.some(v => v.video_id === videoId && v.topic === topic && v.small_step === smallStep);
+            if (!exists) {
+                watched.push({video_id: videoId, topic: topic, small_step: smallStep});
                 saveWatchedVideos(watched);
-                console.log('Marked as watched:', videoId);
+                console.log('Marked as watched:', videoId, topic, smallStep);
             }
         }
-        
+
         // Apply watched styling to videos in parent document
         function applyWatchedStyling() {
             const watched = getWatchedVideos();
-            console.log('Applying styling to', watched.length, 'watched videos');
-            watched.forEach(videoId => {
-                const card = parentDoc.getElementById('video-card-' + videoId);
+            // Remove watched class from all video cards first
+            const allCards = parentDoc.querySelectorAll('.video-card');
+            allCards.forEach(card => card.classList.remove('video-card-watched'));
+            // Add watched class only to matching cards
+            watched.forEach(entry => {
+                const domId = `video-card-${entry.video_id}-${entry.topic}-${entry.small_step}`.replace(/\s/g, '_').replace(/"/g, '').replace(/'/g, '');
+                const card = parentDoc.getElementById(domId);
                 if (card) {
                     card.classList.add('video-card-watched');
                 }
             });
         }
-        
+
         // Attach click handlers to video links
         function attachClickHandlers() {
             const videoLinks = parentDoc.querySelectorAll('a.video-link[data-video-id]');
             videoLinks.forEach(link => {
-                // Remove existing listener if any
                 link.removeEventListener('click', handleVideoClick);
-                // Add new listener
                 link.addEventListener('click', handleVideoClick);
             });
         }
-        
+
         function handleVideoClick(event) {
             const videoId = this.getAttribute('data-video-id');
+            const topic = this.getAttribute('data-topic') || '';
+            const smallStep = this.getAttribute('data-small-step') || '';
             if (videoId) {
-                markVideoWatched(videoId);
+                markVideoWatched(videoId, topic, smallStep);
                 // Apply styling immediately
-                const card = parentDoc.getElementById('video-card-' + videoId);
+                const domId = `video-card-${videoId}-${topic}-${smallStep}`.replace(/\s/g, '_').replace(/"/g, '').replace(/'/g, '');
+                const card = parentDoc.getElementById(domId);
                 if (card) {
                     card.classList.add('video-card-watched');
                 }
             }
         }
-        
+
         // Initialize
         function initialize() {
             applyWatchedStyling();
             attachClickHandlers();
         }
-        
+
         // Run initialization
         initialize();
-        
+
         // Re-run periodically to catch Streamlit updates
         setInterval(function() {
             applyWatchedStyling();
             attachClickHandlers();
         }, 500);
-        
+
         // Watch for DOM changes
         const observer = new MutationObserver(function(mutations) {
             let needsUpdate = false;
@@ -655,18 +666,17 @@ def main():
                     }
                 });
             });
-            
             if (needsUpdate) {
                 setTimeout(initialize, 100);
             }
         });
-        
+
         observer.observe(parentDoc.body, {
             childList: true,
             subtree: true
         });
-        
-        console.log('Video watch tracker initialized');
+
+        console.log('Video watch tracker initialized (context-aware)');
     })();
     </script>
     """, height=0)

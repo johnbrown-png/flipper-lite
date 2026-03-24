@@ -165,14 +165,6 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
         List of video dictionaries
     """
     try:
-        # Debug: Print lookup parameters
-        st.write("**DEBUG - Looking up:**")
-        st.write(f"- Year: `{year}` (type: {type(year).__name__})")
-        st.write(f"- Term: `{term}` (type: {type(term).__name__})")
-        st.write(f"- Difficulty: `{difficulty}` (type: {type(difficulty).__name__})")
-        st.write(f"- Topic: `{topic}` (type: {type(topic).__name__})")
-        st.write(f"- Small Step: `{small_step}` (type: {type(small_step).__name__})")
-        
         # Normalize difficulty for comparison (handle empty strings and NaN)
         # Convert empty strings to NaN for proper pandas comparison
         lookup_difficulty = difficulty if difficulty else None
@@ -199,19 +191,7 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
             )
         matches = df[mask]
         
-        # Debug: Show match count
-        st.write(f"**Matches found: {len(matches)}**")
-        
         if matches.empty:
-            # Debug: Show sample of what's actually in the CSV
-            st.write("**Sample CSV entries for this Year/Term/Difficulty:**")
-            sample_mask = (df['year'] == year) & (df['term'] == term) & (df['difficulty'] == difficulty)
-            sample = df[sample_mask].head(3)
-            if not sample.empty:
-                for idx, row in sample.iterrows():
-                    st.write(f"- Difficulty: `{row['difficulty']}`, Topic: `{row['topic']}`, Step: `{row['small_step'][:50]}...`")
-            else:
-                st.write(f"No entries found for Year=`{year}`, Term=`{term}`, Difficulty=`{difficulty}`")
             return []
         
         # Get first match (should only be one per curriculum item)
@@ -309,7 +289,7 @@ def render_result_card(result):
             if channel or duration:
                 channel_display = channel.replace('_', ' ') if channel else 'Unknown'
                 duration_display = format_duration(duration) if duration else 'N/A'
-                st.markdown(f"<small>{channel_display} • {duration_display}</small>", unsafe_allow_html=True)
+                st.caption(f"{channel_display} • {duration_display}")
             
             # Display scores as badges
             semantic_pct = int(result.get('semantic_score', 0) * 100)

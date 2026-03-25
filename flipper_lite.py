@@ -132,7 +132,7 @@ st.markdown("""
 def load_precomputed_recommendations_flat():
     """Load precomputed curriculum recommendations CSV"""
     try:
-        csv_path = project_root / 'precomputed_recommendations.csv'
+        csv_path = project_root / 'precomputed_recommendations_flat.csv'
         df = pd.read_csv(csv_path)
         return df
     except Exception as e:

@@ -185,29 +185,33 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
         matches = df[mask].copy()
         if matches.empty:
             return []
-        # Sort by recommendation number (from unique_id suffix)
-        def extract_recommendation_num(uid):
-            try:
-                return int(str(uid).rsplit('_recommendation_', 1)[-1])
-            except Exception:
-                return 999
-        matches['rec_num'] = matches['unique_id'].apply(extract_recommendation_num)
-        matches = matches.sort_values('rec_num')
+        # There should only be one row per step, but handle multiple just in case
         results = []
-        for i, (_, row) in enumerate(matches.iterrows()):
-            result = {
-                'rank': i + 1,
-                'video_id': row.get('video_id', ''),
-                'title': row.get('video_title', ''),
-                'semantic_score': float(row.get('semantic_score', 0.0)) if row.get('semantic_score', '') else 0.0,
-                'instruction_score': float(row.get('instruction_quality_score', 0.0)) if row.get('instruction_quality_score', '') else 0.0,
-                'combined_score': float(row.get('combined_score', 0.0)) if row.get('combined_score', '') else 0.0,
-                'channel': row.get('channel', ''),
-                'duration': row.get('duration_formatted', ''),
-                'topic': topic,
-                'small_step': small_step
-            }
-            results.append(result)
+        for _, row in matches.iterrows():
+            # Split pipe-separated fields into lists
+            video_ids = str(row.get('video_id', '')).split('|')
+            titles = str(row.get('video_title', '')).split('|')
+            channels = str(row.get('channel', '')).split('|')
+            durations = str(row.get('duration_formatted', '')).split('|')
+            semantic_scores = [float(x) if x else 0.0 for x in str(row.get('semantic_scores', '')).split('|')]
+            instruction_scores = [float(x) if x else 0.0 for x in str(row.get('instruction_quality_scores', '')).split('|')]
+            combined_scores = [float(x) if x else 0.0 for x in str(row.get('combined_scores', '')).split('|')]
+
+            n = max(len(video_ids), len(titles), len(channels), len(durations))
+            for i in range(n):
+                result = {
+                    'rank': i + 1,
+                    'video_id': video_ids[i] if i < len(video_ids) else '',
+                    'title': titles[i] if i < len(titles) else '',
+                    'semantic_score': semantic_scores[i] if i < len(semantic_scores) else 0.0,
+                    'instruction_score': instruction_scores[i] if i < len(instruction_scores) else 0.0,
+                    'combined_score': combined_scores[i] if i < len(combined_scores) else 0.0,
+                    'channel': channels[i] if i < len(channels) else '',
+                    'duration': durations[i] if i < len(durations) else '',
+                    'topic': topic,
+                    'small_step': small_step
+                }
+                results.append(result)
         return results
     except Exception as e:
         st.error(f"Lookup error: {e}")

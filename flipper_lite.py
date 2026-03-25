@@ -220,10 +220,11 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
                     'instruction_score': float(instruction_scores[i]) if i < len(instruction_scores) else 0.0,
                     'combined_score': float(combined_scores[i]) if i < len(combined_scores) else 0.0,
                     'channel': channels[i] if i < len(channels) else '',
-                    'duration': durations[i] if i < len(durations) else ''
+                    'duration': durations[i] if i < len(durations) else '',
+                    'topic': topic,
+                    'small_step': small_step
                 }
                 results.append(result)
-        
         return results
     
     except Exception as e:
@@ -289,9 +290,11 @@ def render_result_card(result):
             # Channel and duration below title, after a space
             channel = result.get('channel', '')
             duration = result.get('duration', '')
-            channel_display = channel.replace('_', ' ') if channel else 'Unknown'
-            duration_display = format_duration(duration) if duration else 'N/A'
-            st.markdown(f"<div style='font-size:0.95rem; color:#2c5f8d; margin-bottom:0.5rem'>{channel_display} | {duration_display}</div>", unsafe_allow_html=True)
+            channel_display = channel.replace('_', ' ') if channel else ''
+            duration_display = format_duration(duration) if duration else ''
+            if channel_display or duration_display:
+                display_line = f"{channel_display} | {duration_display}" if channel_display and duration_display else channel_display or duration_display
+                st.markdown(f"<div style='font-size:0.95rem; color:#2c5f8d; margin-bottom:0.5rem'>{display_line}</div>", unsafe_allow_html=True)
 
             # Display scores as badges (as before)
             semantic_pct = int(result.get('semantic_score', 0) * 100)

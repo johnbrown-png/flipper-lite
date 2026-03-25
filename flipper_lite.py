@@ -267,7 +267,7 @@ def render_result_card(result):
     dom_id = f"video-card-{video_id}-{topic}-{small_step}".replace(' ', '_').replace('"', '').replace("'", '')
 
     with st.container():
-        # Layout: thumbnail on left, title and info on right
+        # Layout: thumbnail on left, content on right
         col_thumb, col_content = st.columns([1, 3])
 
         with col_thumb:
@@ -283,19 +283,17 @@ def render_result_card(result):
             )
 
         with col_content:
-            # Video title (without bold formatting)
-            st.markdown(f"{result['title']}")
+            # Video title at the top (larger font)
+            st.markdown(f"<div style='font-size:1.1rem; font-weight:600; margin-bottom:0.3rem'>{result['title']}</div>", unsafe_allow_html=True)
 
-            # Channel and duration (smaller font, same row) - only show if available
+            # Channel and duration below title, after a space
             channel = result.get('channel', '')
             duration = result.get('duration', '')
+            channel_display = channel.replace('_', ' ') if channel else 'Unknown'
+            duration_display = format_duration(duration) if duration else 'N/A'
+            st.markdown(f"<div style='font-size:0.95rem; color:#2c5f8d; margin-bottom:0.5rem'>{channel_display} | {duration_display}</div>", unsafe_allow_html=True)
 
-            if channel or duration:
-                channel_display = channel.replace('_', ' ') if channel else 'Unknown'
-                duration_display = format_duration(duration) if duration else 'N/A'
-                st.caption(f"{channel_display} • {duration_display}")
-
-            # Display scores as badges
+            # Display scores as badges (as before)
             semantic_pct = int(result.get('semantic_score', 0) * 100)
             instruction_pct = int(result.get('instruction_score', 0))
             combined_pct = int(result.get('combined_score', 0) * 100)

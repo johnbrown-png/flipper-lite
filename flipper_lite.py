@@ -165,78 +165,50 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
         List of video dictionaries
     """
     try:
-        # Normalize difficulty for comparison (handle empty strings and NaN)
-        # Convert empty strings to NaN for proper pandas comparison
-        lookup_difficulty = difficulty if difficulty else None
-        
         # Filter DataFrame for exact match (including difficulty)
-        # Handle both empty strings and NaN in difficulty column
         if not difficulty:
-            # If difficulty is empty/None, match rows where difficulty is NaN or empty
             mask = (
-                (df['year'] == year) & 
-                (df['term'] == term) & 
+                (df['year'] == year) &
+                (df['term'] == term) &
                 (df['difficulty'].isna() | (df['difficulty'] == '')) &
-                (df['topic'] == topic) & 
+                (df['topic'] == topic) &
                 (df['small_step'] == small_step)
             )
         else:
-            # If difficulty has a value, match exactly
             mask = (
-                (df['year'] == year) & 
-                (df['term'] == term) & 
-                (df['difficulty'] == difficulty) & 
-                (df['topic'] == topic) & 
+                (df['year'] == year) &
+                (df['term'] == term) &
+                (df['difficulty'] == difficulty) &
+                (df['topic'] == topic) &
                 (df['small_step'] == small_step)
             )
-        matches = df[mask]
-        
+        matches = df[mask].copy()
         if matches.empty:
             return []
-        
-        # Get first match (should only be one per curriculum item)
-        row = matches.iloc[0]
-        
-        # Parse pipe-separated values
-        def safe_split(val, n):
-            # Split by |, pad/truncate to length n
-            if pd.isna(val) or val == '':
-                return [''] * n
-            parts = str(val).split('|')
-            if len(parts) < n:
-                parts += [''] * (n - len(parts))
-            elif len(parts) > n:
-                parts = parts[:n]
-            return parts
-
-        # Always use video_ids as the reference length
-        video_ids = safe_split(row.get('video_id', ''), 3)
-        video_titles = safe_split(row.get('video_title', ''), 3)
-        semantic_scores = safe_split(row.get('semantic_scores', ''), 3)
-        instruction_scores = safe_split(row.get('instruction_quality_scores', ''), 3)
-        combined_scores = safe_split(row.get('combined_scores', ''), 3)
-        channels = safe_split(row.get('channel', ''), 3)
-        durations = safe_split(row.get('duration_formatted', ''), 3)
-        
-        # Build result list (top 3)
+        # Sort by recommendation number (from unique_id suffix)
+        def extract_recommendation_num(uid):
+            try:
+                return int(str(uid).rsplit('_recommendation_', 1)[-1])
+            except Exception:
+                return 999
+        matches['rec_num'] = matches['unique_id'].apply(extract_recommendation_num)
+        matches = matches.sort_values('rec_num')
         results = []
-        for i in range(min(3, len(video_ids))):
-            if i < len(video_ids):
-                result = {
-                    'rank': i + 1,
-                    'video_id': video_ids[i],
-                    'title': video_titles[i] if i < len(video_titles) else 'Unknown Title',
-                    'semantic_score': float(semantic_scores[i]) if i < len(semantic_scores) else 0.0,
-                    'instruction_score': float(instruction_scores[i]) if i < len(instruction_scores) else 0.0,
-                    'combined_score': float(combined_scores[i]) if i < len(combined_scores) else 0.0,
-                    'channel': channels[i] if i < len(channels) else '',
-                    'duration': durations[i] if i < len(durations) else '',
-                    'topic': topic,
-                    'small_step': small_step
-                }
-                results.append(result)
+        for i, (_, row) in enumerate(matches.iterrows()):
+            result = {
+                'rank': i + 1,
+                'video_id': row.get('video_id', ''),
+                'title': row.get('video_title', ''),
+                'semantic_score': float(row.get('semantic_score', 0.0)) if row.get('semantic_score', '') else 0.0,
+                'instruction_score': float(row.get('instruction_quality_score', 0.0)) if row.get('instruction_quality_score', '') else 0.0,
+                'combined_score': float(row.get('combined_score', 0.0)) if row.get('combined_score', '') else 0.0,
+                'channel': row.get('channel', ''),
+                'duration': row.get('duration_formatted', ''),
+                'topic': topic,
+                'small_step': small_step
+            }
+            results.append(result)
         return results
-    
     except Exception as e:
         st.error(f"Lookup error: {e}")
         import traceback

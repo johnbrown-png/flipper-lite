@@ -198,17 +198,25 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
         row = matches.iloc[0]
         
         # Parse pipe-separated values
-        video_ids = str(row['video_id']).split('|') if pd.notna(row['video_id']) else []
-        video_titles = str(row['video_title']).split('|') if pd.notna(row['video_title']) else []
-        semantic_scores = str(row['semantic_scores']).split('|') if pd.notna(row['semantic_scores']) else []
-        instruction_scores = str(row['instruction_quality_scores']).split('|') if pd.notna(row['instruction_quality_scores']) else []
-        combined_scores = str(row['combined_scores']).split('|') if pd.notna(row['combined_scores']) else []
-        
-        # Parse channel and duration (new columns) - robust handling for empty/NaN
-        channel_val = row['channel'] if 'channel' in row and pd.notna(row['channel']) else ''
-        duration_val = row['duration_formatted'] if 'duration_formatted' in row and pd.notna(row['duration_formatted']) else ''
-        channels = str(channel_val).split('|') if channel_val else [''] * len(video_ids)
-        durations = str(duration_val).split('|') if duration_val else [''] * len(video_ids)
+        def safe_split(val, n):
+            # Split by |, pad/truncate to length n
+            if pd.isna(val) or val == '':
+                return [''] * n
+            parts = str(val).split('|')
+            if len(parts) < n:
+                parts += [''] * (n - len(parts))
+            elif len(parts) > n:
+                parts = parts[:n]
+            return parts
+
+        # Always use video_ids as the reference length
+        video_ids = safe_split(row.get('video_id', ''), 3)
+        video_titles = safe_split(row.get('video_title', ''), 3)
+        semantic_scores = safe_split(row.get('semantic_scores', ''), 3)
+        instruction_scores = safe_split(row.get('instruction_quality_scores', ''), 3)
+        combined_scores = safe_split(row.get('combined_scores', ''), 3)
+        channels = safe_split(row.get('channel', ''), 3)
+        durations = safe_split(row.get('duration_formatted', ''), 3)
         
         # Build result list (top 3)
         results = []

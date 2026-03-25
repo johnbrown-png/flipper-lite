@@ -129,7 +129,7 @@ st.markdown("""
 
 
 @st.cache_data
-def load_precomputed_recommendations():
+def load_precomputed_recommendations_flat():
     """Load precomputed curriculum recommendations CSV"""
     try:
         csv_path = project_root / 'precomputed_recommendations.csv'
@@ -143,7 +143,7 @@ def load_precomputed_recommendations():
 @st.cache_data
 def load_video_inventory():
     """
-    DEPRECATED: Channel and duration now included in precomputed_recommendations.csv
+    DEPRECATED: Channel and duration now included in precomputed_recommendations_flat.csv
     This function exists for backward compatibility but is no longer needed.
     """
     return None
@@ -393,7 +393,7 @@ def main():
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Load precomputed recommendations
-    recommendations_df = load_precomputed_recommendations()
+    recommendations_df = load_precomputed_recommendations_flat()
     
     if recommendations_df is None:
         st.error("❌ Failed to load precomputed recommendations. Please run `precompute_curriculum_recommendations.py` first.")

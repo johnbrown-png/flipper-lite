@@ -204,9 +204,11 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
         instruction_scores = str(row['instruction_quality_scores']).split('|') if pd.notna(row['instruction_quality_scores']) else []
         combined_scores = str(row['combined_scores']).split('|') if pd.notna(row['combined_scores']) else []
         
-        # Parse channel and duration (new columns)
-        channels = str(row.get('channel', '')).split('|') if pd.notna(row.get('channel')) else []
-        durations = str(row.get('duration_formatted', '')).split('|') if pd.notna(row.get('duration_formatted')) else []
+        # Parse channel and duration (new columns) - robust handling for empty/NaN
+        channel_val = row['channel'] if 'channel' in row and pd.notna(row['channel']) else ''
+        duration_val = row['duration_formatted'] if 'duration_formatted' in row and pd.notna(row['duration_formatted']) else ''
+        channels = str(channel_val).split('|') if channel_val else [''] * len(video_ids)
+        durations = str(duration_val).split('|') if duration_val else [''] * len(video_ids)
         
         # Build result list (top 3)
         results = []

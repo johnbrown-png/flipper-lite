@@ -195,34 +195,22 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
         matches = df[mask].copy()
         if matches.empty:
             return []
-        # There should only be one row per step, but handle multiple just in case
+        # Each row is a single recommendation (not pipe-separated)
         results = []
         for _, row in matches.iterrows():
-            # Split pipe-separated fields into lists
-            video_ids = str(row.get('video_id', '')).split('|')
-            # Do NOT split video_title on pipe; treat as a single value
-            title = str(row.get('video_title', ''))
-            channels = str(row.get('channel', '')).split('|')
-            durations = str(row.get('duration_formatted', '')).split('|')
-            semantic_scores = [float(x) if x else 0.0 for x in str(row.get('semantic_scores', '')).split('|')]
-            instruction_scores = [float(x) if x else 0.0 for x in str(row.get('instruction_quality_scores', '')).split('|')]
-            combined_scores = [float(x) if x else 0.0 for x in str(row.get('combined_scores', '')).split('|')]
-
-            n = max(len(video_ids), len(channels), len(durations))
-            for i in range(n):
-                result = {
-                    'rank': i + 1,
-                    'video_id': video_ids[i] if i < len(video_ids) else '',
-                    'title': title,
-                    'semantic_score': semantic_scores[i] if i < len(semantic_scores) else 0.0,
-                    'instruction_score': instruction_scores[i] if i < len(instruction_scores) else 0.0,
-                    'combined_score': combined_scores[i] if i < len(combined_scores) else 0.0,
-                    'channel': channels[i] if i < len(channels) else '',
-                    'duration': durations[i] if i < len(durations) else '',
-                    'topic': topic,
-                    'small_step': small_step
-                }
-                results.append(result)
+            result = {
+                'rank': row.get('rank', 1),
+                'video_id': row.get('video_id', ''),
+                'title': row.get('video_title', ''),
+                'semantic_score': float(row.get('semantic_score', 0.0)),
+                'instruction_score': float(row.get('instruction_quality_score', 0.0)),
+                'combined_score': float(row.get('combined_score', 0.0)),
+                'channel': row.get('channel', ''),
+                'duration': row.get('duration_formatted', ''),
+                'topic': row.get('topic', topic),
+                'small_step': row.get('small_step', small_step)
+            }
+            results.append(result)
         return results
     except Exception as e:
         st.error(f"Lookup error: {e}")

@@ -55,6 +55,18 @@ class CurriculumAssistant:
         age_options = ['Age ?'] + ages
         if 'curr_year' not in st.session_state or st.session_state.curr_year not in age_options:
             st.session_state.curr_year = 'Age ?'
+        # Custom CSS for Age dropdown width
+            st.markdown("""
+            <style>
+            /* Set Age dropdown width to 15ch for all selectboxes labeled Age */
+            div[data-testid="stSelectbox"] label[aria-label="Age"] ~ div:first-child,
+            div[data-testid="stSelectbox"][aria-label="Age"] > div:first-child {
+                width: 15ch !important;
+                min-width: 15ch !important;
+                max-width: 15ch !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
         selected_year = st.selectbox(
             "Age",
             age_options,

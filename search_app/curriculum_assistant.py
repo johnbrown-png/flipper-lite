@@ -7,7 +7,6 @@ Provides cascading filters for searching curriculum content
 import pandas as pd
 import streamlit as st
 from pathlib import Path
-from rapidfuzz import process, fuzz
 
 
 class CurriculumAssistant:

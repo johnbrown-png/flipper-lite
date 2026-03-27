@@ -402,7 +402,7 @@ def main():
     
     # Note: video_inventory.csv no longer needed - channel & duration now in precomputed_recommendations.csv
     
-    # Initialize curriculum assistant
+    # Initialize curriculum assistant (uses same dropdown UI as flipper.py)
     curriculum_path = project_root / "Curriculum" / "Maths" / "curriculum_22032026.csv"
     curriculum_assistant = None
     if curriculum_path.exists():
@@ -477,26 +477,22 @@ def main():
     # CURRICULUM ASSISTANT (Below results)
     # ==========================================
     if curriculum_assistant:
+        # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
         action, text = curriculum_assistant.render()
-        
         if action == 'small_step_search' and text:
             # Handle small step selection with CSV lookup
             st.session_state.display_status = 'loading'
             st.session_state.display_step_name = text.get('small_step', text['display_text'])
-            
             # Store curriculum context for breadcrumb display
             st.session_state.curriculum_context = text
-            
             # Extract curriculum context
             year = text.get('year')
             term = text.get('term')
             difficulty = text.get('difficulty', '')
             topic = text.get('topic')
             small_step = text.get('small_step')
-            
             # Lookup videos from precomputed CSV (includes channel & duration)
             results = lookup_videos_for_step(recommendations_df, year, term, difficulty, topic, small_step)
-            
             # Store results and update status
             st.session_state.display_results = results
             st.session_state.display_status = 'complete'

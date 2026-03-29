@@ -388,6 +388,12 @@ def main():
             We are keen to hear any views you have on Flipper Schools to help us improve our contribution 
             to learning. Please contact [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
             """)
+            
+            st.markdown("#### Contact:")
+            st.markdown("""
+            FLIPPER EDUCATION LTD Company number: SC882978
+            Registered in Scotland, 36-1 Marlborough Street, Midlothian, Edinburgh, EH15 2BG [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
+            """)
     
     st.markdown("<br>", unsafe_allow_html=True)
     

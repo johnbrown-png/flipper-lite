@@ -33,6 +33,21 @@ class CurriculumAssistant:
     
     def render(self):
         """Render the curriculum assistant UI and return selected text"""
+        # --- Custom CSS: Make all buttons red in this component ---
+        st.markdown('''
+        <style>
+        button[kind="secondary"], button[data-testid="baseButton-secondary"], button[data-testid="baseButton-primary"] {
+            background-color: #d32f2f !important;
+            color: #fff !important;
+            border: none !important;
+        }
+        button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover, button[data-testid="baseButton-primary"]:hover {
+            background-color: #b71c1c !important;
+            color: #fff !important;
+        }
+        </style>
+        ''', unsafe_allow_html=True)
+
         self.df = self._load_curriculum()
         if self.df is None:
             st.warning("Curriculum data not available")

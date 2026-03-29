@@ -145,7 +145,7 @@ class CurriculumAssistant:
                                 if example_text:
                                     st.caption(example_text)
                             with col_button:
-                                if st.button("🔍", key=f"find_step_topic_{step_num}", help="Find videos for this step"):
+                                if st.button("Search", key=f"find_step_topic_{step_num}", help="Find videos for this step"):
                                     difficulty_val = row.get('Difficulty', '')
                                     if pd.isna(difficulty_val):
                                         difficulty_val = ''

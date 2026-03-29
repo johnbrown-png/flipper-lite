@@ -366,6 +366,13 @@ def main():
             Concrete → Pictorial → Abstract (CPA) progression. Via videos we aim to provide some context 
             and quick/light introductions to topics to complement other forms of learning.
             """)
+
+            st.markdown("#### Why flipped/ flipped classroom:")
+            st.markdown("""
+            Flipper School was named after flipped classrooms the idea of reversing the learning of introductory concepts 
+            back onto the learner. This frees up instructional time to be more efficient, allowing it to focus on what its best for,
+            embedding, exploration, elaboration and mastery.                                  .
+            """)
             
             st.markdown("#### How our service works:")
             st.markdown("""
@@ -392,7 +399,7 @@ def main():
             st.markdown("#### Contact:")
             st.markdown("""
             FLIPPER EDUCATION LTD Company number: SC882978
-            Registered in Scotland, 36-1 Marlborough Street, Midlothian, Edinburgh, EH15 2BG [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
+            Registered in Scotland, Edinburgh, EH15 2BG [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
             """)
     
     st.markdown("<br>", unsafe_allow_html=True)

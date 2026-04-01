@@ -135,6 +135,40 @@ st.markdown("""
         opacity: 0.85;
         filter: saturate(0.85);
     }
+    
+    /* Style Watch buttons - make them compact and elegant */
+    button[key^="play_"] {
+        background: linear-gradient(135deg, #2c5f8d 0%, #4a90c8 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        transition: all 0.2s ease !important;
+        margin-top: 0.3rem !important;
+    }
+    
+    button[key^="play_"]:hover {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2c5f8d 100%) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
+    }
+    
+    button[key^="play_"]:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Thumbnail hover effect */
+    .video-thumbnail-container img {
+        transition: filter 0.3s ease;
+    }
+    
+    .video-thumbnail-container:hover img {
+        filter: brightness(1.05);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -316,31 +350,22 @@ def render_video_player(video_data):
     channel = video_data.get('channel', '')
     duration = video_data.get('duration', '')
     
-    # Back button at top
-    if st.button("← Back to Search Results", key="back_to_search", type="primary"):
-        st.session_state.viewing_video = False
-        st.session_state.current_video = None
-        st.rerun()
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Video title
-    st.markdown(f"""<h2 style='margin-bottom:0.5rem;'>{title}</h2>""", unsafe_allow_html=True)
-    
-    # Channel and duration info
-    channel_display = channel.replace('_', ' ') if channel else ''
-    duration_display = format_duration(duration) if duration else ''
-    if channel_display or duration_display:
-        info_line = f"{channel_display} | {duration_display}" if channel_display and duration_display else channel_display or duration_display
-        st.markdown(f"<p style='color:#666; margin-bottom:1.5rem;'>{info_line}</p>", unsafe_allow_html=True)
-    
-    # Video player using youtube-nocookie (privacy-respecting)
+    # Video player at top using youtube-nocookie (privacy-respecting)
     embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1"
     
-    # Responsive iframe container
+    # Full-width responsive iframe container at very top - edge to edge
     st.markdown(
         f"""
-        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px;">
+        <style>
+        /* Remove all padding for video player page to maximize width */
+        .block-container {{
+            padding-top: 0rem !important;
+            padding-left: 0rem !important;
+            padding-right: 0rem !important;
+            max-width: 100% !important;
+        }}
+        </style>
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; width: 100vw; background: #000; border-radius: 0px; margin: 0; margin-left: calc(-1 * var(--block-padding-x, 0px));">
             <iframe 
                 src="{embed_url}" 
                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
@@ -352,13 +377,13 @@ def render_video_player(video_data):
         unsafe_allow_html=True
     )
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # Another back button at bottom for convenience
+    # Back button for navigation - 20px below video
     if st.button("← Back to Search Results", key="back_to_search_bottom", type="primary"):
         st.session_state.viewing_video = False
         st.session_state.current_video = None
         st.rerun()
+    
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_result_card(result):
@@ -377,27 +402,32 @@ def render_result_card(result):
         col_thumb, col_gauge, col_content = st.columns([1.2, 0.5, 3.3])
 
         with col_thumb:
-            # YouTube thumbnail - clickable to view video
-            thumbnail_url = f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
+            # Clickable thumbnail with visible play button overlay
+            unique_key = f"{video_id}_{topic}_{small_step}".replace(' ', '_').replace('"', '').replace("'", '')
             
-            # Use button with thumbnail as clickable element
+            # Thumbnail with hover effect and button
+            st.markdown(f"""
+                <div style='position: relative; width: 100%;' class='video-thumbnail-container'>
+                    <img src='https://img.youtube.com/vi/{video_id}/mqdefault.jpg' 
+                         style='width: 100%; border-radius: 8px; display: block;'
+                         class='video-card' 
+                         data-video-id='{video_id}' 
+                         data-topic='{topic}' 
+                         data-small-step='{small_step}' 
+                         id='{dom_id}' />
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Clean watch button
             if st.button(
-                "▶️",
-                key=f"play_{video_id}_{topic}_{small_step}",
-                help="Click to watch video",
-                use_container_width=True
+                "▶ Watch",
+                key=f"play_{unique_key}",
+                use_container_width=True,
+                type="primary"
             ):
                 st.session_state.viewing_video = True
                 st.session_state.current_video = result
                 st.rerun()
-            
-            # Display thumbnail
-            st.markdown(
-                f"<div class='video-card' data-video-id='{video_id}' data-topic='{topic}' data-small-step='{small_step}' id='{dom_id}'>" 
-                f"<img src='{thumbnail_url}' style='width:100%; border-radius:8px; margin-top:-45px;' />" 
-                f"</div>",
-                unsafe_allow_html=True
-            )
         
         with col_gauge:
             # Circular progress indicator for combined score
@@ -757,7 +787,7 @@ def main():
             allCards.forEach(card => card.classList.remove('video-card-watched'));
             // Add watched class only to matching cards
             watched.forEach(entry => {
-                const domId = `video-card-${entry.video_id}-${entry.topic}-${entry.small_step}`.replace(/\s/g, '_').replace(/"/g, '').replace(/'/g, '');
+                const domId = `video-card-${entry.video_id}-${entry.topic}-${entry.small_step}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
                 const card = parentDoc.getElementById(domId);
                 if (card) {
                     card.classList.add('video-card-watched');
@@ -781,7 +811,7 @@ def main():
             if (videoId) {
                 markVideoWatched(videoId, topic, smallStep);
                 // Apply styling immediately
-                const domId = `video-card-${videoId}-${topic}-${smallStep}`.replace(/\s/g, '_').replace(/"/g, '').replace(/'/g, '');
+                const domId = `video-card-${videoId}-${topic}-${smallStep}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
                 const card = parentDoc.getElementById(domId);
                 if (card) {
                     card.classList.add('video-card-watched');

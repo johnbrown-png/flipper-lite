@@ -33,15 +33,16 @@ class CurriculumAssistant:
     
     def render(self):
         """Render the curriculum assistant UI and return selected text"""
-        # --- Custom CSS: Make all buttons red in this component ---
+        # --- Custom CSS: Make Search buttons red (curriculum navigation only) ---
         st.markdown('''
         <style>
-        button[kind="secondary"], button[data-testid="baseButton-secondary"], button[data-testid="baseButton-primary"] {
+        /* Red buttons for curriculum navigation Search buttons only */
+        button[key^="find_step_topic_"] {
             background-color: #d32f2f !important;
             color: #fff !important;
             border: none !important;
         }
-        button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover, button[data-testid="baseButton-primary"]:hover {
+        button[key^="find_step_topic_"]:hover {
             background-color: #b71c1c !important;
             color: #fff !important;
         }
@@ -118,7 +119,8 @@ class CurriculumAssistant:
             filtered_df = self.df[self.df['Age'] == st.session_state.curr_year]
             if show_difficulty:
                 filtered_df = filtered_df[filtered_df['Difficulty'] == st.session_state.curr_difficulty]
-            topics = sorted(filtered_df['Topic'].dropna().unique())
+            # Preserve CSV order instead of sorting alphabetically
+            topics = filtered_df['Topic'].dropna().unique().tolist()
             topic_options = ['Topic ?'] + topics
             if 'curr_topic' not in st.session_state or st.session_state.curr_topic not in topic_options:
                 st.session_state.curr_topic = 'Topic ?'

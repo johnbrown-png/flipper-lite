@@ -55,7 +55,7 @@ st.markdown("""
     
     /* Top accent bar */
     .stApp::before {
-        content: '';
+        content: "";
         position: fixed;
         top: 0;
         left: 0;

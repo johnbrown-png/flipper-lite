@@ -322,7 +322,7 @@ def render_result_card(result):
 
     with st.container():
         # Layout: thumbnail, circular progress indicator, and content
-        col_thumb, col_gauge, col_content = st.columns([1.2, 0.8, 3])
+        col_thumb, col_gauge, col_content = st.columns([1.2, 0.5, 3.3])
 
         with col_thumb:
             # YouTube thumbnail with play link (yout-ube redirects without ads)
@@ -342,8 +342,8 @@ def render_result_card(result):
             instruction_pct = int(result.get('instruction_score', 0))
             combined_pct = int(result.get('combined_score', 0) * 100)
             
-            # Display circular gauge with label
-            st.markdown("<div style='text-align:center; padding-top:8px;'>", unsafe_allow_html=True)
+            # Display circular gauge with label - centered
+            st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)
             st.markdown(create_circular_progress_svg(combined_pct, size=80), unsafe_allow_html=True)
             st.markdown("<div style='font-size:0.75rem; color:#666; margin-top:4px;'>Combined</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)

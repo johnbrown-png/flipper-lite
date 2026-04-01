@@ -203,7 +203,7 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
                 'video_id': row.get('video_id', ''),
                 'title': row.get('video_title', ''),
                 'semantic_score': float(row.get('semantic_score', 0.0)),
-                'instruction_score': float(row.get('instruction_quality_score', 0.0)),
+                'instruction_score': float(row.get('instruction_score', 0.0)),
                 'instruction_justification': row.get('instruction_justification', ''),
                 'combined_score': float(row.get('combined_score', 0.0)),
                 'channel': row.get('channel', ''),

@@ -204,6 +204,7 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
                 'title': row.get('video_title', ''),
                 'semantic_score': float(row.get('semantic_score', 0.0)),
                 'instruction_score': float(row.get('instruction_quality_score', 0.0)),
+                'instruction_justification': row.get('instruction_justification', ''),
                 'combined_score': float(row.get('combined_score', 0.0)),
                 'channel': row.get('channel', ''),
                 'duration': row.get('duration_formatted', ''),
@@ -287,6 +288,11 @@ def render_result_card(result):
             combined_pct = int(result.get('combined_score', 0) * 100)
 
             st.caption(f"🔍 Semantic: {semantic_pct}% | 📚 Instruction: {instruction_pct}% | ⭐ Combined: {combined_pct}%")
+            
+            # Display instruction justification if available
+            justification = result.get('instruction_justification', '')
+            if justification and str(justification).strip():
+                st.markdown(f"<div style='font-size:0.9rem; color:#555; margin-top:0.5rem; font-style:italic; padding:0.5rem; background:#f8f9fa; border-left:3px solid #4a90c8; border-radius:4px;'>💡 {justification}</div>", unsafe_allow_html=True)
 
         st.markdown("---")
 

@@ -17,6 +17,7 @@ from search_app.curriculum_assistant import CurriculumAssistant
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
+import math
 
 # Configure page
 st.set_page_config(
@@ -242,6 +243,72 @@ def format_duration(duration_str):
         return str(duration_str)
 
 
+def create_circular_progress_svg(score_pct, size=80):
+    """
+    Create an SVG circular progress indicator.
+    
+    Args:
+        score_pct: Score as percentage (0-100)
+        size: Diameter of the circle in pixels
+    
+    Returns:
+        HTML string with SVG element
+    """
+    # Color based on score (Red -> Yellow -> Green spectrum)
+    if score_pct >= 70:
+        color = "#22c55e"  # Green
+    elif score_pct >= 40:
+        color = "#eab308"  # Yellow/Gold
+    else:
+        color = "#ef4444"  # Red
+    
+    # Calculate circle parameters
+    radius = (size - 10) / 2
+    circumference = 2 * math.pi * radius
+    
+    # Calculate the arc length for the scored portion
+    # stroke-dasharray and stroke-dashoffset create the progress effect
+    progress = (score_pct / 100) * circumference
+    
+    svg = f"""
+    <svg width="{size}" height="{size}" style="transform: rotate(-90deg);">
+        <!-- Background circle (gray) -->
+        <circle
+            cx="{size/2}"
+            cy="{size/2}"
+            r="{radius}"
+            fill="none"
+            stroke="#e5e7eb"
+            stroke-width="8"
+        />
+        <!-- Progress circle (colored) -->
+        <circle
+            cx="{size/2}"
+            cy="{size/2}"
+            r="{radius}"
+            fill="none"
+            stroke="{color}"
+            stroke-width="8"
+            stroke-dasharray="{circumference}"
+            stroke-dashoffset="{circumference - progress}"
+            stroke-linecap="round"
+        />
+        <!-- Score text in center -->
+        <text
+            x="{size/2}"
+            y="{size/2}"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="20"
+            font-weight="bold"
+            fill="{color}"
+            style="transform: rotate(90deg); transform-origin: {size/2}px {size/2}px;"
+        >{score_pct}%</text>
+    </svg>
+    """
+    return svg
+
+
 def render_result_card(result):
     """Render a single video result card"""
     
@@ -254,8 +321,8 @@ def render_result_card(result):
     dom_id = f"video-card-{video_id}-{topic}-{small_step}".replace(' ', '_').replace('"', '').replace("'", '')
 
     with st.container():
-        # Layout: thumbnail on left, content on right
-        col_thumb, col_content = st.columns([1, 3])
+        # Layout: thumbnail, circular progress indicator, and content
+        col_thumb, col_gauge, col_content = st.columns([1.2, 0.8, 3])
 
         with col_thumb:
             # YouTube thumbnail with play link (yout-ube redirects without ads)
@@ -268,6 +335,18 @@ def render_result_card(result):
                 f"</a></div>",
                 unsafe_allow_html=True
             )
+        
+        with col_gauge:
+            # Circular progress indicator for combined score
+            semantic_pct = int(result.get('semantic_score', 0) * 100)
+            instruction_pct = int(result.get('instruction_score', 0))
+            combined_pct = int(result.get('combined_score', 0) * 100)
+            
+            # Display circular gauge with label
+            st.markdown("<div style='text-align:center; padding-top:8px;'>", unsafe_allow_html=True)
+            st.markdown(create_circular_progress_svg(combined_pct, size=80), unsafe_allow_html=True)
+            st.markdown("<div style='font-size:0.75rem; color:#666; margin-top:4px;'>Combined</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
         with col_content:
             # Video title at the top (larger font)
@@ -282,12 +361,8 @@ def render_result_card(result):
                 display_line = f"{channel_display} | {duration_display}" if channel_display and duration_display else channel_display or duration_display
                 st.markdown(f"<div style='font-size:0.95rem; color:#2c5f8d; margin-bottom:0.5rem'>{display_line}</div>", unsafe_allow_html=True)
 
-            # Display scores as badges (as before)
-            semantic_pct = int(result.get('semantic_score', 0) * 100)
-            instruction_pct = int(result.get('instruction_score', 0))
-            combined_pct = int(result.get('combined_score', 0) * 100)
-
-            st.caption(f"🔍 Semantic: {semantic_pct}% | 📚 Instruction: {instruction_pct}% | ⭐ Combined: {combined_pct}%")
+            # Display individual score details as text
+            st.caption(f"🔍 Semantic: {semantic_pct}% | 📚 Instruction: {instruction_pct}%")
             
             # Display instruction justification if available
             justification = result.get('instruction_justification', '')

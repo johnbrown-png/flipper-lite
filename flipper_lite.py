@@ -309,6 +309,58 @@ def create_circular_progress_svg(score_pct, size=80):
     return svg
 
 
+def render_video_player(video_data):
+    """Render full-screen video player view with back button"""
+    video_id = video_data['video_id']
+    title = video_data['title']
+    channel = video_data.get('channel', '')
+    duration = video_data.get('duration', '')
+    
+    # Back button at top
+    if st.button("← Back to Search Results", key="back_to_search", type="primary"):
+        st.session_state.viewing_video = False
+        st.session_state.current_video = None
+        st.rerun()
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Video title
+    st.markdown(f"""<h2 style='margin-bottom:0.5rem;'>{title}</h2>""", unsafe_allow_html=True)
+    
+    # Channel and duration info
+    channel_display = channel.replace('_', ' ') if channel else ''
+    duration_display = format_duration(duration) if duration else ''
+    if channel_display or duration_display:
+        info_line = f"{channel_display} | {duration_display}" if channel_display and duration_display else channel_display or duration_display
+        st.markdown(f"<p style='color:#666; margin-bottom:1.5rem;'>{info_line}</p>", unsafe_allow_html=True)
+    
+    # Video player using youtube-nocookie (privacy-respecting)
+    embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1"
+    
+    # Responsive iframe container
+    st.markdown(
+        f"""
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 8px;">
+            <iframe 
+                src="{embed_url}" 
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+            </iframe>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # Another back button at bottom for convenience
+    if st.button("← Back to Search Results", key="back_to_search_bottom", type="primary"):
+        st.session_state.viewing_video = False
+        st.session_state.current_video = None
+        st.rerun()
+
+
 def render_result_card(result):
     """Render a single video result card"""
     
@@ -325,14 +377,25 @@ def render_result_card(result):
         col_thumb, col_gauge, col_content = st.columns([1.2, 0.5, 3.3])
 
         with col_thumb:
-            # YouTube thumbnail with play link (yout-ube redirects without ads)
-            video_url = f"https://www.yout-ube.com/watch?v={video_id}"
+            # YouTube thumbnail - clickable to view video
             thumbnail_url = f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
+            
+            # Use button with thumbnail as clickable element
+            if st.button(
+                "▶️",
+                key=f"play_{video_id}_{topic}_{small_step}",
+                help="Click to watch video",
+                use_container_width=True
+            ):
+                st.session_state.viewing_video = True
+                st.session_state.current_video = result
+                st.rerun()
+            
+            # Display thumbnail
             st.markdown(
-                f"<div class='video-card' data-video-id='{video_id}' data-topic='{topic}' data-small-step='{small_step}' id='{dom_id}'>"
-                f"<a href='{video_url}' target='_blank' class='video-link' data-video-id='{video_id}' data-topic='{topic}' data-small-step='{small_step}'>"
-                f"<img src='{thumbnail_url}' style='width:100%; border-radius:8px; cursor:pointer;' />"
-                f"</a></div>",
+                f"<div class='video-card' data-video-id='{video_id}' data-topic='{topic}' data-small-step='{small_step}' id='{dom_id}'>" 
+                f"<img src='{thumbnail_url}' style='width:100%; border-radius:8px; margin-top:-45px;' />" 
+                f"</div>",
                 unsafe_allow_html=True
             )
         
@@ -374,6 +437,17 @@ def render_result_card(result):
 
 def main():
     """Main application"""
+    
+    # Initialize session state for video viewing mode
+    if 'viewing_video' not in st.session_state:
+        st.session_state.viewing_video = False
+    if 'current_video' not in st.session_state:
+        st.session_state.current_video = None
+    
+    # If in video viewing mode, show video player instead of search interface
+    if st.session_state.viewing_video and st.session_state.current_video:
+        render_video_player(st.session_state.current_video)
+        return
     
     # ========== COLOR SCHEME ==========
     # Professional Blue (Trustworthy, Clean, Modern)
@@ -762,7 +836,7 @@ def main():
     st.markdown("""
     <div style="text-align: center; padding: 1rem; font-size: 0.75rem; color: #666;">
         FLIPPER EDUCATION LTD Company number: SC882978<br>
-        Registered in Scotland, 36-1 Marlborough Street, Midlothian, Edinburgh, EH15 2BG<br>
+        Registered in Scotland, Edinburgh<br>
         John.Brown@flipper.school
     </div>
     """, unsafe_allow_html=True)

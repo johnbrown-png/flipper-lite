@@ -19,6 +19,8 @@ import streamlit.components.v1 as components
 import pandas as pd
 import math
 
+from shared.curriculum_schema import normalize_precomputed_df
+
 # Configure page
 st.set_page_config(
     page_title="Flipper Lite - Video Browser",
@@ -179,7 +181,7 @@ def load_precomputed_recommendations_flat():
     try:
         csv_path = project_root / 'precomputed_recommendations_flat.csv'
         df = pd.read_csv(csv_path)
-        return df
+        return normalize_precomputed_df(df)
     except Exception as e:
         st.error(f"Error loading precomputed recommendations: {e}")
         return None
@@ -194,7 +196,7 @@ def load_video_inventory():
     return None
 
 
-def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
+def lookup_videos_for_step(df, year, term, difficulty, topic, small_step, small_step_id=""):
     """
     Lookup videos from precomputed recommendations
     
@@ -210,8 +212,9 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
         List of video dictionaries
     """
     try:
-        # Filter DataFrame for exact match (including difficulty)
-        if not difficulty:
+        if small_step_id and 'small_step_id' in df.columns:
+            matches = df[df['small_step_id'] == small_step_id].copy()
+        elif not difficulty:
             mask = (
                 (df['year'] == year) &
                 (df['term'] == term) &
@@ -219,6 +222,7 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
                 (df['topic'] == topic) &
                 (df['small_step'] == small_step)
             )
+            matches = df[mask].copy()
         else:
             mask = (
                 (df['year'] == year) &
@@ -227,7 +231,7 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
                 (df['topic'] == topic) &
                 (df['small_step'] == small_step)
             )
-        matches = df[mask].copy()
+            matches = df[mask].copy()
         if matches.empty:
             return []
         # Each row is a single recommendation (not pipe-separated)
@@ -236,15 +240,16 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step):
             result = {
                 'rank': row.get('rank', 1),
                 'video_id': row.get('video_id', ''),
-                'title': row.get('video_title', ''),
+                'title': row.get('video_title', row.get('title', '')),
                 'semantic_score': float(row.get('semantic_score', 0.0)),
                 'instruction_score': float(row.get('instruction_score', 0.0)),
                 'instruction_justification': row.get('instruction_justification', ''),
                 'combined_score': float(row.get('combined_score', 0.0)),
                 'channel': row.get('channel', ''),
-                'duration': row.get('duration_formatted', ''),
+                'duration': row.get('duration_formatted', row.get('duration', '')),
                 'topic': row.get('topic', topic),
-                'small_step': row.get('small_step', small_step)
+                'small_step': row.get('small_step', small_step),
+                'small_step_id': row.get('small_step_id', small_step_id)
             }
             results.append(result)
         return results
@@ -687,8 +692,9 @@ def main():
             difficulty = text.get('difficulty', '')
             topic = text.get('topic')
             small_step = text.get('small_step')
+            small_step_id = text.get('small_step_id', '')
             # Lookup videos from precomputed CSV (includes channel & duration)
-            results = lookup_videos_for_step(recommendations_df, year, term, difficulty, topic, small_step)
+            results = lookup_videos_for_step(recommendations_df, year, term, difficulty, topic, small_step, small_step_id)
             # Store results and update status
             st.session_state.display_results = results
             st.session_state.display_status = 'complete'

@@ -8,6 +8,8 @@ import pandas as pd
 import streamlit as st
 from pathlib import Path
 
+from shared.curriculum_schema import curriculum_to_long_df
+
 
 class CurriculumAssistant:
     """Helper for navigating the White Rose Maths curriculum"""
@@ -23,7 +25,7 @@ class CurriculumAssistant:
         """Load and cache the curriculum data"""
         try:
             df = pd.read_csv(_self.csv_path)
-            return df
+            return curriculum_to_long_df(df)
         except FileNotFoundError:
             st.error(f"Curriculum file not found: {_self.csv_path}")
             return None
@@ -67,7 +69,7 @@ class CurriculumAssistant:
         # --- New: Age dropdown above free-text topic search ---
         # --- Final: Only Age -> Topic -> Small Steps UI ---
         # Age dropdown
-        ages = sorted(self.df['Age'].unique(), key=lambda x: int(str(x).split('-')[0]) if '-' in str(x) else 0)
+        ages = sorted(self.df['age'].dropna().unique(), key=lambda x: int(str(x).split('-')[0]) if '-' in str(x) else 0)
         age_options = ['Age ?'] + ages
         if 'curr_year' not in st.session_state or st.session_state.curr_year not in age_options:
             st.session_state.curr_year = 'Age ?'
@@ -116,11 +118,11 @@ class CurriculumAssistant:
 
         # Only show Topic dropdown after Age is selected (and difficulty if required)
         if st.session_state.curr_year != 'Age ?' and (not show_difficulty or st.session_state.curr_difficulty != 'All'):
-            filtered_df = self.df[self.df['Age'] == st.session_state.curr_year]
+            filtered_df = self.df[self.df['age'] == st.session_state.curr_year]
             if show_difficulty:
-                filtered_df = filtered_df[filtered_df['Difficulty'] == st.session_state.curr_difficulty]
+                filtered_df = filtered_df[filtered_df['difficulty'] == st.session_state.curr_difficulty]
             # Preserve CSV order instead of sorting alphabetically
-            topics = filtered_df['Topic'].dropna().unique().tolist()
+            topics = filtered_df['topic'].dropna().unique().tolist()
             topic_options = ['Topic ?'] + topics
             if 'curr_topic' not in st.session_state or st.session_state.curr_topic not in topic_options:
                 st.session_state.curr_topic = 'Topic ?'
@@ -137,25 +139,15 @@ class CurriculumAssistant:
 
             # Show small steps if topic selected
             if st.session_state.curr_topic != 'Topic ?':
-                topic_row = filtered_df[filtered_df['Topic'] == st.session_state.curr_topic]
-                if not topic_row.empty:
-                    row = topic_row.iloc[0]
-                    small_steps = []
-                    for i in range(1, 41):
-                        step_col = f"Small Step {i}"
-                        example_col = f"SS{i}_desc_short"
-                        full_desc_col = f"SS{i}_desc"
-                        if step_col in row.index and pd.notna(row[step_col]) and str(row[step_col]).strip():
-                            step_text = str(row[step_col]).strip()
-                            full_desc = ""
-                            if full_desc_col in row.index and pd.notna(row[full_desc_col]):
-                                full_desc = str(row[full_desc_col]).strip()
-                            example_text = ""
-                            if example_col in row.index and pd.notna(row[example_col]) and str(row[example_col]).strip():
-                                example_text = str(row[example_col]).strip()
-                            small_steps.append((i, step_text, example_text, full_desc))
-                    if small_steps:
-                        for step_num, step_text, example_text, full_desc in small_steps:
+                topic_steps = filtered_df[filtered_df['topic'] == st.session_state.curr_topic]
+                if not topic_steps.empty:
+                    topic_steps = topic_steps.sort_values('small_step_num_in_topic', kind='stable')
+                    if len(topic_steps) > 0:
+                        for _, row in topic_steps.iterrows():
+                            step_num = int(row['small_step_num_in_topic'])
+                            step_text = str(row['small_step_name']).strip()
+                            full_desc = str(row.get('ss_wr_desc', '')).strip()
+                            example_text = str(row.get('ss_desc', '')).strip()
                             col_content, col_button = st.columns([9, 1])
                             with col_content:
                                 st.markdown(f"**{step_num}.** {step_text}")
@@ -163,18 +155,21 @@ class CurriculumAssistant:
                                     st.caption(example_text)
                             with col_button:
                                 if st.button("Search", key=f"find_step_topic_{step_num}", help="Find videos for this step"):
-                                    difficulty_val = row.get('Difficulty', '')
+                                    difficulty_val = row.get('difficulty', '')
                                     if pd.isna(difficulty_val):
                                         difficulty_val = ''
                                     st.session_state.pending_insertion = {
                                         'action': 'small_step_search',
-                                        'year': row['Year'],
-                                        'term': row['Term'],
+                                        'year': row['year'],
+                                        'term': row['term'],
                                         'difficulty': difficulty_val,
-                                        'topic': row['Topic'],
+                                        'topic': row['topic'],
                                         'small_step': step_text,
                                         'small_step_desc': full_desc,
-                                        'age': row['Age'],
+                                        'small_step_id': row['small_step_id'],
+                                        'small_step_num': int(row['small_step_num']),
+                                        'small_step_num_in_topic': step_num,
+                                        'age': row['age'],
                                         'display_text': step_text if not example_text else f"{step_text} - {example_text}"
                                     }
                                     st.rerun()
@@ -192,6 +187,6 @@ class CurriculumAssistant:
         
         return {
             'total_entries': len(self.df),
-            'year_groups': len(self.df['Year'].unique()),
-            'topics': len(self.df['Topic'].unique())
+            'year_groups': len(self.df['year'].unique()),
+            'topics': len(self.df['topic'].unique())
         }

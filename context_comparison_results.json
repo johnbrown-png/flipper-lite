@@ -1,0 +1,727 @@
+{
+  "test_metadata": {
+    "timestamp": "2026-04-02T22:47:43.143053",
+    "num_videos": 5,
+    "num_models": 2,
+    "context_scopes": [
+      "first_chunk",
+      "first_3_chunks",
+      "full_transcript"
+    ],
+    "models_tested": [
+      "GPT-4o",
+      "Claude-3-Haiku"
+    ],
+    "video_ids": [
+      "PrZJG74WaZA",
+      "bmY28wdGL9M",
+      "n8EOIAYClDU",
+      "ZAZ74S0vPqs",
+      "Lj9fn0cpkRo"
+    ]
+  },
+  "results": [
+    {
+      "model_name": "GPT-4o",
+      "video_id": "PrZJG74WaZA",
+      "context_scope": "first_chunk",
+      "response_time": 7.95780086517334,
+      "input_tokens": 434,
+      "output_tokens": 369,
+      "cost": 0.004775,
+      "response": {
+        "learning_objective": "Students will be able to describe and identify full turns, half turns, and quarter turns.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Draw a circle and mark a starting point. Then, show and label a full turn, half turn, and quarter turn from the starting point.",
+          "success_criteria": "The drawing should include a circle with a marked starting point, and correctly labeled arrows indicating a full turn (360 degrees), a half turn (180 degrees), and a quarter turn (90 degrees)."
+        },
+        "worked_solution": "1. Draw a circle on a piece of paper. \n2. Mark a point on the perimeter of the circle as the starting point. \n3. From the starting point, draw an arrow that goes all the way around the circle and back to the starting point to represent a full turn. Label this as 'Full Turn (360\u00b0)'. \n4. From the starting point, draw an arrow that goes halfway around the circle to the opposite side to represent a half turn. Label this as 'Half Turn (180\u00b0)'. \n5. From the starting point, draw an arrow that goes a quarter of the way around the circle to represent a quarter turn. Label this as 'Quarter Turn (90\u00b0)'.",
+        "common_misconception": "Students often confuse half turns and quarter turns, thinking a half turn is only a quarter of the circle.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "geometric_figure",
+          "description": "A circle with arrows showing full turn, half turn, and quarter turn from a marked starting point."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:46:39.081310",
+      "context_word_count": 90,
+      "context_duration_seconds": 44.699999999999996
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "PrZJG74WaZA",
+      "context_scope": "first_chunk",
+      "response_time": 0.0029783248901367188,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:46:39.084990",
+      "context_word_count": 90,
+      "context_duration_seconds": 44.699999999999996
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "PrZJG74WaZA",
+      "context_scope": "first_3_chunks",
+      "response_time": 3.3642992973327637,
+      "input_tokens": 624,
+      "output_tokens": 299,
+      "cost": 0.00455,
+      "response": {
+        "learning_objective": "Students will be able to describe and identify full, half, quarter, and three-quarter turns.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Given a diagram with a character facing a blue square, describe the character's position after a full turn, half turn, quarter turn, and three-quarter turn.",
+          "success_criteria": "Correct descriptions of the character's final position after each turn, using the terms full turn, half turn, quarter turn, and three-quarter turn."
+        },
+        "worked_solution": "1. Start with the character facing the blue square. \n2. After a full turn, the character faces the blue square again. \n3. After a half turn, the character faces the purple pentagon. \n4. After a quarter turn, the character faces the green triangle. \n5. After a three-quarter turn, the character faces the orange circle.",
+        "common_misconception": "Students might confuse the direction of the turn, thinking a clockwise turn is counterclockwise or vice versa.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "geometric_figure",
+          "description": "A diagram showing a character and objects (blue square, purple pentagon, green triangle, orange circle) in a circular layout for visualizing turns."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:46:42.450344",
+      "context_word_count": 271,
+      "context_duration_seconds": 149.35
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "PrZJG74WaZA",
+      "context_scope": "first_3_chunks",
+      "response_time": 0.0005767345428466797,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:46:42.451492",
+      "context_word_count": 271,
+      "context_duration_seconds": 149.35
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "PrZJG74WaZA",
+      "context_scope": "full_transcript",
+      "response_time": 4.091323614120483,
+      "input_tokens": 1515,
+      "output_tokens": 282,
+      "cost": 0.0066075000000000005,
+      "response": {
+        "learning_objective": "Students will be able to describe and identify full, half, quarter, and three-quarter turns using geometric shapes.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Draw a triangle and show what it looks like after a quarter turn, half turn, three-quarter turn, and full turn. Label each position.",
+          "success_criteria": "The correct response should include accurately drawn positions of the triangle after each specified turn, with clear labels for each turn type."
+        },
+        "worked_solution": "1. Start with a triangle pointing upwards. \n2. For a quarter turn clockwise, the triangle should point to the right. \n3. For a half turn, the triangle points downwards. \n4. For a three-quarter turn, the triangle points to the left. \n5. For a full turn, the triangle returns to pointing upwards.",
+        "common_misconception": "Students often confuse the direction of turns, especially between clockwise and counterclockwise rotations.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "geometric_figure",
+          "description": "A series of diagrams showing a triangle in its initial position and after each turn, with arrows indicating the direction of the turns."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:46:46.543350",
+      "context_word_count": 1149,
+      "context_duration_seconds": 532
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "PrZJG74WaZA",
+      "context_scope": "full_transcript",
+      "response_time": 0.0008602142333984375,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:46:46.544970",
+      "context_word_count": 1149,
+      "context_duration_seconds": 532
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "bmY28wdGL9M",
+      "context_scope": "first_chunk",
+      "response_time": 5.448634624481201,
+      "input_tokens": 434,
+      "output_tokens": 347,
+      "cost": 0.004555,
+      "response": {
+        "learning_objective": "Students will be able to interpret and create a simple pictograph to represent data.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Create a pictograph to represent the number of different fruits students in a class like, using pictures to represent quantities.",
+          "success_criteria": "The pictograph should include a title, a key to explain what each picture represents, accurate representation of data using pictures, and correct labels for each category of fruit."
+        },
+        "worked_solution": "Step 1: Gather data on how many students like each type of fruit (e.g., apples, bananas, oranges). Step 2: Choose a picture to represent a specific number (e.g., one apple picture = 2 students). Step 3: Draw the pictograph, starting with a title such as 'Favorite Fruits in the Class'. Step 4: Draw pictures in rows or columns to represent the number of students for each fruit, based on the chosen key. Step 5: Include a key on the graph to explain what each picture represents (e.g., 1 picture = 2 students). Step 6: Label each row or column with the type of fruit it represents.",
+        "common_misconception": "Students may mistakenly think that each picture represents only one item, rather than referring to the key to understand the quantity each picture represents.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "graph",
+          "description": "A pictograph showing different categories of fruits with pictures representing quantities, including a title and a key."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:46:51.995252",
+      "context_word_count": 95,
+      "context_duration_seconds": 53.44
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "bmY28wdGL9M",
+      "context_scope": "first_chunk",
+      "response_time": 0.001102447509765625,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:46:51.997125",
+      "context_word_count": 95,
+      "context_duration_seconds": 53.44
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "bmY28wdGL9M",
+      "context_scope": "first_3_chunks",
+      "response_time": 5.4674177169799805,
+      "input_tokens": 630,
+      "output_tokens": 306,
+      "cost": 0.004635,
+      "response": {
+        "learning_objective": "Students will be able to interpret and create simple pictographs and bar graphs.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Create a bar graph representing data from a pictograph showing favorite fruits among students. The pictograph uses pictures of apples and oranges to represent votes.",
+          "success_criteria": "The bar graph should accurately reflect the data from the pictograph, including correct scaling and labeling of the axes."
+        },
+        "worked_solution": "1. Analyze the pictograph and note the number of pictures for each fruit. If the pictograph shows 4 apples and each apple represents 3 votes, then there are 12 votes for apples. 2. Repeat this for each fruit. 3. Draw a bar graph with the x-axis labeled with the fruit names and the y-axis as the number of votes. 4. For each fruit, draw a bar up to the number of votes calculated. 5. Ensure each bar is the same width, and the graph is neatly labeled.",
+        "common_misconception": "Students may forget that each picture in a pictograph can represent more than one vote, leading to incorrect data interpretation.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "graph",
+          "description": "A bar graph showing the number of votes for different fruits, with clear labels and bars."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:46:57.465584",
+      "context_word_count": 282,
+      "context_duration_seconds": 130.0
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "bmY28wdGL9M",
+      "context_scope": "first_3_chunks",
+      "response_time": 0.0004818439483642578,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:46:57.466699",
+      "context_word_count": 282,
+      "context_duration_seconds": 130.0
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "bmY28wdGL9M",
+      "context_scope": "full_transcript",
+      "response_time": 6.373318910598755,
+      "input_tokens": 1365,
+      "output_tokens": 382,
+      "cost": 0.007232499999999999,
+      "response": {
+        "learning_objective": "Students will be able to interpret various types of graphs, including pictographs, bar graphs, line graphs, and pie charts, to extract and summarize key information.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Given a set of data about students' favorite fruits, create a pictograph, bar graph, line graph, and pie chart to represent the data, and answer questions about which fruit is most and least popular.",
+          "success_criteria": "The correct response should include accurate representations of the data in all four graph types and correctly identify the most and least popular fruits by analyzing each graph."
+        },
+        "worked_solution": "1. Start by organizing the data into a table listing fruits and their popularity. 2. Create a pictograph by drawing symbols, like apples, to represent each unit of popularity, ensuring clarity in the key. 3. Construct a bar graph with labeled axes for fruits and popularity, drawing bars to the correct height. 4. Develop a line graph if the data represents changes over time, plotting points, and connecting them with a line. 5. Form a pie chart by calculating the percentage each fruit represents of the whole, and divide the pie accordingly. 6. Analyze each graph to determine the most and least popular fruits, ensuring consistency across all graph types.",
+        "common_misconception": "Students often confuse the function of different graph types, such as thinking a line graph is suitable for categorical data instead of continuous data over time.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "graph",
+          "description": "Visuals should include examples of a pictograph, bar graph, line graph, and pie chart, each accurately reflecting the given data set."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:03.840659",
+      "context_word_count": 992,
+      "context_duration_seconds": 396
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "bmY28wdGL9M",
+      "context_scope": "full_transcript",
+      "response_time": 0.0004999637603759766,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:03.841641",
+      "context_word_count": 992,
+      "context_duration_seconds": 396
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "n8EOIAYClDU",
+      "context_scope": "first_chunk",
+      "response_time": 3.9167559146881104,
+      "input_tokens": 435,
+      "output_tokens": 275,
+      "cost": 0.0038375,
+      "response": {
+        "learning_objective": "Students will be able to add three one-digit whole numbers using a number line.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Add the numbers 2, 4, and 3 using a number line and explain each step.",
+          "success_criteria": "The correct response should include a number line with arrows showing the steps of adding 2 and 4 first, then adding 3 to the result, with a final answer of 9."
+        },
+        "worked_solution": "Start at 0 on the number line. First, move 2 steps to the right, landing on 2. Next, move 4 steps to the right, landing on 6. Finally, move 3 more steps to the right, landing on 9. Therefore, 2 + 4 + 3 equals 9.",
+        "common_misconception": "A common mistake is to incorrectly align the steps on the number line, leading to an incorrect sum.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "number_line",
+          "description": "A number line starting at 0 with arrows demonstrating the addition process of 2 + 4 + 3."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:07.759391",
+      "context_word_count": 97,
+      "context_duration_seconds": 37.28
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "n8EOIAYClDU",
+      "context_scope": "first_chunk",
+      "response_time": 0.0006139278411865234,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:07.760864",
+      "context_word_count": 97,
+      "context_duration_seconds": 37.28
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "n8EOIAYClDU",
+      "context_scope": "first_3_chunks",
+      "response_time": 4.184581518173218,
+      "input_tokens": 636,
+      "output_tokens": 297,
+      "cost": 0.00456,
+      "response": {
+        "learning_objective": "Students will be able to add three one-digit whole numbers using a number line.",
+        "proof_of_learning": {
+          "type": "worked_example",
+          "task": "Demonstrate the process of adding the numbers 2, 4, and 3 using a number line.",
+          "success_criteria": "The correct response should show the initial position on the number line, the two steps of addition, and the final sum, with clear indications of movements on the number line."
+        },
+        "worked_solution": "1. Start at 0 on the number line. \n2. Move 2 steps forward to reach 2. \n3. From 2, move 4 steps forward to reach 6. \n4. From 6, move 3 steps forward to reach 9. \n5. Therefore, 2 + 4 + 3 equals 9.",
+        "common_misconception": "A common mistake is forgetting to count the starting position as zero on the number line, leading to an incorrect final sum.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "number_line",
+          "description": "A number line from 0 to at least 10, with markers showing the steps of addition for the numbers 2, 4, and 3."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:11.945921",
+      "context_word_count": 292,
+      "context_duration_seconds": 95.75999999999999
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "n8EOIAYClDU",
+      "context_scope": "first_3_chunks",
+      "response_time": 0.0004954338073730469,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:11.946934",
+      "context_word_count": 292,
+      "context_duration_seconds": 95.75999999999999
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "n8EOIAYClDU",
+      "context_scope": "full_transcript",
+      "response_time": 5.251786470413208,
+      "input_tokens": 825,
+      "output_tokens": 293,
+      "cost": 0.0049925,
+      "response": {
+        "learning_objective": "Students will be able to add three one-digit whole numbers using a number line.",
+        "proof_of_learning": {
+          "type": "calculation",
+          "task": "Use a number line to add the numbers 3, 5, and 2. Show your work and the final sum.",
+          "success_criteria": "The correct response should include a number line diagram starting at 3, counting forward 5 times to reach 8, and then counting forward 2 more times to reach the final sum of 10."
+        },
+        "worked_solution": "Start from the number 3 on the number line. Move forward 5 steps: 4, 5, 6, 7, 8. Now, move forward 2 more steps: 9, 10. The sum of 3, 5, and 2 is 10.",
+        "common_misconception": "A common mistake is starting from 0 instead of the first number, which leads to an incorrect sum.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "number_line",
+          "description": "A number line starting from 0 to at least 10, with arrows or marks indicating the steps taken from 3 to 8, and then from 8 to 10."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:17.199347",
+      "context_word_count": 482,
+      "context_duration_seconds": 268
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "n8EOIAYClDU",
+      "context_scope": "full_transcript",
+      "response_time": 0.0006580352783203125,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:17.200529",
+      "context_word_count": 482,
+      "context_duration_seconds": 268
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "ZAZ74S0vPqs",
+      "context_scope": "first_chunk",
+      "response_time": 2.619580030441284,
+      "input_tokens": 435,
+      "output_tokens": 265,
+      "cost": 0.0037375,
+      "response": {
+        "learning_objective": "Students will be able to identify and read CVC (consonant-vowel-consonant) words by blending individual sounds.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "List five CVC words you can find around the classroom and write each word by sounding out and blending the letters.",
+          "success_criteria": "A correct response should include a list of five CVC words with correctly identified consonant and vowel sounds, demonstrating the ability to blend these sounds into words."
+        },
+        "worked_solution": "Example of a CVC word is 'cat'. Identify each sound: /c/ - /a/ - /t/. Blend the sounds together to form the word 'cat'. Repeat this process for each word on the list.",
+        "common_misconception": "A common mistake is confusing CVC words with words that have consonant blends or digraphs, such as 'chat' or 'stop', which are not simple CVC words.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "none",
+          "description": "No additional visualization is required as the focus is on auditory and written skills."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:19.821172",
+      "context_word_count": 97,
+      "context_duration_seconds": 76.60000000000001
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "ZAZ74S0vPqs",
+      "context_scope": "first_chunk",
+      "response_time": 0.0004363059997558594,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:19.821974",
+      "context_word_count": 97,
+      "context_duration_seconds": 76.60000000000001
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "ZAZ74S0vPqs",
+      "context_scope": "first_3_chunks",
+      "response_time": 4.983352422714233,
+      "input_tokens": 542,
+      "output_tokens": 340,
+      "cost": 0.0047550000000000005,
+      "response": {
+        "learning_objective": "Students will be able to identify and form CVC (consonant-vowel-consonant) words by sounding out letters and blending them together.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Create a list of 5 CVC words using the given letters: c, a, t, r, e, d, b, i, g.",
+          "success_criteria": "A correct response should include correctly formed CVC words such as 'cat', 'red', 'big', etc., with each word having the consonant-vowel-consonant structure."
+        },
+        "worked_solution": "To form a CVC word, follow these steps:\n1. Choose a consonant for the beginning of the word: 'c'.\n2. Select a vowel for the middle of the word: 'a'.\n3. Choose another consonant for the end of the word: 't'.\n4. Blend the sounds together to form the word 'cat'.\nRepeat this process with other combinations, such as 'r-e-d' to form 'red' and 'b-i-g' to form 'big'.",
+        "common_misconception": "A common mistake is confusing CVC words with words that have consonant clusters or longer vowel sounds, such as 'chat' or 'cake'.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "none",
+          "description": "No specific visualization needed; focus on auditory and phonetic practice."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:24.805609",
+      "context_word_count": 200,
+      "context_duration_seconds": 121.56
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "ZAZ74S0vPqs",
+      "context_scope": "first_3_chunks",
+      "response_time": 0.0004317760467529297,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:24.806506",
+      "context_word_count": 200,
+      "context_duration_seconds": 121.56
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "ZAZ74S0vPqs",
+      "context_scope": "full_transcript",
+      "response_time": 5.654614448547363,
+      "input_tokens": 541,
+      "output_tokens": 380,
+      "cost": 0.005152500000000001,
+      "response": {
+        "learning_objective": "Students will be able to identify, read, and construct Consonant-Vowel-Consonant (CVC) words by blending individual sounds.",
+        "proof_of_learning": {
+          "type": "problem",
+          "task": "Provide a list of five CVC words. For each word, break it down into its individual sounds (e.g., 'cat' -> /k/ /\u00e6/ /t/) and blend them to pronounce the word.",
+          "success_criteria": "The response should include a correct breakdown of each word into its constituent phonemes and a correct pronunciation of the blended word."
+        },
+        "worked_solution": "1. Identify the CVC word 'cat'. 2. Break it down into sounds: /k/, /\u00e6/, /t/. 3. Blend the sounds: /k/ + /\u00e6/ + /t/ = 'cat'. 4. Repeat for 'dog': /d/, /\u0252/, /g/ blended to 'dog'. 5. Repeat for 'pig': /p/, /\u026a/, /g/ blended to 'pig'. 6. Repeat for 'sun': /s/, /\u028c/, /n/ blended to 'sun'. 7. Repeat for 'hat': /h/, /\u00e6/, /t/ blended to 'hat'.",
+        "common_misconception": "Students may confuse CVC words with CVCC or CCVC words, not recognizing the single consonant sounds at the beginning and end of the words.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "geometric_figure",
+          "description": "Illustrate the breakdown of each CVC word into its phonemes with arrows showing the blending process."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:30.461440",
+      "context_word_count": 200,
+      "context_duration_seconds": 134
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "ZAZ74S0vPqs",
+      "context_scope": "full_transcript",
+      "response_time": 0.0005750656127929688,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:30.462605",
+      "context_word_count": 200,
+      "context_duration_seconds": 134
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "Lj9fn0cpkRo",
+      "context_scope": "first_chunk",
+      "response_time": 3.4875259399414062,
+      "input_tokens": 432,
+      "output_tokens": 302,
+      "cost": 0.0041,
+      "response": {
+        "learning_objective": "Students will be able to accurately add decimal numbers, understanding alignment of decimal points.",
+        "proof_of_learning": {
+          "type": "calculation",
+          "task": "Add the numbers 2.4, 3.01, and 3, ensuring proper alignment of decimal points.",
+          "success_criteria": "The correct sum of 8.41 with proper alignment of decimal points during calculation."
+        },
+        "worked_solution": "To add 2.4, 3.01, and 3, first align the numbers by their decimal points:\n\n  2.40\n+ 3.01\n+ 3.00\n------\n  8.41\n\nStart by adding the numbers from the rightmost column: 0 + 1 + 0 = 1. Move to the next column: 4 + 0 + 0 = 4. Finally, add the leftmost column: 2 + 3 + 3 = 8. The sum is 8.41.",
+        "common_misconception": "A common mistake is not aligning the decimal points, which can lead to incorrect addition results.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "none",
+          "description": "No visual aid is necessary as the task focuses on numerical alignment and addition."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:33.951240",
+      "context_word_count": 87,
+      "context_duration_seconds": 34.720000000000006
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "Lj9fn0cpkRo",
+      "context_scope": "first_chunk",
+      "response_time": 0.0005896091461181641,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:33.952170",
+      "context_word_count": 87,
+      "context_duration_seconds": 34.720000000000006
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "Lj9fn0cpkRo",
+      "context_scope": "first_3_chunks",
+      "response_time": 4.978775978088379,
+      "input_tokens": 627,
+      "output_tokens": 325,
+      "cost": 0.0048175,
+      "response": {
+        "learning_objective": "Students will be able to accurately add numbers with decimals by aligning decimal points and performing addition step-by-step.",
+        "proof_of_learning": {
+          "type": "calculation",
+          "task": "Add the numbers 2.4, 3.01, and 3 by aligning their decimal points and performing the addition.",
+          "success_criteria": "The correct response should show the numbers aligned by their decimal points and the sum calculated as 8.41."
+        },
+        "worked_solution": "1. Align the numbers by their decimal points:\n   \n     2.40\n   + 3.01\n   + 3.00\n   ______\n\n2. Add the numbers column by column starting from the rightmost column:\n   - Hundredths place: 0 + 1 + 0 = 1\n   - Tenths place: 4 + 0 + 0 = 4\n   - Units place: 2 + 3 + 3 = 8\n\n3. Write down the result: 8.41",
+        "common_misconception": "A common mistake is not aligning the decimal points, which can lead to incorrect addition. Students may also forget to add a zero to whole numbers to match the decimal places.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "none",
+          "description": "No additional visualization is needed beyond aligning numbers by their decimal points."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:38.931364",
+      "context_word_count": 269,
+      "context_duration_seconds": 90.2
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "Lj9fn0cpkRo",
+      "context_scope": "first_3_chunks",
+      "response_time": 0.0008952617645263672,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:38.932913",
+      "context_word_count": 269,
+      "context_duration_seconds": 90.2
+    },
+    {
+      "model_name": "GPT-4o",
+      "video_id": "Lj9fn0cpkRo",
+      "context_scope": "full_transcript",
+      "response_time": 4.207961082458496,
+      "input_tokens": 1012,
+      "output_tokens": 307,
+      "cost": 0.0056,
+      "response": {
+        "learning_objective": "Students will be able to accurately add numbers with decimals by aligning decimal points correctly.",
+        "proof_of_learning": {
+          "type": "calculation",
+          "task": "Add the numbers 4.5, 2.35, and 7 by aligning the decimal points correctly.",
+          "success_criteria": "The correct response should show the decimal points aligned vertically and the sum calculated correctly, which is 13.85."
+        },
+        "worked_solution": "To add 2.4, 3.01, and 3, first align the decimal points: 2.40, 3.01, 3.00. Add the numbers column by column, starting from the rightmost column. In the hundredths place, add 0 + 1 + 0 = 1. In the tenths place, add 4 + 0 + 0 = 4. Place the decimal point directly below the others in the sum. In the units place, add 2 + 3 + 3 = 8. The sum is 8.41.",
+        "common_misconception": "A common mistake is not aligning the decimal points, which can lead to incorrect addition results.",
+        "difficulty_level": "beginner",
+        "visual_spec": {
+          "needed": true,
+          "type": "none",
+          "description": "Visualizing the alignment of decimal points and column addition process."
+        }
+      },
+      "error": null,
+      "timestamp": "2026-04-02T22:47:43.141536",
+      "context_word_count": 622,
+      "context_duration_seconds": 198
+    },
+    {
+      "model_name": "Claude-3-Haiku",
+      "video_id": "Lj9fn0cpkRo",
+      "context_scope": "full_transcript",
+      "response_time": 0.0006043910980224609,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost": 0.0,
+      "response": {},
+      "error": "API call failed or JSON parsing error",
+      "timestamp": "2026-04-02T22:47:43.142717",
+      "context_word_count": 622,
+      "context_duration_seconds": 198
+    }
+  ],
+  "summary": {
+    "by_model_and_scope": {
+      "GPT-4o": {
+        "first_chunk": {
+          "total_tests": 5,
+          "avg_response_time": 4.686059474945068,
+          "avg_input_tokens": 434.0,
+          "avg_output_tokens": 311.6,
+          "avg_cost": 0.004201,
+          "avg_context_words": 93.2,
+          "avg_context_duration": 49.348
+        },
+        "first_3_chunks": {
+          "total_tests": 5,
+          "avg_response_time": 4.595685386657715,
+          "avg_input_tokens": 611.8,
+          "avg_output_tokens": 313.4,
+          "avg_cost": 0.0046635,
+          "avg_context_words": 262.8,
+          "avg_context_duration": 117.374
+        },
+        "full_transcript": {
+          "total_tests": 5,
+          "avg_response_time": 5.115800905227661,
+          "avg_input_tokens": 1051.6,
+          "avg_output_tokens": 328.8,
+          "avg_cost": 0.005917,
+          "avg_context_words": 689.0,
+          "avg_context_duration": 305.6
+        }
+      },
+      "Claude-3-Haiku": {}
+    },
+    "context_scope_comparison": {
+      "first_chunk": {
+        "total_tests": 5,
+        "avg_cost": 0.004201,
+        "avg_input_tokens": 434.0,
+        "avg_context_words": 93.2,
+        "avg_context_duration": 49.348
+      },
+      "first_3_chunks": {
+        "total_tests": 5,
+        "avg_cost": 0.0046635,
+        "avg_input_tokens": 611.8,
+        "avg_context_words": 262.8,
+        "avg_context_duration": 117.374
+      },
+      "full_transcript": {
+        "total_tests": 5,
+        "avg_cost": 0.005917,
+        "avg_input_tokens": 1051.6,
+        "avg_context_words": 689.0,
+        "avg_context_duration": 305.6
+      }
+    }
+  }
+}

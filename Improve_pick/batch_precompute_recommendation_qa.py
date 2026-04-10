@@ -6,8 +6,14 @@ import argparse
 import asyncio
 from datetime import datetime
 from pathlib import Path
+import sys
 
 import pandas as pd
+
+# Ensure imports work when script is launched from Improve_pick/
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from precompute_curriculum_recommendations import load_faiss_index, search_and_score_async
 from query_embedder import QueryEmbedder
@@ -17,8 +23,8 @@ from shared.curriculum_schema import curriculum_to_long_df, enrich_precomputed_w
 from shared.qa_registry import DEFAULT_EXCEPTION_REGISTRY_PATH, get_allowed_incomplete_recommendation_ids
 
 
-DEFAULT_TARGETS_PATH = Path('qa/targeted_ss_wr_desc_overrides.csv')
-DEFAULT_OUTPUT_DIR = Path('qa/outputs')
+DEFAULT_TARGETS_PATH = Path('../qa/targeted_ss_wr_desc_overrides.csv')
+DEFAULT_OUTPUT_DIR = Path('../qa/outputs')
 
 
 def clean_text(value: object) -> str:
@@ -42,7 +48,7 @@ def build_query_text(topic: str, small_step_name: str, ss_wr_desc: str) -> str:
 
 def load_video_lookup() -> dict[str, dict[str, str]]:
     lookup: dict[str, dict[str, str]] = {}
-    video_inventory_path = Path('video_inventory.csv')
+    video_inventory_path = Path('../video_inventory.csv')
     if not video_inventory_path.exists():
         return lookup
 
@@ -207,12 +213,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Run targeted QA experiments for selected curriculum steps')
     parser.add_argument(
         '--curriculum',
-        default='Curriculum/Maths/curriculum_22032026_small_steps.csv',
+        default='../Curriculum/Maths/curriculum_22032026_small_steps.csv',
         help='Path to long curriculum CSV or legacy curriculum CSV',
     )
     parser.add_argument(
         '--precomputed',
-        default='precomputed_recommendations_flat.csv',
+        default='../precomputed_recommendations_flat.csv',
         help='Path to precomputed recommendations CSV',
     )
     parser.add_argument(

@@ -23,8 +23,8 @@ from shared.curriculum_schema import curriculum_to_long_df, enrich_precomputed_w
 from shared.qa_registry import DEFAULT_EXCEPTION_REGISTRY_PATH, get_allowed_incomplete_recommendation_ids
 
 
-DEFAULT_TARGETS_PATH = Path('../qa/targeted_ss_wr_desc_overrides.csv')
-DEFAULT_OUTPUT_DIR = Path('../qa/outputs')
+DEFAULT_TARGETS_PATH = project_root / 'qa' / 'targeted_ss_wr_desc_overrides.csv'
+DEFAULT_OUTPUT_DIR = project_root / 'qa' / 'outputs'
 
 
 def clean_text(value: object) -> str:
@@ -48,7 +48,7 @@ def build_query_text(topic: str, small_step_name: str, ss_wr_desc: str) -> str:
 
 def load_video_lookup() -> dict[str, dict[str, str]]:
     lookup: dict[str, dict[str, str]] = {}
-    video_inventory_path = Path('../video_inventory.csv')
+    video_inventory_path = project_root / 'video_inventory.csv'
     if not video_inventory_path.exists():
         return lookup
 
@@ -60,6 +60,32 @@ def load_video_lookup() -> dict[str, dict[str, str]]:
         lookup[video_id] = {
             'channel': clean_text(row.get('channel')),
             'duration_formatted': clean_text(row.get('duration_formatted')),
+        }
+    return lookup
+
+
+def format_duration_hms(seconds: object) -> str:
+    if seconds is None or seconds == '':
+        return ''
+    try:
+        total_seconds = int(float(seconds))
+    except (TypeError, ValueError):
+        return ''
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    secs = total_seconds % 60
+    return f'{hours:02d}:{minutes:02d}:{secs:02d}'
+
+
+def build_faiss_video_lookup(metadata: list[dict[str, object]]) -> dict[str, dict[str, str]]:
+    lookup: dict[str, dict[str, str]] = {}
+    for item in metadata:
+        video_id = clean_text(item.get('video_id'))
+        if not video_id or video_id in lookup:
+            continue
+        lookup[video_id] = {
+            'channel': clean_text(item.get('channel')),
+            'duration_formatted': format_duration_hms(item.get('duration')),
         }
     return lookup
 
@@ -95,6 +121,7 @@ def build_detailed_rows(
     baseline_rows: pd.DataFrame,
     candidate_results: list[dict[str, object]],
     video_lookup: dict[str, dict[str, str]],
+    fallback_lookup: dict[str, dict[str, str]],
 ) -> list[dict[str, object]]:
     detailed_rows: list[dict[str, object]] = []
 
@@ -129,6 +156,8 @@ def build_detailed_rows(
     for rank, result in enumerate(candidate_results, 1):
         video_id = clean_text(result.get('video_id'))
         video_meta = video_lookup.get(video_id, {})
+        if not video_meta:
+            video_meta = fallback_lookup.get(video_id, {})
         detailed_rows.append({
             'small_step_id': row['small_step_id'],
             'small_step_key': row['small_step_key'],
@@ -213,12 +242,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Run targeted QA experiments for selected curriculum steps')
     parser.add_argument(
         '--curriculum',
-        default='../Curriculum/Maths/curriculum_22032026_small_steps.csv',
+        default=str(project_root / 'Curriculum' / 'Maths' / 'curriculum_22032026_small_steps.csv'),
         help='Path to long curriculum CSV or legacy curriculum CSV',
     )
     parser.add_argument(
         '--precomputed',
-        default='../precomputed_recommendations_flat.csv',
+        default=str(project_root / 'precomputed_recommendations_flat.csv'),
         help='Path to precomputed recommendations CSV',
     )
     parser.add_argument(
@@ -290,6 +319,7 @@ def main() -> None:
 
     print('Loading FAISS index...')
     index, metadata = load_faiss_index()
+    fallback_lookup = build_faiss_video_lookup(metadata)
     print('Loading video inventory...')
     video_lookup = load_video_lookup()
     print('Loading deleted video registry...')
@@ -341,6 +371,7 @@ def main() -> None:
                 baseline_rows=baseline_rows,
                 candidate_results=candidate_results,
                 video_lookup=video_lookup,
+                fallback_lookup=fallback_lookup,
             )
         )
         summary_rows.append(

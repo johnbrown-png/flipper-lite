@@ -355,6 +355,12 @@ def render_video_player(video_data):
     channel = video_data.get('channel', '')
     duration = video_data.get('duration', '')
     
+    # Back button above video display for quick navigation
+    if st.button("← Back to Search Results", key="back_to_search_top", type="primary"):
+        st.session_state.viewing_video = False
+        st.session_state.current_video = None
+        st.rerun()
+    
     # Video player at top using youtube-nocookie (privacy-respecting)
     embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1"
     

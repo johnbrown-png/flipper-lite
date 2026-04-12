@@ -37,6 +37,8 @@ from shared.curriculum_schema import curriculum_to_long_df
 CURRICULUM_PATH = project_root / "Curriculum" / "Maths" / "curriculum_22032026_small_steps.csv"
 TARGET_OVERRIDES_PATH = project_root / "qa" / "targeted_ss_wr_desc_overrides.csv"
 APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates.csv"
+QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
+VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
 TOP_K = 3
 
 
@@ -165,6 +167,17 @@ class ImprovePickQAGUI:
         self.rating_vars: list[tk.StringVar] = []
         self.rating_dropdowns: list[tk.OptionMenu] = []
 
+        self.precomputed_df: pd.DataFrame = pd.DataFrame()
+        self.precomputed_results: list[dict[str, object]] = []
+        self.precomputed_title_labels: list[ttk.Label] = []
+        self.precomputed_channel_labels: list[ttk.Label] = []
+        self.precomputed_score_labels: list[ttk.Label] = []
+        self.precomputed_open_buttons: list[ttk.Button] = []
+        self.precomputed_delete_buttons: list[ttk.Button] = []
+        self.precomputed_rating_vars: list[tk.StringVar] = []
+        self.precomputed_rating_dropdowns: list[tk.OptionMenu] = []
+        self.candidate_delete_buttons: list[ttk.Button] = []
+
         self._build_ui()
         # Defer heavy loading until after mainloop starts so the window appears immediately.
         self.root.after(100, self._load_initial_data)
@@ -196,7 +209,6 @@ class ImprovePickQAGUI:
         ttk.Label(selector_frame, text="Scenario label:").grid(row=0, column=2, sticky="w", padx=(12, 8))
         self.scenario_entry = ttk.Entry(selector_frame, textvariable=self.scenario_var, width=24)
         self.scenario_entry.grid(row=0, column=3, sticky="w")
-
         text_frame = ttk.LabelFrame(outer, text="Query Text", padding=10)
         text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 8))
         text_frame.columnconfigure(0, weight=1)
@@ -225,50 +237,97 @@ class ImprovePickQAGUI:
         self.search_btn.grid(row=0, column=0, padx=(0, 8))
         self.save_btn = ttk.Button(control_frame, text="Save Approved Candidate", command=self._save_candidate, state=tk.DISABLED)
         self.save_btn.grid(row=0, column=1, padx=(0, 8))
+        self.update_qa_btn = ttk.Button(control_frame, text="Update QA CSV", command=self._update_qa_csv)
+        self.update_qa_btn.grid(row=0, column=2, padx=(0, 8))
 
         self.status_label = ttk.Label(control_frame, textvariable=self.status_var, foreground="blue")
-        self.status_label.grid(row=0, column=2, sticky="w")
-
-        results_frame = ttk.LabelFrame(outer, text="Top 3 Results", padding=10)
-        results_frame.grid(row=4, column=0, sticky="nsew")
-        results_frame.columnconfigure(1, weight=1)
-        for row_num in range(TOP_K + 1):
-            results_frame.rowconfigure(row_num, weight=0)
-
-        headers = ["Rank", "Video", "Channel", "Combined", "Open", "Rating (1-10)"]
-        for col, header in enumerate(headers):
-            ttk.Label(results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 6))
+        self.status_label.grid(row=0, column=3, sticky="w")
 
         rating_options = [str(i) for i in range(1, 11)]
+        results_row_frame = ttk.Frame(outer)
+        results_row_frame.grid(row=4, column=0, sticky="nsew")
+        results_row_frame.columnconfigure(0, weight=1)
+        results_row_frame.columnconfigure(1, weight=1)
+        results_row_frame.rowconfigure(0, weight=1)
+
+        precomp_frame = ttk.LabelFrame(results_row_frame, text="Precomputed Picks (Current)", padding=10)
+        precomp_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
+        precomp_frame.columnconfigure(1, weight=1)
+        candidate_results_frame = ttk.LabelFrame(results_row_frame, text="Candidate Search Results", padding=10)
+        candidate_results_frame.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
+        candidate_results_frame.columnconfigure(1, weight=1)
+
+        headers = ["Rank", "Title", "Channel", "Score", "Open", "Delete", "Rating"]
+        for col, header in enumerate(headers):
+            ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 6))
+            ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 6))
 
         for i in range(TOP_K):
             row_num = i + 1
-            ttk.Label(results_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=4)
+            ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=4)
+            ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=4)
 
-            title_label = ttk.Label(results_frame, text="", width=70)
-            title_label.grid(row=row_num, column=1, sticky="w", padx=4, pady=4)
-            self.result_title_labels.append(title_label)
+            p_title = ttk.Label(precomp_frame, text="", width=44)
+            p_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=4)
+            self.precomputed_title_labels.append(p_title)
+            c_title = ttk.Label(candidate_results_frame, text="", width=44)
+            c_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=4)
+            self.result_title_labels.append(c_title)
 
-            channel_label = ttk.Label(results_frame, text="", width=28)
-            channel_label.grid(row=row_num, column=2, sticky="w", padx=4, pady=4)
-            self.result_channel_labels.append(channel_label)
+            p_channel = ttk.Label(precomp_frame, text="", width=20)
+            p_channel.grid(row=row_num, column=2, sticky="w", padx=4, pady=4)
+            self.precomputed_channel_labels.append(p_channel)
+            c_channel = ttk.Label(candidate_results_frame, text="", width=20)
+            c_channel.grid(row=row_num, column=2, sticky="w", padx=4, pady=4)
+            self.result_channel_labels.append(c_channel)
 
-            score_label = ttk.Label(results_frame, text="", width=12)
-            score_label.grid(row=row_num, column=3, sticky="w", padx=4, pady=4)
-            self.result_score_labels.append(score_label)
+            p_score = ttk.Label(precomp_frame, text="", width=10)
+            p_score.grid(row=row_num, column=3, sticky="w", padx=4, pady=4)
+            self.precomputed_score_labels.append(p_score)
+            c_score = ttk.Label(candidate_results_frame, text="", width=10)
+            c_score.grid(row=row_num, column=3, sticky="w", padx=4, pady=4)
+            self.result_score_labels.append(c_score)
 
-            open_btn = ttk.Button(results_frame, text="Open", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
-            open_btn.grid(row=row_num, column=4, sticky="w", padx=4, pady=4)
-            self.result_open_buttons.append(open_btn)
+            p_open = ttk.Button(precomp_frame, text="Open", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
+            p_open.grid(row=row_num, column=4, sticky="w", padx=4, pady=4)
+            self.precomputed_open_buttons.append(p_open)
+            c_open = ttk.Button(candidate_results_frame, text="Open", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
+            c_open.grid(row=row_num, column=4, sticky="w", padx=4, pady=4)
+            self.result_open_buttons.append(c_open)
 
-            rating_var = tk.StringVar(value="5")
-            self.rating_vars.append(rating_var)
+            p_delete = ttk.Button(
+                precomp_frame,
+                text="Append",
+                command=lambda idx=i: self._append_result_to_videos_to_delete("current", idx),
+                state=tk.DISABLED,
+            )
+            p_delete.grid(row=row_num, column=5, sticky="w", padx=4, pady=4)
+            self.precomputed_delete_buttons.append(p_delete)
 
+            c_delete = ttk.Button(
+                candidate_results_frame,
+                text="Append",
+                command=lambda idx=i: self._append_result_to_videos_to_delete("candidate", idx),
+                state=tk.DISABLED,
+            )
+            c_delete.grid(row=row_num, column=5, sticky="w", padx=4, pady=4)
+            self.candidate_delete_buttons.append(c_delete)
+
+            p_rating_var = tk.StringVar(value="5")
+            self.precomputed_rating_vars.append(p_rating_var)
+            p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
+            p_menu.grid(row=row_num, column=6, sticky="w", padx=4, pady=4)
+            p_menu.config(width=4)
+            self.precomputed_rating_dropdowns.append(p_menu)
+            self._apply_precomputed_rating_color(i)
+
+            c_rating_var = tk.StringVar(value="5")
+            self.rating_vars.append(c_rating_var)
             # tk.OptionMenu allows per-widget background color updates.
-            rating_menu = tk.OptionMenu(results_frame, rating_var, *rating_options, command=lambda _value, idx=i: self._on_rating_change(idx))
-            rating_menu.grid(row=row_num, column=5, sticky="w", padx=4, pady=4)
-            rating_menu.config(width=5)
-            self.rating_dropdowns.append(rating_menu)
+            c_menu = tk.OptionMenu(candidate_results_frame, c_rating_var, *rating_options, command=lambda _v, idx=i: self._on_rating_change(idx))
+            c_menu.grid(row=row_num, column=6, sticky="w", padx=4, pady=4)
+            c_menu.config(width=4)
+            self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
 
     def _load_initial_data(self) -> None:
@@ -293,12 +352,23 @@ class ImprovePickQAGUI:
 
             self.curriculum_df = self.curriculum_df[self.curriculum_df["small_step_id"].str.len() > 0].copy()
 
+            precomputed_path = project_root / "precomputed_recommendations_flat.csv"
+            if precomputed_path.exists():
+                precomp_df = pd.read_csv(precomputed_path)
+                for col in ["small_step_id", "video_id", "title", "video_title", "channel"]:
+                    if col in precomp_df.columns:
+                        precomp_df[col] = precomp_df[col].map(clean_text)
+                self.precomputed_df = precomp_df
+
             self.curriculum_by_id = {
                 row["small_step_id"]: row
                 for _, row in self.curriculum_df.drop_duplicates(subset=["small_step_id"], keep="first").iterrows()
             }
 
-            self.sorted_step_ids = sorted(self.curriculum_by_id.keys())
+            self.sorted_step_ids = sorted(
+                self.curriculum_by_id.keys(),
+                key=lambda sid: int(self.curriculum_by_id[sid].get("small_step_num", 0)),
+            )
             self.step_labels_by_id = {}
             labels = []
             for small_step_id in self.sorted_step_ids:
@@ -311,6 +381,9 @@ class ImprovePickQAGUI:
             if labels:
                 self.step_var.set(labels[0])
                 self._on_step_selected(None)
+                selected_step_id = self._selected_small_step_id()
+                if selected_step_id:
+                    self._populate_precomputed(selected_step_id)
 
             self.status_var.set("Loading retrieval assets (FAISS / embedder)...")
             self.search_btn.config(state=tk.DISABLED)
@@ -377,6 +450,7 @@ class ImprovePickQAGUI:
         self._set_text(self.baseline_text, baseline)
         self._set_text(self.candidate_text, baseline)
         self._clear_results()
+        self._populate_precomputed(small_step_id)
         self.status_var.set("Ready")
 
     def _set_text(self, widget: scrolledtext.ScrolledText, content: str) -> None:
@@ -395,6 +469,7 @@ class ImprovePickQAGUI:
             self.result_channel_labels[i].config(text="")
             self.result_score_labels[i].config(text="")
             self.result_open_buttons[i].config(state=tk.DISABLED)
+            self.candidate_delete_buttons[i].config(state=tk.DISABLED)
             self.rating_vars[i].set("5")
             self._apply_rating_color(i)
 
@@ -486,14 +561,24 @@ class ImprovePickQAGUI:
                 self.result_channel_labels[i].config(text=result.get("channel", ""))
                 self.result_score_labels[i].config(text=f"{result['combined_score']:.4f}")
                 self.result_open_buttons[i].config(state=tk.NORMAL)
+                self.candidate_delete_buttons[i].config(state=tk.NORMAL if clean_text(result.get("video_id")) else tk.DISABLED)
             else:
                 self.result_title_labels[i].config(text="")
                 self.result_channel_labels[i].config(text="")
                 self.result_score_labels[i].config(text="")
                 self.result_open_buttons[i].config(state=tk.DISABLED)
+                self.candidate_delete_buttons[i].config(state=tk.DISABLED)
 
             self.rating_vars[i].set("5")
             self._apply_rating_color(i)
+
+        self._restore_saved_ratings(
+            small_step_id=self._selected_small_step_id(),
+            source="candidate",
+            results=self.latest_results,
+            rating_vars=self.rating_vars,
+            apply_color_fn=self._apply_rating_color,
+        )
 
         self.search_btn.config(state=tk.NORMAL)
         self.save_btn.config(state=tk.NORMAL if results else tk.DISABLED)
@@ -537,6 +622,291 @@ class ImprovePickQAGUI:
         menu_btn.config(bg=bg, fg=fg, activebackground=bg, activeforeground=fg, highlightthickness=1)
         menu_btn["menu"].config(bg="white", fg="black")
 
+    def _populate_precomputed(self, small_step_id: str) -> None:
+        self.precomputed_results = []
+        if self.precomputed_df.empty:
+            return
+
+        step_rows = self.precomputed_df[self.precomputed_df["small_step_id"] == small_step_id]
+        if "rank" in step_rows.columns:
+            step_rows = step_rows.sort_values("rank")
+        picks = step_rows.head(TOP_K).reset_index(drop=True)
+
+        for i in range(len(picks)):
+            r = picks.iloc[i]
+            video_id = clean_text(r.get("video_id"))
+            title = clean_text(r.get("title") or r.get("video_title"))
+            channel = clean_text(r.get("channel"))
+            combined_score = float(r.get("combined_score") or 0.0)
+            self.precomputed_results.append({
+                "video_id": video_id,
+                "title": title,
+                "channel": channel,
+                "combined_score": combined_score,
+            })
+            self.precomputed_title_labels[i].config(text=f"{title} ({video_id})")
+            self.precomputed_channel_labels[i].config(text=channel)
+            self.precomputed_score_labels[i].config(text=f"{combined_score:.4f}")
+            self.precomputed_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.precomputed_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.precomputed_rating_vars[i].set("5")
+            self._apply_precomputed_rating_color(i)
+
+        for i in range(len(picks), TOP_K):
+            self.precomputed_title_labels[i].config(text="")
+            self.precomputed_channel_labels[i].config(text="")
+            self.precomputed_score_labels[i].config(text="")
+            self.precomputed_open_buttons[i].config(state=tk.DISABLED)
+            self.precomputed_delete_buttons[i].config(state=tk.DISABLED)
+            self.precomputed_rating_vars[i].set("5")
+            self._apply_precomputed_rating_color(i)
+
+        self._restore_saved_ratings(
+            small_step_id=small_step_id,
+            source="current",
+            results=self.precomputed_results,
+            rating_vars=self.precomputed_rating_vars,
+            apply_color_fn=self._apply_precomputed_rating_color,
+        )
+
+    def _open_precomputed_video(self, index_num: int) -> None:
+        if index_num < 0 or index_num >= len(self.precomputed_results):
+            return
+        video_id = clean_text(self.precomputed_results[index_num].get("video_id"))
+        if not video_id:
+            return
+        webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
+
+    def _on_precomputed_rating_change(self, index_num: int) -> None:
+        self._apply_precomputed_rating_color(index_num)
+
+    def _apply_precomputed_rating_color(self, index_num: int) -> None:
+        rating_str = self.precomputed_rating_vars[index_num].get().strip() or "5"
+        try:
+            rating = int(rating_str)
+        except ValueError:
+            rating = 5
+            self.precomputed_rating_vars[index_num].set("5")
+        bg = rating_to_color(rating)
+        fg = text_color_for_bg(bg)
+        menu_btn = self.precomputed_rating_dropdowns[index_num]
+        menu_btn.config(bg=bg, fg=fg, activebackground=bg, activeforeground=fg, highlightthickness=1)
+        menu_btn["menu"].config(bg="white", fg="black")
+
+    def _safe_parse_rating(self, raw_value: object, default: int = 5) -> int:
+        try:
+            parsed = int(str(raw_value).strip())
+        except (TypeError, ValueError):
+            return default
+        return max(1, min(10, parsed))
+
+    def _load_qa_df(self) -> pd.DataFrame:
+        columns = [
+            "updated_at",
+            "small_step_id",
+            "topic",
+            "small_step_name",
+            "source",
+            "rank",
+            "video_id",
+            "video_title",
+            "channel",
+            "combined_score",
+            "rating",
+            "candidate_ss_wr_desc",
+        ]
+
+        if QA_TRACKING_PATH.exists():
+            qa_df = pd.read_csv(QA_TRACKING_PATH)
+        else:
+            qa_df = pd.DataFrame(columns=columns)
+
+        for col in columns:
+            if col not in qa_df.columns:
+                qa_df[col] = ""
+
+        qa_df["small_step_id"] = qa_df["small_step_id"].map(clean_text)
+        qa_df["source"] = qa_df["source"].map(clean_text)
+        qa_df["video_id"] = qa_df["video_id"].map(clean_text)
+        qa_df["rank"] = pd.to_numeric(qa_df["rank"], errors="coerce")
+        qa_df["rating"] = pd.to_numeric(qa_df["rating"], errors="coerce")
+        return qa_df[columns]
+
+    def _ensure_qa_template_exists(self) -> None:
+        if QA_TRACKING_PATH.exists():
+            return
+
+        QA_TRACKING_PATH.parent.mkdir(parents=True, exist_ok=True)
+        rows: list[dict[str, object]] = []
+        now = datetime.now().isoformat(timespec="seconds")
+
+        for small_step_id in self.sorted_step_ids:
+            row = self.curriculum_by_id.get(small_step_id, {})
+            for source in ("current", "candidate"):
+                for rank in range(1, TOP_K + 1):
+                    rows.append(
+                        {
+                            "updated_at": now,
+                            "small_step_id": clean_text(small_step_id),
+                            "topic": clean_text(row.get("topic")),
+                            "small_step_name": clean_text(row.get("small_step_name")),
+                            "source": source,
+                            "rank": rank,
+                            "video_id": "",
+                            "video_title": "",
+                            "channel": "",
+                            "combined_score": "",
+                            "rating": 5,
+                            "candidate_ss_wr_desc": "",
+                        }
+                    )
+
+        pd.DataFrame(rows).to_csv(QA_TRACKING_PATH, index=False)
+
+    def _restore_saved_ratings(
+        self,
+        small_step_id: str,
+        source: str,
+        results: list[dict[str, object]],
+        rating_vars: list[tk.StringVar],
+        apply_color_fn,
+    ) -> None:
+        if not small_step_id:
+            return
+
+        qa_df = self._load_qa_df()
+        step_rows = qa_df[(qa_df["small_step_id"] == small_step_id) & (qa_df["source"] == source)]
+        if step_rows.empty:
+            return
+
+        for i in range(TOP_K):
+            rank = i + 1
+            candidate_rows = step_rows[step_rows["rank"] == rank]
+            if candidate_rows.empty:
+                continue
+
+            qa_row = candidate_rows.iloc[-1]
+            qa_video_id = clean_text(qa_row.get("video_id"))
+            result_video_id = ""
+            if i < len(results):
+                result_video_id = clean_text(results[i].get("video_id"))
+
+            # Only restore when empty/template row or matching video id.
+            if qa_video_id and result_video_id and qa_video_id != result_video_id:
+                continue
+
+            rating_vars[i].set(str(self._safe_parse_rating(qa_row.get("rating"), default=5)))
+            apply_color_fn(i)
+
+    def _collect_qa_rows(
+        self,
+        row: dict[str, object],
+        candidate_text: str,
+        candidate_ratings: list[int],
+        precomputed_ratings: list[int],
+    ) -> list[dict[str, object]]:
+        now = datetime.now().isoformat(timespec="seconds")
+        rows: list[dict[str, object]] = []
+
+        def append_rows(source: str, results: list[dict[str, object]], ratings: list[int]) -> None:
+            for idx in range(TOP_K):
+                result = results[idx] if idx < len(results) else {}
+                rows.append(
+                    {
+                        "updated_at": now,
+                        "small_step_id": clean_text(row.get("small_step_id")),
+                        "topic": clean_text(row.get("topic")),
+                        "small_step_name": clean_text(row.get("small_step_name")),
+                        "source": source,
+                        "rank": idx + 1,
+                        "video_id": clean_text(result.get("video_id")),
+                        "video_title": clean_text(result.get("title")),
+                        "channel": clean_text(result.get("channel")),
+                        "combined_score": result.get("combined_score", ""),
+                        "rating": ratings[idx] if idx < len(ratings) else 5,
+                        "candidate_ss_wr_desc": candidate_text if source == "candidate" else "",
+                    }
+                )
+
+        append_rows("current", self.precomputed_results, precomputed_ratings)
+        append_rows("candidate", self.latest_results, candidate_ratings)
+        return rows
+
+    def _upsert_qa_rows(self, qa_rows: list[dict[str, object]]) -> None:
+        self._ensure_qa_template_exists()
+        qa_df = self._load_qa_df()
+        new_df = pd.DataFrame(qa_rows)
+
+        for col in qa_df.columns:
+            if col not in new_df.columns:
+                new_df[col] = ""
+
+        merged = pd.concat([qa_df, new_df[qa_df.columns]], ignore_index=True)
+        merged["rank"] = pd.to_numeric(merged["rank"], errors="coerce")
+        merged = merged.drop_duplicates(subset=["small_step_id", "source", "rank"], keep="last")
+        merged = merged.sort_values(["small_step_id", "source", "rank"], kind="stable")
+        merged.to_csv(QA_TRACKING_PATH, index=False)
+
+    def _update_qa_csv(self) -> None:
+        small_step_id = self._selected_small_step_id()
+        row = self.curriculum_by_id.get(small_step_id)
+        if row is None:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+
+        candidate_text = self.candidate_text.get("1.0", tk.END).strip()
+
+        candidate_ratings = [self._safe_parse_rating(var.get(), default=5) for var in self.rating_vars]
+        precomputed_ratings = [self._safe_parse_rating(var.get(), default=5) for var in self.precomputed_rating_vars]
+
+        qa_rows = self._collect_qa_rows(
+            row=row,
+            candidate_text=candidate_text,
+            candidate_ratings=candidate_ratings,
+            precomputed_ratings=precomputed_ratings,
+        )
+
+        try:
+            self._upsert_qa_rows(qa_rows)
+        except Exception as exc:
+            messagebox.showerror("QA Save Error", str(exc))
+            return
+
+        self.status_var.set("Updated qa/qa.csv for selected small step.")
+        messagebox.showinfo("QA Updated", f"Saved QA rows to:\n{QA_TRACKING_PATH}")
+
+    def _append_result_to_videos_to_delete(self, source: str, index_num: int) -> None:
+        results = self.precomputed_results if source == "current" else self.latest_results
+        if index_num < 0 or index_num >= len(results):
+            return
+
+        video_id = clean_text(results[index_num].get("video_id"))
+        if not video_id:
+            messagebox.showwarning("Missing video", "No video_id found for this row.")
+            return
+
+        VIDEOS_TO_DELETE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if VIDEOS_TO_DELETE_PATH.exists():
+            delete_df = pd.read_csv(VIDEOS_TO_DELETE_PATH)
+        else:
+            delete_df = pd.DataFrame(columns=["video_id"])
+
+        if "video_id" not in delete_df.columns:
+            first_col = delete_df.columns[0] if len(delete_df.columns) > 0 else None
+            if first_col:
+                delete_df = delete_df.rename(columns={first_col: "video_id"})
+            else:
+                delete_df["video_id"] = ""
+
+        delete_df["video_id"] = delete_df["video_id"].map(clean_text)
+        if (delete_df["video_id"] == video_id).any():
+            self.status_var.set(f"{video_id} is already in videos_to_delete.csv")
+            return
+
+        delete_df = pd.concat([delete_df, pd.DataFrame([{"video_id": video_id}])], ignore_index=True)
+        delete_df.to_csv(VIDEOS_TO_DELETE_PATH, index=False)
+        self.status_var.set(f"Appended {video_id} to videos_to_delete.csv")
+
     def _save_candidate(self) -> None:
         small_step_id = self._selected_small_step_id()
         row = self.curriculum_by_id.get(small_step_id)
@@ -563,8 +933,15 @@ class ImprovePickQAGUI:
             except ValueError:
                 ratings.append(5)
 
+        precomputed_ratings: list[int] = []
+        for i in range(TOP_K):
+            try:
+                precomputed_ratings.append(int(self.precomputed_rating_vars[i].get().strip()))
+            except ValueError:
+                precomputed_ratings.append(5)
+
         try:
-            self._save_approved_candidates_log(row=row, candidate=candidate, ratings=ratings)
+            self._save_approved_candidates_log(row=row, candidate=candidate, ratings=ratings, precomputed_ratings=precomputed_ratings)
             self._upsert_targeted_override(row=row, candidate=candidate, scenario_label=scenario_label, ratings=ratings)
             self.status_var.set("Saved approved candidate and override row.")
             messagebox.showinfo(
@@ -574,7 +951,7 @@ class ImprovePickQAGUI:
         except Exception as exc:
             messagebox.showerror("Save Error", str(exc))
 
-    def _save_approved_candidates_log(self, row: dict[str, object], candidate: str, ratings: list[int]) -> None:
+    def _save_approved_candidates_log(self, row: dict[str, object], candidate: str, ratings: list[int], precomputed_ratings: list[int] | None = None) -> None:
         APPROVED_CANDIDATES_PATH.parent.mkdir(parents=True, exist_ok=True)
 
         now = datetime.now().isoformat(timespec="seconds")
@@ -614,6 +991,18 @@ class ImprovePickQAGUI:
             "rank3_video_title": result_rows[3]["title"],
             "rank3_video_channel": result_rows[3]["channel"],
             "rank3_rating": ratings[2] if len(ratings) > 2 else "",
+                "precomp_rank1_video_id": clean_text(self.precomputed_results[0]["video_id"]) if len(self.precomputed_results) > 0 else "",
+                "precomp_rank1_title": clean_text(self.precomputed_results[0]["title"]) if len(self.precomputed_results) > 0 else "",
+                "precomp_rank1_channel": clean_text(self.precomputed_results[0]["channel"]) if len(self.precomputed_results) > 0 else "",
+                "precomp_rank1_rating": precomputed_ratings[0] if precomputed_ratings and len(precomputed_ratings) > 0 else "",
+                "precomp_rank2_video_id": clean_text(self.precomputed_results[1]["video_id"]) if len(self.precomputed_results) > 1 else "",
+                "precomp_rank2_title": clean_text(self.precomputed_results[1]["title"]) if len(self.precomputed_results) > 1 else "",
+                "precomp_rank2_channel": clean_text(self.precomputed_results[1]["channel"]) if len(self.precomputed_results) > 1 else "",
+                "precomp_rank2_rating": precomputed_ratings[1] if precomputed_ratings and len(precomputed_ratings) > 1 else "",
+                "precomp_rank3_video_id": clean_text(self.precomputed_results[2]["video_id"]) if len(self.precomputed_results) > 2 else "",
+                "precomp_rank3_title": clean_text(self.precomputed_results[2]["title"]) if len(self.precomputed_results) > 2 else "",
+                "precomp_rank3_channel": clean_text(self.precomputed_results[2]["channel"]) if len(self.precomputed_results) > 2 else "",
+                "precomp_rank3_rating": precomputed_ratings[2] if precomputed_ratings and len(precomputed_ratings) > 2 else "",
         }
 
         if APPROVED_CANDIDATES_PATH.exists():

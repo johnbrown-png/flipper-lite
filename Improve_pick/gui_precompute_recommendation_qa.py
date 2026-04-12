@@ -27,7 +27,7 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from precompute_curriculum_recommendations import load_faiss_index, search_and_score_async
+from precompute_curriculum_recommendations import calculate_cosine_similarity, load_faiss_index, search_and_score_async
 from query_embedder import QueryEmbedder
 from data_pipeline.deletion_tracker import DeletionTracker
 from data_pipeline.instruction_quality_scorer import InstructionQualityScorer
@@ -40,6 +40,9 @@ APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
 TOP_K = 3
+SEMANTIC_PREVIEW_K = 5
+SEMANTIC_PREVIEW_CHUNKS = 30
+SEMANTIC_PREVIEW_DEBOUNCE_MS = 550
 
 
 def clean_text(value: object) -> str:
@@ -159,6 +162,10 @@ class ImprovePickQAGUI:
 
         self.latest_results: list[dict[str, object]] = []
         self.latest_query_text = ""
+        self.semantic_preview_results: list[dict[str, object]] = []
+        self.semantic_preview_status_var = tk.StringVar(value="Semantic preview: idle")
+        self.semantic_preview_after_id: str | None = None
+        self.semantic_preview_request_id = 0
 
         self.result_title_labels: list[ttk.Label] = []
         self.result_channel_labels: list[ttk.Label] = []
@@ -177,6 +184,9 @@ class ImprovePickQAGUI:
         self.precomputed_rating_vars: list[tk.StringVar] = []
         self.precomputed_rating_dropdowns: list[tk.OptionMenu] = []
         self.candidate_delete_buttons: list[ttk.Button] = []
+        self.semantic_preview_title_labels: list[ttk.Label] = []
+        self.semantic_preview_channel_labels: list[ttk.Label] = []
+        self.semantic_preview_score_labels: list[ttk.Label] = []
 
         self._build_ui()
         # Defer heavy loading until after mainloop starts so the window appears immediately.
@@ -230,6 +240,34 @@ class ImprovePickQAGUI:
         ttk.Label(candidate_frame, text="Candidate wording (candidate_ss_wr_desc)", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
         self.candidate_text = scrolledtext.ScrolledText(candidate_frame, wrap=tk.WORD, height=8)
         self.candidate_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
+        self.candidate_text.bind("<<Modified>>", self._on_candidate_text_modified)
+
+        semantic_preview_frame = ttk.LabelFrame(candidate_frame, text="Live Semantic Preview (No Instruction Scoring)", padding=8)
+        semantic_preview_frame.grid(row=2, column=0, sticky="nsew", pady=(8, 0))
+        semantic_preview_frame.columnconfigure(1, weight=1)
+        candidate_frame.rowconfigure(2, weight=1)
+
+        preview_headers = ["Rank", "Title", "Channel", "Semantic"]
+        for col, header in enumerate(preview_headers):
+            ttk.Label(semantic_preview_frame, text=header, font=("Segoe UI", 9, "bold")).grid(row=0, column=col, sticky="w", padx=3, pady=(0, 4))
+
+        for i in range(SEMANTIC_PREVIEW_K):
+            row_num = i + 1
+            ttk.Label(semantic_preview_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=3, pady=2)
+
+            title_label = ttk.Label(semantic_preview_frame, text="", width=44)
+            title_label.grid(row=row_num, column=1, sticky="w", padx=3, pady=2)
+            self.semantic_preview_title_labels.append(title_label)
+
+            channel_label = ttk.Label(semantic_preview_frame, text="", width=20)
+            channel_label.grid(row=row_num, column=2, sticky="w", padx=3, pady=2)
+            self.semantic_preview_channel_labels.append(channel_label)
+
+            score_label = ttk.Label(semantic_preview_frame, text="", width=10)
+            score_label.grid(row=row_num, column=3, sticky="w", padx=3, pady=2)
+            self.semantic_preview_score_labels.append(score_label)
+
+        ttk.Label(candidate_frame, textvariable=self.semantic_preview_status_var, foreground="#555555").grid(row=3, column=0, sticky="w", pady=(4, 0))
 
         control_frame = ttk.Frame(outer)
         control_frame.grid(row=3, column=0, sticky="ew", pady=(0, 8))
@@ -429,6 +467,7 @@ class ImprovePickQAGUI:
         self.scorer = scorer
         self.search_btn.config(state=tk.NORMAL)
         self.status_var.set("Ready")
+        self._schedule_semantic_preview()
 
     def _on_heavy_assets_error(self, error_message: str) -> None:
         self.status_var.set("Failed to load retrieval assets")
@@ -450,15 +489,150 @@ class ImprovePickQAGUI:
         self._set_text(self.baseline_text, baseline)
         self._set_text(self.candidate_text, baseline)
         self._clear_results()
+        self._clear_semantic_preview()
         self._populate_precomputed(small_step_id)
         self.status_var.set("Ready")
+        self._schedule_semantic_preview()
 
     def _set_text(self, widget: scrolledtext.ScrolledText, content: str) -> None:
         widget.config(state=tk.NORMAL)
         widget.delete("1.0", tk.END)
         widget.insert(tk.END, content)
+        if widget is self.candidate_text:
+            self.candidate_text.edit_modified(False)
         if widget is self.baseline_text:
             widget.config(state=tk.DISABLED)
+
+    def _clear_semantic_preview(self) -> None:
+        self.semantic_preview_results = []
+        for i in range(SEMANTIC_PREVIEW_K):
+            self.semantic_preview_title_labels[i].config(text="")
+            self.semantic_preview_channel_labels[i].config(text="")
+            self.semantic_preview_score_labels[i].config(text="")
+        self.semantic_preview_status_var.set("Semantic preview: idle")
+
+    def _on_candidate_text_modified(self, _event) -> None:
+        if not self.candidate_text.edit_modified():
+            return
+        self.candidate_text.edit_modified(False)
+        self._schedule_semantic_preview()
+
+    def _schedule_semantic_preview(self) -> None:
+        if self.semantic_preview_after_id is not None:
+            self.root.after_cancel(self.semantic_preview_after_id)
+            self.semantic_preview_after_id = None
+
+        self.semantic_preview_after_id = self.root.after(
+            SEMANTIC_PREVIEW_DEBOUNCE_MS,
+            self._run_semantic_preview,
+        )
+
+    def _run_semantic_preview(self) -> None:
+        self.semantic_preview_after_id = None
+        small_step_id = self._selected_small_step_id()
+        row = self.curriculum_by_id.get(small_step_id)
+        if row is None:
+            self._clear_semantic_preview()
+            return
+
+        if self.embedder is None or self.index is None:
+            self.semantic_preview_status_var.set("Semantic preview: waiting for retrieval assets")
+            return
+
+        candidate = self.candidate_text.get("1.0", tk.END).strip()
+        if not candidate:
+            self._clear_semantic_preview()
+            return
+
+        self.semantic_preview_request_id += 1
+        request_id = self.semantic_preview_request_id
+        self.semantic_preview_status_var.set("Semantic preview: searching...")
+
+        worker = threading.Thread(
+            target=self._semantic_preview_worker,
+            args=(request_id, row, candidate),
+            daemon=True,
+        )
+        worker.start()
+
+    def _semantic_preview_worker(self, request_id: int, row: dict[str, object], candidate: str) -> None:
+        try:
+            query_text = build_query_text(
+                topic=clean_text(row.get("topic")),
+                small_step_name=clean_text(row.get("small_step_name")),
+                ss_wr_desc=candidate,
+            )
+
+            embedding = self.embedder.embed_query(query_text).reshape(1, -1)
+            distances, indices = self.index.search(embedding, SEMANTIC_PREVIEW_CHUNKS)
+
+            video_chunks: dict[str, list[dict[str, object]]] = {}
+            for dist, idx in zip(distances[0], indices[0]):
+                if idx == -1 or idx >= len(self.metadata):
+                    continue
+
+                video_meta = self.metadata[int(idx)]
+                video_id = clean_text(video_meta.get("video_id"))
+                if not video_id or video_id in self.deleted_videos:
+                    continue
+
+                cosine_sim = calculate_cosine_similarity(float(dist))
+                if video_id not in video_chunks:
+                    video_chunks[video_id] = []
+                video_chunks[video_id].append(
+                    {
+                        "cosine_similarity": cosine_sim,
+                        "video_meta": video_meta,
+                    }
+                )
+
+            video_stats: list[dict[str, object]] = []
+            for video_id, chunks in video_chunks.items():
+                sims = [float(c["cosine_similarity"]) for c in chunks]
+                good_chunks = [sim for sim in sims if sim >= 0.6]
+                median_sim = sorted(sims)[len(sims) // 2]
+                ranking_score = median_sim + (len(good_chunks) * 0.02)
+                best_meta = chunks[0]["video_meta"]
+
+                title = clean_text(best_meta.get("video_title") or best_meta.get("title"))
+                meta = self.video_lookup.get(video_id) or self.fallback_lookup.get(video_id) or {}
+                video_stats.append(
+                    {
+                        "video_id": video_id,
+                        "title": title,
+                        "channel": clean_text(meta.get("channel") or best_meta.get("channel")),
+                        "semantic_score": median_sim,
+                        "ranking_score": ranking_score,
+                    }
+                )
+
+            top_results = sorted(video_stats, key=lambda x: float(x["ranking_score"]), reverse=True)[:SEMANTIC_PREVIEW_K]
+            self.root.after(0, self._on_semantic_preview_success, request_id, top_results)
+        except Exception as exc:
+            self.root.after(0, self._on_semantic_preview_error, request_id, str(exc))
+
+    def _on_semantic_preview_success(self, request_id: int, results: list[dict[str, object]]) -> None:
+        if request_id != self.semantic_preview_request_id:
+            return
+
+        self.semantic_preview_results = results
+        for i in range(SEMANTIC_PREVIEW_K):
+            if i < len(results):
+                result = results[i]
+                self.semantic_preview_title_labels[i].config(text=f"{result['title']} ({result['video_id']})")
+                self.semantic_preview_channel_labels[i].config(text=clean_text(result.get("channel")))
+                self.semantic_preview_score_labels[i].config(text=f"{float(result['semantic_score']):.4f}")
+            else:
+                self.semantic_preview_title_labels[i].config(text="")
+                self.semantic_preview_channel_labels[i].config(text="")
+                self.semantic_preview_score_labels[i].config(text="")
+
+        self.semantic_preview_status_var.set(f"Semantic preview: {len(results)} result(s)")
+
+    def _on_semantic_preview_error(self, request_id: int, error_message: str) -> None:
+        if request_id != self.semantic_preview_request_id:
+            return
+        self.semantic_preview_status_var.set(f"Semantic preview error: {error_message}")
 
     def _clear_results(self) -> None:
         self.latest_results = []
@@ -602,7 +776,7 @@ class ImprovePickQAGUI:
         if not video_id:
             return
 
-        webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
+        webbrowser.open(f"https://www.youtube.com/embed/{video_id}?autoplay=1&rel=0")
 
     def _on_rating_change(self, index_num: int) -> None:
         self._apply_rating_color(index_num)
@@ -675,7 +849,7 @@ class ImprovePickQAGUI:
         video_id = clean_text(self.precomputed_results[index_num].get("video_id"))
         if not video_id:
             return
-        webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
+        webbrowser.open(f"https://www.youtube.com/embed/{video_id}?autoplay=1&rel=0")
 
     def _on_precomputed_rating_change(self, index_num: int) -> None:
         self._apply_precomputed_rating_color(index_num)

@@ -491,6 +491,27 @@ class ImprovePickQAGUI:
             return ""
         return label.split(" | ", 1)[0].strip()
 
+    def _get_saved_candidate_text(self, small_step_id: str) -> str:
+        if not small_step_id or not APPROVED_CANDIDATES_PATH.exists():
+            return ""
+
+        try:
+            approved_df = pd.read_csv(APPROVED_CANDIDATES_PATH)
+        except Exception:
+            return ""
+
+        required_cols = {"small_step_id", "candidate_ss_wr_desc"}
+        if not required_cols.issubset(approved_df.columns):
+            return ""
+
+        approved_df["small_step_id"] = approved_df["small_step_id"].map(clean_text)
+        approved_df["candidate_ss_wr_desc"] = approved_df["candidate_ss_wr_desc"].map(clean_text)
+        step_rows = approved_df[approved_df["small_step_id"] == small_step_id]
+        if step_rows.empty:
+            return ""
+
+        return clean_text(step_rows.iloc[-1].get("candidate_ss_wr_desc"))
+
     def _on_step_selected(self, _event) -> None:
         small_step_id = self._selected_small_step_id()
         row = self.curriculum_by_id.get(small_step_id)
@@ -498,8 +519,9 @@ class ImprovePickQAGUI:
             return
 
         baseline = clean_text(row.get("ss_wr_desc"))
+        candidate_default = self._get_saved_candidate_text(small_step_id) or baseline
         self._set_text(self.baseline_text, baseline)
-        self._set_text(self.candidate_text, baseline)
+        self._set_text(self.candidate_text, candidate_default)
         self._clear_results()
         self._clear_semantic_preview()
         self._populate_precomputed(small_step_id)
@@ -676,6 +698,40 @@ class ImprovePickQAGUI:
                 self.rating_vars[i].set("5")
                 self._apply_rating_color(i)
 
+    def _render_candidate_search_results(self, results: list[dict[str, object]]) -> None:
+        self._clear_candidate_result_widgets(reset_ratings=True)
+
+        for i in range(TOP_K):
+            if i >= len(results):
+                continue
+
+            result = results[i]
+            video_id = clean_text(result.get("video_id"))
+            title = clean_text(result.get("title"))
+            channel = clean_text(result.get("channel"))
+
+            score_text = ""
+            try:
+                score_text = f"{float(result.get('combined_score', 0.0)):.4f}"
+            except (TypeError, ValueError):
+                score_text = ""
+
+            title_text = ""
+            if title and video_id:
+                title_text = f"{title} ({video_id})"
+            elif title:
+                title_text = title
+            elif video_id:
+                title_text = f"({video_id})"
+
+            self.result_title_labels[i].config(text=title_text)
+            self.result_channel_labels[i].config(text=channel)
+            self.result_score_labels[i].config(text=score_text)
+            self.result_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.candidate_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.rating_vars[i].set("5")
+            self._apply_rating_color(i)
+
     def _run_search(self) -> None:
         small_step_id = self._selected_small_step_id()
         if not small_step_id:
@@ -760,18 +816,14 @@ class ImprovePickQAGUI:
         self.latest_results = results
         self.latest_query_text = query_text
 
-        # Keep candidate panel blank until Save Approved Candidate + Update QA CSV.
-        self._clear_candidate_result_widgets(reset_ratings=True)
-        self._set_candidate_panel_state("Candidate panel: search complete, click Save Approved Candidate then Update QA CSV")
+        self._render_candidate_search_results(results)
+        self._set_candidate_panel_state("Candidate panel: showing current Search Top 3 results (not yet persisted)")
 
         self.search_btn.config(state=tk.NORMAL)
         self.save_btn.config(state=tk.NORMAL if results else tk.DISABLED)
 
         if results:
-            self.status_var.set(
-                f"Search complete. Found {len(results)} recommendation(s). "
-                "Click Save Approved Candidate, then Update QA CSV to display persisted candidate picks."
-            )
+            self.status_var.set(f"Search complete. Found {len(results)} recommendation(s).")
         else:
             self.status_var.set("Search complete. No recommendations found.")
 

@@ -776,7 +776,7 @@ class ImprovePickQAGUI:
         if not video_id:
             return
 
-        webbrowser.open(f"https://www.youtube.com/embed/{video_id}?autoplay=1&rel=0")
+        webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
 
     def _on_rating_change(self, index_num: int) -> None:
         self._apply_rating_color(index_num)
@@ -849,7 +849,7 @@ class ImprovePickQAGUI:
         video_id = clean_text(self.precomputed_results[index_num].get("video_id"))
         if not video_id:
             return
-        webbrowser.open(f"https://www.youtube.com/embed/{video_id}?autoplay=1&rel=0")
+        webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
 
     def _on_precomputed_rating_change(self, index_num: int) -> None:
         self._apply_precomputed_rating_color(index_num)

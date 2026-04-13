@@ -146,6 +146,7 @@ class ImprovePickQAGUI:
         self.status_var = tk.StringVar(value="Loading data...")
         self.step_var = tk.StringVar(value="")
         self.scenario_var = tk.StringVar(value="gui_mvp_approved")
+        self.awaiting_download_faiss_var = tk.BooleanVar(value=False)
         self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until Save Approved Candidate + Update QA CSV")
 
         self.curriculum_df = pd.DataFrame()
@@ -281,8 +282,15 @@ class ImprovePickQAGUI:
         self.update_qa_btn = ttk.Button(control_frame, text="Update QA CSV", command=self._update_qa_csv)
         self.update_qa_btn.grid(row=0, column=2, padx=(0, 8))
 
+        self.awaiting_download_check = ttk.Checkbutton(
+            control_frame,
+            text="Set 'Awaiting download/faiss rebuild' on Update QA CSV",
+            variable=self.awaiting_download_faiss_var,
+        )
+        self.awaiting_download_check.grid(row=0, column=3, padx=(0, 8), sticky="w")
+
         self.status_label = ttk.Label(control_frame, textvariable=self.status_var, foreground="blue")
-        self.status_label.grid(row=0, column=3, sticky="w")
+        self.status_label.grid(row=0, column=4, sticky="w")
 
         rating_options = [str(i) for i in range(1, 11)]
         results_row_frame = ttk.Frame(outer)
@@ -525,9 +533,10 @@ class ImprovePickQAGUI:
         self._clear_results()
         self._clear_semantic_preview()
         self._populate_precomputed(small_step_id)
-        if small_step_id in self.candidate_display_unlocked_steps:
-            self._populate_candidate_from_qa(small_step_id)
+        if self._populate_candidate_from_qa(small_step_id):
+            self.candidate_display_unlocked_steps.add(small_step_id)
         else:
+            self.candidate_display_unlocked_steps.discard(small_step_id)
             self._set_candidate_panel_state("Candidate panel: locked until Save Approved Candidate + Update QA CSV")
         self.status_var.set("Ready")
         self._schedule_semantic_preview()
@@ -827,15 +836,16 @@ class ImprovePickQAGUI:
         else:
             self.status_var.set("Search complete. No recommendations found.")
 
-    def _populate_candidate_from_qa(self, small_step_id: str) -> None:
+    def _populate_candidate_from_qa(self, small_step_id: str) -> bool:
         self._clear_candidate_result_widgets(reset_ratings=True)
         qa_df = self._load_qa_df()
         step_rows = qa_df[(qa_df["small_step_id"] == small_step_id) & (qa_df["source"] == "candidate")]
         if step_rows.empty:
             self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
-            return
+            return False
 
         displayed_results: list[dict[str, object]] = []
+        has_persisted_picks = False
         for i in range(TOP_K):
             rank = i + 1
             rank_rows = step_rows[step_rows["rank"] == rank]
@@ -871,6 +881,9 @@ class ImprovePickQAGUI:
             self.rating_vars[i].set(str(self._safe_parse_rating(qa_row.get("rating"), default=5)))
             self._apply_rating_color(i)
 
+            if video_id or title:
+                has_persisted_picks = True
+
             displayed_results.append(
                 {
                     "video_id": video_id,
@@ -880,9 +893,17 @@ class ImprovePickQAGUI:
                 }
             )
 
+        if not has_persisted_picks:
+            self._clear_candidate_result_widgets(reset_ratings=True)
+            self.latest_results = []
+            self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
+            self.save_btn.config(state=tk.DISABLED)
+            return False
+
         self.latest_results = displayed_results
         self._set_candidate_panel_state("Candidate panel: showing persisted candidate picks from qa.csv")
         self.save_btn.config(state=tk.DISABLED)
+        return True
 
     def _on_search_error(self, error_message: str) -> None:
         self.search_btn.config(state=tk.NORMAL)
@@ -1010,6 +1031,7 @@ class ImprovePickQAGUI:
             "combined_score",
             "rating",
             "candidate_ss_wr_desc",
+            "awaiting download and faiss update",
         ]
 
         if QA_TRACKING_PATH.exists():
@@ -1054,6 +1076,7 @@ class ImprovePickQAGUI:
                             "combined_score": "",
                             "rating": 5,
                             "candidate_ss_wr_desc": "",
+                            "awaiting download and faiss update": "",
                         }
                     )
 
@@ -1100,6 +1123,7 @@ class ImprovePickQAGUI:
         candidate_text: str,
         candidate_ratings: list[int],
         precomputed_ratings: list[int],
+        awaiting_download_faiss_text: str,
     ) -> list[dict[str, object]]:
         now = datetime.now().isoformat(timespec="seconds")
         rows: list[dict[str, object]] = []
@@ -1121,6 +1145,7 @@ class ImprovePickQAGUI:
                         "combined_score": result.get("combined_score", ""),
                         "rating": ratings[idx] if idx < len(ratings) else 5,
                         "candidate_ss_wr_desc": candidate_text if source == "candidate" else "",
+                        "awaiting download and faiss update": awaiting_download_faiss_text,
                     }
                 )
 
@@ -1151,6 +1176,7 @@ class ImprovePickQAGUI:
             return
 
         candidate_text = self.candidate_text.get("1.0", tk.END).strip()
+        awaiting_download_faiss_text = "Awaiting download/faiss rebuild" if self.awaiting_download_faiss_var.get() else ""
 
         candidate_ratings = [self._safe_parse_rating(var.get(), default=5) for var in self.rating_vars]
         precomputed_ratings = [self._safe_parse_rating(var.get(), default=5) for var in self.precomputed_rating_vars]
@@ -1160,6 +1186,7 @@ class ImprovePickQAGUI:
             candidate_text=candidate_text,
             candidate_ratings=candidate_ratings,
             precomputed_ratings=precomputed_ratings,
+            awaiting_download_faiss_text=awaiting_download_faiss_text,
         )
 
         try:
@@ -1168,9 +1195,8 @@ class ImprovePickQAGUI:
             messagebox.showerror("QA Save Error", str(exc))
             return
 
-        if small_step_id in self.saved_candidate_steps:
+        if self._populate_candidate_from_qa(small_step_id):
             self.candidate_display_unlocked_steps.add(small_step_id)
-            self._populate_candidate_from_qa(small_step_id)
             self.status_var.set("Updated qa/qa.csv and loaded persisted candidate picks.")
         else:
             self.candidate_display_unlocked_steps.discard(small_step_id)

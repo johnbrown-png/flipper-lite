@@ -41,7 +41,7 @@ QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
 TOP_K = 3
 SEMANTIC_PREVIEW_K = 5
-SEMANTIC_PREVIEW_CHUNKS = 30
+SEMANTIC_PREVIEW_CHUNKS = 40
 SEMANTIC_PREVIEW_DEBOUNCE_MS = 550
 
 

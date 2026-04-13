@@ -146,6 +146,7 @@ class ImprovePickQAGUI:
         self.status_var = tk.StringVar(value="Loading data...")
         self.step_var = tk.StringVar(value="")
         self.scenario_var = tk.StringVar(value="gui_mvp_approved")
+        self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until Save Approved Candidate + Update QA CSV")
 
         self.curriculum_df = pd.DataFrame()
         self.curriculum_by_id: dict[str, dict[str, object]] = {}
@@ -187,6 +188,8 @@ class ImprovePickQAGUI:
         self.semantic_preview_title_labels: list[ttk.Label] = []
         self.semantic_preview_channel_labels: list[ttk.Label] = []
         self.semantic_preview_score_labels: list[ttk.Label] = []
+        self.saved_candidate_steps: set[str] = set()
+        self.candidate_display_unlocked_steps: set[str] = set()
 
         self._build_ui()
         # Defer heavy loading until after mainloop starts so the window appears immediately.
@@ -295,42 +298,48 @@ class ImprovePickQAGUI:
         candidate_results_frame.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
         candidate_results_frame.columnconfigure(1, weight=1)
 
+        ttk.Label(
+            candidate_results_frame,
+            textvariable=self.candidate_panel_state_var,
+            foreground="#555555",
+        ).grid(row=0, column=0, columnspan=7, sticky="w", padx=4, pady=(0, 6))
+
         headers = ["Rank", "Title", "Channel", "Score", "Open", "Delete", "Rating"]
         for col, header in enumerate(headers):
             ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 6))
-            ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 6))
+            ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 6))
 
         for i in range(TOP_K):
             row_num = i + 1
             ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=4)
-            ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=4)
+            ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=4)
 
             p_title = ttk.Label(precomp_frame, text="", width=44)
             p_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=4)
             self.precomputed_title_labels.append(p_title)
             c_title = ttk.Label(candidate_results_frame, text="", width=44)
-            c_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=4)
+            c_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=4)
             self.result_title_labels.append(c_title)
 
             p_channel = ttk.Label(precomp_frame, text="", width=20)
             p_channel.grid(row=row_num, column=2, sticky="w", padx=4, pady=4)
             self.precomputed_channel_labels.append(p_channel)
             c_channel = ttk.Label(candidate_results_frame, text="", width=20)
-            c_channel.grid(row=row_num, column=2, sticky="w", padx=4, pady=4)
+            c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=4)
             self.result_channel_labels.append(c_channel)
 
             p_score = ttk.Label(precomp_frame, text="", width=10)
             p_score.grid(row=row_num, column=3, sticky="w", padx=4, pady=4)
             self.precomputed_score_labels.append(p_score)
             c_score = ttk.Label(candidate_results_frame, text="", width=10)
-            c_score.grid(row=row_num, column=3, sticky="w", padx=4, pady=4)
+            c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=4)
             self.result_score_labels.append(c_score)
 
             p_open = ttk.Button(precomp_frame, text="Open", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
             p_open.grid(row=row_num, column=4, sticky="w", padx=4, pady=4)
             self.precomputed_open_buttons.append(p_open)
             c_open = ttk.Button(candidate_results_frame, text="Open", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
-            c_open.grid(row=row_num, column=4, sticky="w", padx=4, pady=4)
+            c_open.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=4)
             self.result_open_buttons.append(c_open)
 
             p_delete = ttk.Button(
@@ -348,7 +357,7 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._append_result_to_videos_to_delete("candidate", idx),
                 state=tk.DISABLED,
             )
-            c_delete.grid(row=row_num, column=5, sticky="w", padx=4, pady=4)
+            c_delete.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=4)
             self.candidate_delete_buttons.append(c_delete)
 
             p_rating_var = tk.StringVar(value="5")
@@ -363,10 +372,13 @@ class ImprovePickQAGUI:
             self.rating_vars.append(c_rating_var)
             # tk.OptionMenu allows per-widget background color updates.
             c_menu = tk.OptionMenu(candidate_results_frame, c_rating_var, *rating_options, command=lambda _v, idx=i: self._on_rating_change(idx))
-            c_menu.grid(row=row_num, column=6, sticky="w", padx=4, pady=4)
+            c_menu.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=4)
             c_menu.config(width=4)
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
+
+    def _set_candidate_panel_state(self, text: str) -> None:
+        self.candidate_panel_state_var.set(text)
 
     def _load_initial_data(self) -> None:
         """Entry point called after mainloop starts. Curriculum loads on main thread (fast);
@@ -491,6 +503,10 @@ class ImprovePickQAGUI:
         self._clear_results()
         self._clear_semantic_preview()
         self._populate_precomputed(small_step_id)
+        if small_step_id in self.candidate_display_unlocked_steps:
+            self._populate_candidate_from_qa(small_step_id)
+        else:
+            self._set_candidate_panel_state("Candidate panel: locked until Save Approved Candidate + Update QA CSV")
         self.status_var.set("Ready")
         self._schedule_semantic_preview()
 
@@ -515,6 +531,13 @@ class ImprovePickQAGUI:
         if not self.candidate_text.edit_modified():
             return
         self.candidate_text.edit_modified(False)
+        step_id = self._selected_small_step_id()
+        if step_id:
+            # Edited candidate text invalidates any previously unlocked persisted candidate view.
+            self.saved_candidate_steps.discard(step_id)
+            self.candidate_display_unlocked_steps.discard(step_id)
+        self._clear_results()
+        self._set_candidate_panel_state("Candidate panel: candidate edited, Save Approved Candidate + Update QA CSV required")
         self._schedule_semantic_preview()
 
     def _schedule_semantic_preview(self) -> None:
@@ -638,16 +661,20 @@ class ImprovePickQAGUI:
         self.latest_results = []
         self.latest_query_text = ""
 
+        self._clear_candidate_result_widgets(reset_ratings=True)
+        self._set_candidate_panel_state("Candidate panel: locked until Save Approved Candidate + Update QA CSV")
+        self.save_btn.config(state=tk.DISABLED)
+
+    def _clear_candidate_result_widgets(self, reset_ratings: bool) -> None:
         for i in range(TOP_K):
             self.result_title_labels[i].config(text="")
             self.result_channel_labels[i].config(text="")
             self.result_score_labels[i].config(text="")
             self.result_open_buttons[i].config(state=tk.DISABLED)
             self.candidate_delete_buttons[i].config(state=tk.DISABLED)
-            self.rating_vars[i].set("5")
-            self._apply_rating_color(i)
-
-        self.save_btn.config(state=tk.DISABLED)
+            if reset_ratings:
+                self.rating_vars[i].set("5")
+                self._apply_rating_color(i)
 
     def _run_search(self) -> None:
         small_step_id = self._selected_small_step_id()
@@ -668,6 +695,12 @@ class ImprovePickQAGUI:
         if not candidate:
             messagebox.showwarning("Missing candidate", "Enter candidate wording before searching.")
             return
+
+        # Any new search requires Save + Update before candidate panel is shown again.
+        self.saved_candidate_steps.discard(small_step_id)
+        self.candidate_display_unlocked_steps.discard(small_step_id)
+        self._clear_candidate_result_widgets(reset_ratings=True)
+        self._set_candidate_panel_state("Candidate panel: search is transient until Save Approved Candidate + Update QA CSV")
 
         self.search_btn.config(state=tk.DISABLED)
         self.save_btn.config(state=tk.DISABLED)
@@ -727,40 +760,77 @@ class ImprovePickQAGUI:
         self.latest_results = results
         self.latest_query_text = query_text
 
-        for i in range(TOP_K):
-            if i < len(results):
-                result = results[i]
-                title_text = f"{result['title']} ({result['video_id']})"
-                self.result_title_labels[i].config(text=title_text)
-                self.result_channel_labels[i].config(text=result.get("channel", ""))
-                self.result_score_labels[i].config(text=f"{result['combined_score']:.4f}")
-                self.result_open_buttons[i].config(state=tk.NORMAL)
-                self.candidate_delete_buttons[i].config(state=tk.NORMAL if clean_text(result.get("video_id")) else tk.DISABLED)
-            else:
-                self.result_title_labels[i].config(text="")
-                self.result_channel_labels[i].config(text="")
-                self.result_score_labels[i].config(text="")
-                self.result_open_buttons[i].config(state=tk.DISABLED)
-                self.candidate_delete_buttons[i].config(state=tk.DISABLED)
-
-            self.rating_vars[i].set("5")
-            self._apply_rating_color(i)
-
-        self._restore_saved_ratings(
-            small_step_id=self._selected_small_step_id(),
-            source="candidate",
-            results=self.latest_results,
-            rating_vars=self.rating_vars,
-            apply_color_fn=self._apply_rating_color,
-        )
+        # Keep candidate panel blank until Save Approved Candidate + Update QA CSV.
+        self._clear_candidate_result_widgets(reset_ratings=True)
+        self._set_candidate_panel_state("Candidate panel: search complete, click Save Approved Candidate then Update QA CSV")
 
         self.search_btn.config(state=tk.NORMAL)
         self.save_btn.config(state=tk.NORMAL if results else tk.DISABLED)
 
         if results:
-            self.status_var.set(f"Search complete. Found {len(results)} recommendation(s).")
+            self.status_var.set(
+                f"Search complete. Found {len(results)} recommendation(s). "
+                "Click Save Approved Candidate, then Update QA CSV to display persisted candidate picks."
+            )
         else:
             self.status_var.set("Search complete. No recommendations found.")
+
+    def _populate_candidate_from_qa(self, small_step_id: str) -> None:
+        self._clear_candidate_result_widgets(reset_ratings=True)
+        qa_df = self._load_qa_df()
+        step_rows = qa_df[(qa_df["small_step_id"] == small_step_id) & (qa_df["source"] == "candidate")]
+        if step_rows.empty:
+            self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
+            return
+
+        displayed_results: list[dict[str, object]] = []
+        for i in range(TOP_K):
+            rank = i + 1
+            rank_rows = step_rows[step_rows["rank"] == rank]
+            if rank_rows.empty:
+                displayed_results.append({})
+                continue
+
+            qa_row = rank_rows.iloc[-1]
+            video_id = clean_text(qa_row.get("video_id"))
+            title = clean_text(qa_row.get("video_title"))
+            channel = clean_text(qa_row.get("channel"))
+
+            score_text = ""
+            try:
+                score_value = float(qa_row.get("combined_score"))
+                score_text = f"{score_value:.4f}"
+            except (TypeError, ValueError):
+                score_value = ""
+
+            title_text = ""
+            if title and video_id:
+                title_text = f"{title} ({video_id})"
+            elif title:
+                title_text = title
+            elif video_id:
+                title_text = f"({video_id})"
+
+            self.result_title_labels[i].config(text=title_text)
+            self.result_channel_labels[i].config(text=channel)
+            self.result_score_labels[i].config(text=score_text)
+            self.result_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.candidate_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.rating_vars[i].set(str(self._safe_parse_rating(qa_row.get("rating"), default=5)))
+            self._apply_rating_color(i)
+
+            displayed_results.append(
+                {
+                    "video_id": video_id,
+                    "title": title,
+                    "channel": channel,
+                    "combined_score": score_value,
+                }
+            )
+
+        self.latest_results = displayed_results
+        self._set_candidate_panel_state("Candidate panel: showing persisted candidate picks from qa.csv")
+        self.save_btn.config(state=tk.DISABLED)
 
     def _on_search_error(self, error_message: str) -> None:
         self.search_btn.config(state=tk.NORMAL)
@@ -1046,7 +1116,16 @@ class ImprovePickQAGUI:
             messagebox.showerror("QA Save Error", str(exc))
             return
 
-        self.status_var.set("Updated qa/qa.csv for selected small step.")
+        if small_step_id in self.saved_candidate_steps:
+            self.candidate_display_unlocked_steps.add(small_step_id)
+            self._populate_candidate_from_qa(small_step_id)
+            self.status_var.set("Updated qa/qa.csv and loaded persisted candidate picks.")
+        else:
+            self.candidate_display_unlocked_steps.discard(small_step_id)
+            self._clear_candidate_result_widgets(reset_ratings=False)
+            self._set_candidate_panel_state("Candidate panel: Update QA CSV ran, but Save Approved Candidate has not been done yet")
+            self.status_var.set("Updated qa/qa.csv. Candidate panel remains blank until Save Approved Candidate, then Update QA CSV.")
+
         messagebox.showinfo("QA Updated", f"Saved QA rows to:\n{QA_TRACKING_PATH}")
 
     def _append_result_to_videos_to_delete(self, source: str, index_num: int) -> None:
@@ -1107,16 +1186,12 @@ class ImprovePickQAGUI:
             except ValueError:
                 ratings.append(5)
 
-        precomputed_ratings: list[int] = []
-        for i in range(TOP_K):
-            try:
-                precomputed_ratings.append(int(self.precomputed_rating_vars[i].get().strip()))
-            except ValueError:
-                precomputed_ratings.append(5)
-
         try:
-            self._save_approved_candidates_log(row=row, candidate=candidate, ratings=ratings, precomputed_ratings=precomputed_ratings)
+            self._save_approved_candidate_mapping(row=row, candidate=candidate)
             self._upsert_targeted_override(row=row, candidate=candidate, scenario_label=scenario_label, ratings=ratings)
+            self.saved_candidate_steps.add(small_step_id)
+            self.candidate_display_unlocked_steps.discard(small_step_id)
+            self._set_candidate_panel_state("Candidate panel: candidate saved, click Update QA CSV to show persisted picks")
             self.status_var.set("Saved approved candidate and override row.")
             messagebox.showinfo(
                 "Saved",
@@ -1125,67 +1200,32 @@ class ImprovePickQAGUI:
         except Exception as exc:
             messagebox.showerror("Save Error", str(exc))
 
-    def _save_approved_candidates_log(self, row: dict[str, object], candidate: str, ratings: list[int], precomputed_ratings: list[int] | None = None) -> None:
+    def _save_approved_candidate_mapping(self, row: dict[str, object], candidate: str) -> None:
         APPROVED_CANDIDATES_PATH.parent.mkdir(parents=True, exist_ok=True)
 
         now = datetime.now().isoformat(timespec="seconds")
 
-        result_rows: dict[int, dict[str, str]] = {}
-        top3_video_ids = []
-        for idx in range(TOP_K):
-            result = self.latest_results[idx] if idx < len(self.latest_results) else {}
-            video_id = clean_text(result.get("video_id"))
-            title = clean_text(result.get("title"))
-            channel = clean_text(result.get("channel"))
-            top3_video_ids.append(video_id)
-            result_rows[idx + 1] = {
-                "video_id": video_id,
-                "title": title,
-                "channel": channel,
-            }
-
+        base_columns = ["updated_at", "small_step_id", "candidate_ss_wr_desc"]
         record = {
-            "approved_at": now,
+            "updated_at": now,
             "small_step_id": clean_text(row.get("small_step_id")),
-            "topic": clean_text(row.get("topic")),
-            "small_step_name": clean_text(row.get("small_step_name")),
-            "baseline_ss_wr_desc": clean_text(row.get("ss_wr_desc")),
             "candidate_ss_wr_desc": candidate,
-            "query_text_used": self.latest_query_text,
-            "candidate_top3_video_ids": " | ".join([v for v in top3_video_ids if v]),
-            "rank1_video_id": result_rows[1]["video_id"],
-            "rank1_video_title": result_rows[1]["title"],
-            "rank1_video_channel": result_rows[1]["channel"],
-            "rank1_rating": ratings[0] if len(ratings) > 0 else "",
-            "rank2_video_id": result_rows[2]["video_id"],
-            "rank2_video_title": result_rows[2]["title"],
-            "rank2_video_channel": result_rows[2]["channel"],
-            "rank2_rating": ratings[1] if len(ratings) > 1 else "",
-            "rank3_video_id": result_rows[3]["video_id"],
-            "rank3_video_title": result_rows[3]["title"],
-            "rank3_video_channel": result_rows[3]["channel"],
-            "rank3_rating": ratings[2] if len(ratings) > 2 else "",
-                "precomp_rank1_video_id": clean_text(self.precomputed_results[0]["video_id"]) if len(self.precomputed_results) > 0 else "",
-                "precomp_rank1_title": clean_text(self.precomputed_results[0]["title"]) if len(self.precomputed_results) > 0 else "",
-                "precomp_rank1_channel": clean_text(self.precomputed_results[0]["channel"]) if len(self.precomputed_results) > 0 else "",
-                "precomp_rank1_rating": precomputed_ratings[0] if precomputed_ratings and len(precomputed_ratings) > 0 else "",
-                "precomp_rank2_video_id": clean_text(self.precomputed_results[1]["video_id"]) if len(self.precomputed_results) > 1 else "",
-                "precomp_rank2_title": clean_text(self.precomputed_results[1]["title"]) if len(self.precomputed_results) > 1 else "",
-                "precomp_rank2_channel": clean_text(self.precomputed_results[1]["channel"]) if len(self.precomputed_results) > 1 else "",
-                "precomp_rank2_rating": precomputed_ratings[1] if precomputed_ratings and len(precomputed_ratings) > 1 else "",
-                "precomp_rank3_video_id": clean_text(self.precomputed_results[2]["video_id"]) if len(self.precomputed_results) > 2 else "",
-                "precomp_rank3_title": clean_text(self.precomputed_results[2]["title"]) if len(self.precomputed_results) > 2 else "",
-                "precomp_rank3_channel": clean_text(self.precomputed_results[2]["channel"]) if len(self.precomputed_results) > 2 else "",
-                "precomp_rank3_rating": precomputed_ratings[2] if precomputed_ratings and len(precomputed_ratings) > 2 else "",
         }
 
         if APPROVED_CANDIDATES_PATH.exists():
-            existing_df = pd.read_csv(APPROVED_CANDIDATES_PATH)
-            updated_df = pd.concat([existing_df, pd.DataFrame([record])], ignore_index=True)
+            approved_df = pd.read_csv(APPROVED_CANDIDATES_PATH)
         else:
-            updated_df = pd.DataFrame([record])
+            approved_df = pd.DataFrame(columns=base_columns)
 
-        updated_df.to_csv(APPROVED_CANDIDATES_PATH, index=False)
+        for col in base_columns:
+            if col not in approved_df.columns:
+                approved_df[col] = ""
+
+        approved_df["small_step_id"] = approved_df["small_step_id"].map(clean_text)
+        merged = pd.concat([approved_df[base_columns], pd.DataFrame([record], columns=base_columns)], ignore_index=True)
+        merged = merged.drop_duplicates(subset=["small_step_id"], keep="last")
+        merged = merged.sort_values(["small_step_id"], kind="stable")
+        merged.to_csv(APPROVED_CANDIDATES_PATH, index=False)
 
     def _upsert_targeted_override(
         self,

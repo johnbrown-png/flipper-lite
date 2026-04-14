@@ -133,3 +133,74 @@ Rewritten strings will be stored in a new column `SS{i}_desc_retrieval` in the c
 | LLM classification pass | Not started |
 | LLM rewriting of flagged strings | Not started |
 | QC with comparator harness | Not started |
+
+---
+
+## Session Continuation Note — Stricter LLM Appositeness Prompt (April 13, 2026)
+
+### Goal of this change
+
+For LLM-based appraisal/reranking, scoring should give materially higher reward to transcripts that explicitly teach the exact `ss_wr_desc` objective and strongly penalize near-miss or adjacent-topic transcripts.
+
+### Proposed strict evaluation design (GPT-4o)
+
+Use `ss_wr_desc` as the authoritative target and enforce:
+
+- Dominant weight on objective match
+- Evidence-based scoring from transcript quotes
+- Hard caps when key objective is missing, only mentioned briefly, or replaced by adjacent-topic teaching
+
+Recommended weighted components:
+
+- `objective_match_score` (0-5), weight `0.55`
+- `instructional_evidence_score` (0-5), weight `0.20`
+- `depth_coverage_score` (0-5), weight `0.15`
+- `age_stage_appropriateness_score` (0-5), weight `0.10`
+
+Computation:
+
+- `weighted_5pt = 0.55*objective_match + 0.20*instructional_evidence + 0.15*depth_coverage + 0.10*age_stage_appropriateness`
+- `base_score_100 = round(weighted_5pt * 20)`
+- Apply hard caps/penalties after base score.
+
+Hard-penalty rules:
+
+- If key objective is absent: `objective_match_score` must be `0` or `1`.
+- If objective is only briefly mentioned without explanation: cap final score at `45`.
+- If transcript is mostly adjacent-topic rather than target small-step: cap final score at `35`.
+- If transcript teaches an incompatible/contradictory method: final score must be `<= 20`.
+
+### Suggested prompt frame (ready to embed)
+
+Role:
+
+- "You are an educational relevance judge. Evaluate transcript appositeness to the target small-step objective in `ss_wr_desc`."
+
+Core instruction:
+
+- "Reward direct instructional alignment to the exact objective. Penalize generic overlap, adjacent-topic similarity, and missing key learning action."
+
+Output:
+
+- JSON-only output with:
+	- `final_score`
+	- component scores
+	- `objective_presence` (`explicit|partial|absent`)
+	- `evidence_quotes`
+	- `objective_gap_reason`
+	- `penalties_applied`
+	- `confidence`
+
+Decision bias rule:
+
+- "Be strict. If uncertain between true objective alignment and adjacent similarity, choose the lower score."
+
+### Why this is expected to help
+
+- Prevents generous scoring for semantically related but instructionally wrong videos.
+- Makes explicit objective teaching the primary signal.
+- Produces audit-ready outputs (quotes + penalty tags) for later QA analysis.
+
+### Next practical implementation step
+
+Add this strict prompt as an optional scoring mode (for example, `strict_appositeness_v1`) in the Improve_pick QA flow so baseline vs strict scoring can be compared on the same test rows before promoting to default.

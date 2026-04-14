@@ -204,3 +204,94 @@ Decision bias rule:
 ### Next practical implementation step
 
 Add this strict prompt as an optional scoring mode (for example, `strict_appositeness_v1`) in the Improve_pick QA flow so baseline vs strict scoring can be compared on the same test rows before promoting to default.
+
+---
+
+## Session Summary — Pipeline Restructure Discussion (April 14, 2026)
+
+### User objective
+
+Improve recommendation appositeness to intended curriculum objectives in `ss_wr_desc`, especially when objective details are specific (for example number ranges such as "up to 10").
+
+### Current pipeline (as discussed)
+
+1. Stage 1 semantic shortlist via FAISS chunk matching from curriculum objective text.
+2. Stage 2 LLM scoring using `data_pipeline/instruction_quality_scorer.py` where alignment and pedagogy are currently mixed in one score.
+3. Final blend currently weighted toward semantic plus instruction quality (commonly referenced as 60/40).
+
+### Main problem identified
+
+The current LLM instruction score already includes some alignment judgement, but alignment is not isolated as a first-class score. This allows some near-miss videos to survive if they are pedagogically decent, and makes objective-specific misses harder to control.
+
+### Recommended architecture from this session
+
+Adopt a **hybrid staged rerank**:
+
+1. Stage 1: FAISS retrieval for broad recall.
+2. Stage 1.5: Optional deterministic objective constraints gate (for explicit must-have/must-not-have conditions).
+3. Stage 2: Dedicated LLM curriculum-alignment score (strict objective match).
+4. Stage 3: Dedicated LLM instruction-quality score (pedagogy only, with alignment removed from rubric).
+5. Final score: weighted blend where alignment is the dominant component, and alignment threshold/gating prevents misaligned videos from being rescued by pedagogy score.
+
+Suggested starter blend discussed:
+
+- `semantic = 0.25`
+- `alignment = 0.55`
+- `instruction = 0.20`
+
+Suggested alignment floor for pass-through (tune in QA):
+
+- `alignment >= 0.55` (start point)
+
+### Cost-control guidance (important)
+
+Avoid full dual-LLM scoring on all 40 FAISS candidates. Use progressive narrowing:
+
+1. FAISS aggregate shortlist: ~20 videos.
+2. After constraint gate: ~10 videos.
+3. Alignment LLM: evaluate ~10.
+4. Instruction LLM: evaluate only top ~5 alignment-pass videos.
+
+This keeps call volume manageable while still improving objective specificity.
+
+### Alternative considered: manual critical-parameter rules only
+
+Discussed example: rules such as "exclude videos using numbers greater than 10".
+
+Conclusion:
+
+1. Rule-only method is low-cost and strong for hard boundaries.
+2. Rule-only method is brittle and cannot fully replace semantic/LLM judgement.
+3. Best cost-benefit is hybrid: deterministic rules for hard filters + LLM alignment for nuanced objective fit.
+
+### QA GUI feasibility and plan
+
+Feasible to extend `Improve_pick/gui_precompute_recommendation_qa.py` with an experimentation tab/panel containing:
+
+1. Weight controls for semantic/alignment/instruction.
+2. Shortlist size controls per stage.
+3. Alignment threshold control.
+4. Constraint toggle + simple parameter editor.
+5. Per-video stage breakdown table (semantic, alignment, instruction, final, pass/fail reason, rank delta).
+6. Cost estimator (expected LLM calls per small step under current settings).
+
+### Prompt design split agreed
+
+1. Alignment prompt should judge objective match strictly and report evidence/violations.
+2. Instruction prompt should score pedagogical quality only (clarity, examples, sequencing, age appropriateness, engagement), without curriculum-alignment criterion.
+
+### Practical phased rollout
+
+1. Phase 1 (MVP): add constraint gate + dedicated alignment stage + revised blend.
+2. Phase 2: split instruction stage and run only on alignment-pass finalists.
+3. Phase 3: calibrate thresholds/weights by topic family using audit results.
+
+### Note for future sessions
+
+When comparing variants, track both quality and efficiency:
+
+1. Top-k appositeness judgement (human QA).
+2. Objective-violation rate (for explicit constraints).
+3. LLM calls per small step (and cache hit rate).
+
+Do not promote a heavier configuration unless appositeness gain justifies call growth.

@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 from pathlib import Path
+import re
 import sys
 import threading
 import webbrowser
@@ -39,10 +40,13 @@ TARGET_OVERRIDES_PATH = project_root / "qa" / "targeted_ss_wr_desc_overrides.csv
 APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates.csv"
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
+CONSTRAINTS_GATE_PATH = Path(__file__).resolve().parent / "constraints_gate.csv"
 TOP_K = 3
 SEMANTIC_PREVIEW_K = 5
 SEMANTIC_PREVIEW_CHUNKS = 40
 SEMANTIC_PREVIEW_DEBOUNCE_MS = 550
+CONSTRAINTS_GATE_DEFAULT_K = 20
+CONSTRAINTS_GATE_MAX_K = 80
 
 
 def clean_text(value: object) -> str:
@@ -137,6 +141,23 @@ def text_color_for_bg(hex_color: str) -> str:
     return "black" if luminance > 150 else "white"
 
 
+def split_constraint_terms(raw_value: object) -> list[str]:
+    text = clean_text(raw_value)
+    if not text:
+        return []
+    return [part.strip().lower() for part in re.split(r"[,;]", text) if part.strip()]
+
+
+def parse_upper_bound(raw_value: object) -> int | None:
+    text = clean_text(raw_value).lower()
+    if not text:
+        return None
+    match = re.search(r"up to\s*(\d+)", text)
+    if match:
+        return int(match.group(1))
+    return None
+
+
 class ImprovePickQAGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -148,11 +169,18 @@ class ImprovePickQAGUI:
         self.scenario_var = tk.StringVar(value="gui_mvp_approved")
         self.awaiting_download_faiss_var = tk.BooleanVar(value=False)
         self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until Save Approved Candidate + Update QA CSV")
+        self.constraints_status_var = tk.StringVar(value="Constraints gate: idle")
+        self.constraints_summary_var = tk.StringVar(value="No constraint test run yet")
+        self.constraints_step_var = tk.StringVar(value="")
+        self.constraints_k_var = tk.StringVar(value=str(CONSTRAINTS_GATE_DEFAULT_K))
 
         self.curriculum_df = pd.DataFrame()
         self.curriculum_by_id: dict[str, dict[str, object]] = {}
         self.step_labels_by_id: dict[str, str] = {}
         self.sorted_step_ids: list[str] = []
+        self.constraints_df: pd.DataFrame = pd.DataFrame()
+        self.constraints_by_step_id: dict[str, dict[str, object]] = {}
+        self.constraints_labels_by_step_id: dict[str, str] = {}
 
         self.index = None
         self.metadata: list[dict[str, object]] = []
@@ -191,6 +219,12 @@ class ImprovePickQAGUI:
         self.semantic_preview_score_labels: list[ttk.Label] = []
         self.saved_candidate_steps: set[str] = set()
         self.candidate_display_unlocked_steps: set[str] = set()
+        self.constraints_results: list[dict[str, object]] = []
+        self.constraints_title_labels: list[ttk.Label] = []
+        self.constraints_gate_labels: list[ttk.Label] = []
+        self.constraints_reason_labels: list[ttk.Label] = []
+        self.constraints_open_buttons: list[ttk.Button] = []
+        self.constraints_score_labels: list[ttk.Label] = []
 
         self._build_ui()
         # Defer heavy loading until after mainloop starts so the window appears immediately.
@@ -293,16 +327,25 @@ class ImprovePickQAGUI:
         self.status_label.grid(row=0, column=4, sticky="w")
 
         rating_options = [str(i) for i in range(1, 11)]
-        results_row_frame = ttk.Frame(outer)
-        results_row_frame.grid(row=4, column=0, sticky="nsew")
-        results_row_frame.columnconfigure(0, weight=1)
-        results_row_frame.columnconfigure(1, weight=1)
-        results_row_frame.rowconfigure(0, weight=1)
 
-        precomp_frame = ttk.LabelFrame(results_row_frame, text="Precomputed Picks (Current)", padding=10)
+        results_notebook = ttk.Notebook(outer)
+        results_notebook.grid(row=4, column=0, sticky="nsew")
+
+        qa_results_tab = ttk.Frame(results_notebook, padding=8)
+        qa_results_tab.columnconfigure(0, weight=1)
+        qa_results_tab.columnconfigure(1, weight=1)
+        qa_results_tab.rowconfigure(0, weight=1)
+        results_notebook.add(qa_results_tab, text="QA Results")
+
+        constraints_tab = ttk.Frame(results_notebook, padding=8)
+        constraints_tab.columnconfigure(0, weight=1)
+        constraints_tab.rowconfigure(2, weight=1)
+        results_notebook.add(constraints_tab, text="Constraints Gate")
+
+        precomp_frame = ttk.LabelFrame(qa_results_tab, text="Precomputed Picks (Current)", padding=10)
         precomp_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
         precomp_frame.columnconfigure(1, weight=1)
-        candidate_results_frame = ttk.LabelFrame(results_row_frame, text="Candidate Search Results", padding=10)
+        candidate_results_frame = ttk.LabelFrame(qa_results_tab, text="Candidate Search Results", padding=10)
         candidate_results_frame.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
         candidate_results_frame.columnconfigure(1, weight=1)
 
@@ -385,8 +428,356 @@ class ImprovePickQAGUI:
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
 
+        constraints_controls = ttk.LabelFrame(constraints_tab, text="Stage 1.5 Constraints Gate", padding=10)
+        constraints_controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        constraints_controls.columnconfigure(1, weight=1)
+
+        ttk.Label(constraints_controls, text="Test small step (not_aligned=1):").grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self.constraints_step_combo = ttk.Combobox(
+            constraints_controls,
+            textvariable=self.constraints_step_var,
+            state="readonly",
+        )
+        self.constraints_step_combo.grid(row=0, column=1, sticky="ew")
+        self.constraints_step_combo.bind("<<ComboboxSelected>>", self._on_constraints_step_selected)
+
+        ttk.Label(constraints_controls, text="FAISS shortlist k:").grid(row=0, column=2, sticky="w", padx=(12, 6))
+        self.constraints_k_spin = tk.Spinbox(
+            constraints_controls,
+            from_=5,
+            to=CONSTRAINTS_GATE_MAX_K,
+            width=6,
+            textvariable=self.constraints_k_var,
+            increment=1,
+        )
+        self.constraints_k_spin.grid(row=0, column=3, sticky="w")
+
+        self.constraints_run_btn = ttk.Button(
+            constraints_controls,
+            text="Run Constraints Gate",
+            command=self._run_constraints_gate_test,
+            state=tk.DISABLED,
+        )
+        self.constraints_run_btn.grid(row=0, column=4, sticky="w", padx=(12, 0))
+
+        ttk.Label(constraints_controls, textvariable=self.constraints_status_var, foreground="blue").grid(
+            row=1,
+            column=0,
+            columnspan=5,
+            sticky="w",
+            pady=(8, 0),
+        )
+
+        summary_frame = ttk.LabelFrame(constraints_tab, text="Gate Summary", padding=10)
+        summary_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(summary_frame, textvariable=self.constraints_summary_var, foreground="#555555").grid(row=0, column=0, sticky="w")
+
+        constraints_results_frame = ttk.LabelFrame(constraints_tab, text="FAISS -> Gate Outcome", padding=10)
+        constraints_results_frame.grid(row=2, column=0, sticky="nsew")
+        constraints_results_frame.columnconfigure(1, weight=1)
+
+        constraints_headers = ["Rank", "Title (video_id)", "Semantic", "Gate", "Reason", "Open"]
+        for col, header in enumerate(constraints_headers):
+            ttk.Label(constraints_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(
+                row=0,
+                column=col,
+                sticky="w",
+                padx=4,
+                pady=(0, 6),
+            )
+
+        for i in range(10):
+            row_num = i + 1
+            ttk.Label(constraints_results_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=3)
+
+            title_label = ttk.Label(constraints_results_frame, text="", width=56)
+            title_label.grid(row=row_num, column=1, sticky="w", padx=4, pady=3)
+            self.constraints_title_labels.append(title_label)
+
+            semantic_label = ttk.Label(constraints_results_frame, text="", width=10)
+            semantic_label.grid(row=row_num, column=2, sticky="w", padx=4, pady=3)
+            self.constraints_score_labels.append(semantic_label)
+
+            gate_label = ttk.Label(constraints_results_frame, text="", width=8)
+            gate_label.grid(row=row_num, column=3, sticky="w", padx=4, pady=3)
+            self.constraints_gate_labels.append(gate_label)
+
+            reason_label = ttk.Label(constraints_results_frame, text="", width=58)
+            reason_label.grid(row=row_num, column=4, sticky="w", padx=4, pady=3)
+            self.constraints_reason_labels.append(reason_label)
+
+            open_btn = ttk.Button(
+                constraints_results_frame,
+                text="Open",
+                command=lambda idx=i: self._open_constraints_video(idx),
+                state=tk.DISABLED,
+            )
+            open_btn.grid(row=row_num, column=5, sticky="w", padx=4, pady=3)
+            self.constraints_open_buttons.append(open_btn)
+
     def _set_candidate_panel_state(self, text: str) -> None:
         self.candidate_panel_state_var.set(text)
+
+    def _load_constraints_gate_cases(self) -> None:
+        self.constraints_df = pd.DataFrame()
+        self.constraints_by_step_id = {}
+        self.constraints_labels_by_step_id = {}
+
+        if not CONSTRAINTS_GATE_PATH.exists():
+            self.constraints_step_combo["values"] = []
+            self.constraints_summary_var.set("No constraints_gate.csv found")
+            return
+
+        raw_df = pd.read_csv(CONSTRAINTS_GATE_PATH)
+        expected_cols = [
+            "small_step_id",
+            "not_aligned",
+            "ss_wr_desc",
+            "objective",
+            "must_include",
+            "must_not_include",
+            "numeric_bounds",
+            "reject_rule",
+        ]
+
+        renamed = raw_df.copy()
+        for idx, col in enumerate(raw_df.columns[: len(expected_cols)]):
+            renamed = renamed.rename(columns={col: expected_cols[idx]})
+
+        for col in expected_cols:
+            if col not in renamed.columns:
+                renamed[col] = ""
+
+        renamed["small_step_id"] = renamed["small_step_id"].map(clean_text)
+        renamed["not_aligned"] = pd.to_numeric(renamed["not_aligned"], errors="coerce").fillna(0).astype(int)
+        for col in ["ss_wr_desc", "objective", "must_include", "must_not_include", "numeric_bounds", "reject_rule"]:
+            renamed[col] = renamed[col].map(clean_text)
+
+        filtered = renamed[(renamed["small_step_id"].str.len() > 0) & (renamed["not_aligned"] == 1)].copy()
+        self.constraints_df = filtered
+
+        labels: list[str] = []
+        for _, row in filtered.iterrows():
+            step_id = clean_text(row.get("small_step_id"))
+            if not step_id or step_id in self.constraints_by_step_id:
+                continue
+
+            self.constraints_by_step_id[step_id] = dict(row)
+            objective = clean_text(row.get("objective"))
+            short_objective = objective[:90] + "..." if len(objective) > 93 else objective
+            label = f"{step_id} | {short_objective}" if short_objective else step_id
+            self.constraints_labels_by_step_id[step_id] = label
+            labels.append(label)
+
+        self.constraints_step_combo["values"] = labels
+        if labels:
+            self.constraints_step_var.set(labels[0])
+            self.constraints_summary_var.set(f"Loaded {len(labels)} not_aligned=1 test cases from constraints_gate.csv")
+        else:
+            self.constraints_summary_var.set("No not_aligned=1 test cases found in constraints_gate.csv")
+
+    def _constraints_selected_small_step_id(self) -> str:
+        label = self.constraints_step_var.get().strip()
+        if not label:
+            return ""
+        return label.split(" | ", 1)[0].strip()
+
+    def _sync_constraints_selection_from_main_step(self, small_step_id: str) -> None:
+        if not small_step_id:
+            return
+        label = self.constraints_labels_by_step_id.get(small_step_id)
+        if label:
+            self.constraints_step_var.set(label)
+
+    def _on_constraints_step_selected(self, _event) -> None:
+        self._clear_constraints_results()
+
+    def _clear_constraints_results(self) -> None:
+        self.constraints_results = []
+        for i in range(len(self.constraints_title_labels)):
+            self.constraints_title_labels[i].config(text="")
+            self.constraints_score_labels[i].config(text="")
+            self.constraints_gate_labels[i].config(text="")
+            self.constraints_reason_labels[i].config(text="")
+            self.constraints_open_buttons[i].config(state=tk.DISABLED)
+
+    def _evaluate_constraints_for_text(self, gate_row: dict[str, object], text: str) -> tuple[bool, str]:
+        haystack = text.lower()
+        reasons: list[str] = []
+
+        must_include_terms = split_constraint_terms(gate_row.get("must_include"))
+        if must_include_terms and not any(term in haystack for term in must_include_terms):
+            reasons.append("missing required signal")
+
+        must_not_terms = split_constraint_terms(gate_row.get("must_not_include"))
+        triggered = [term for term in must_not_terms if term in haystack]
+        if triggered:
+            reasons.append(f"blocked term: {triggered[0]}")
+
+        upper_bound = parse_upper_bound(gate_row.get("numeric_bounds") or gate_row.get("reject_rule"))
+        if upper_bound is not None:
+            numeric_hits = [int(m) for m in re.findall(r"\b\d+\b", haystack)]
+            above_bound = [value for value in numeric_hits if value > upper_bound]
+            if above_bound:
+                reasons.append(f"number above {upper_bound}")
+
+        reject_rule = clean_text(gate_row.get("reject_rule")).lower()
+        if "divisable by 10" in reject_rule or "divisible by 10" in reject_rule:
+            numeric_hits = [int(m) for m in re.findall(r"\b\d+\b", haystack)]
+            if any(value % 10 == 0 for value in numeric_hits if value > 0):
+                reasons.append("contains multiple of 10")
+
+        passed = len(reasons) == 0
+        return passed, "PASS" if passed else "; ".join(reasons)
+
+    def _run_constraints_gate_test(self) -> None:
+        step_id = self._constraints_selected_small_step_id()
+        if not step_id:
+            messagebox.showwarning("Missing test case", "Select a constraints gate test case first.")
+            return
+
+        if self.embedder is None or self.index is None:
+            messagebox.showwarning("Not ready", "Retrieval assets are still loading or failed.")
+            return
+
+        gate_row = self.constraints_by_step_id.get(step_id)
+        if gate_row is None:
+            messagebox.showwarning("Missing test case", "Selected constraints case was not found.")
+            return
+
+        curriculum_row = self.curriculum_by_id.get(step_id, {})
+        topic = clean_text(curriculum_row.get("topic"))
+        small_step_name = clean_text(curriculum_row.get("small_step_name"))
+        ss_wr_desc = clean_text(gate_row.get("ss_wr_desc")) or clean_text(curriculum_row.get("ss_wr_desc"))
+
+        try:
+            shortlist_k = int(self.constraints_k_var.get().strip())
+        except ValueError:
+            shortlist_k = CONSTRAINTS_GATE_DEFAULT_K
+            self.constraints_k_var.set(str(shortlist_k))
+
+        shortlist_k = max(5, min(CONSTRAINTS_GATE_MAX_K, shortlist_k))
+        self.constraints_k_var.set(str(shortlist_k))
+
+        self.constraints_run_btn.config(state=tk.DISABLED)
+        self.constraints_status_var.set("Constraints gate: running FAISS shortlist and hard-rule gate...")
+        self._clear_constraints_results()
+
+        worker = threading.Thread(
+            target=self._constraints_gate_worker,
+            args=(gate_row, topic, small_step_name, ss_wr_desc, shortlist_k),
+            daemon=True,
+        )
+        worker.start()
+
+    def _constraints_gate_worker(
+        self,
+        gate_row: dict[str, object],
+        topic: str,
+        small_step_name: str,
+        ss_wr_desc: str,
+        shortlist_k: int,
+    ) -> None:
+        try:
+            query_text = build_query_text(topic=topic, small_step_name=small_step_name, ss_wr_desc=ss_wr_desc)
+            embedding = self.embedder.embed_query(query_text).reshape(1, -1)
+            distances, indices = self.index.search(embedding, shortlist_k)
+
+            video_chunks: dict[str, list[dict[str, object]]] = {}
+            for dist, idx in zip(distances[0], indices[0]):
+                if idx == -1 or idx >= len(self.metadata):
+                    continue
+
+                video_meta = self.metadata[int(idx)]
+                video_id = clean_text(video_meta.get("video_id"))
+                if not video_id or video_id in self.deleted_videos:
+                    continue
+
+                cosine_sim = calculate_cosine_similarity(float(dist))
+                if video_id not in video_chunks:
+                    video_chunks[video_id] = []
+
+                video_chunks[video_id].append(
+                    {
+                        "cosine_similarity": float(cosine_sim),
+                        "video_meta": video_meta,
+                        "chunk_text": clean_text(video_meta.get("text")),
+                    }
+                )
+
+            ranked_results: list[dict[str, object]] = []
+            for video_id, chunks in video_chunks.items():
+                sims = [float(c["cosine_similarity"]) for c in chunks]
+                good_chunks = [sim for sim in sims if sim >= 0.6]
+                median_sim = sorted(sims)[len(sims) // 2]
+                ranking_score = median_sim + (len(good_chunks) * 0.02)
+
+                sorted_chunks = sorted(chunks, key=lambda item: float(item["cosine_similarity"]), reverse=True)
+                evidence_text = " ".join(chunk.get("chunk_text", "") for chunk in sorted_chunks[:3])
+                best_meta = sorted_chunks[0]["video_meta"]
+                title = clean_text(best_meta.get("video_title") or best_meta.get("title"))
+
+                gate_pass, gate_reason = self._evaluate_constraints_for_text(gate_row, f"{title} {evidence_text}")
+                ranked_results.append(
+                    {
+                        "video_id": video_id,
+                        "title": title,
+                        "semantic_score": ranking_score,
+                        "gate_pass": gate_pass,
+                        "gate_reason": gate_reason,
+                    }
+                )
+
+            ranked_results.sort(key=lambda item: float(item["semantic_score"]), reverse=True)
+            self.root.after(0, self._on_constraints_gate_success, ranked_results)
+        except Exception as exc:
+            self.root.after(0, self._on_constraints_gate_error, str(exc))
+
+    def _on_constraints_gate_success(self, results: list[dict[str, object]]) -> None:
+        self.constraints_run_btn.config(state=tk.NORMAL)
+        self.constraints_results = results
+
+        display_count = len(self.constraints_title_labels)
+        for i in range(display_count):
+            if i < len(results):
+                result = results[i]
+                video_id = clean_text(result.get("video_id"))
+                title = clean_text(result.get("title"))
+                self.constraints_title_labels[i].config(text=f"{title} ({video_id})")
+                self.constraints_score_labels[i].config(text=f"{float(result.get('semantic_score', 0.0)):.4f}")
+
+                if bool(result.get("gate_pass")):
+                    self.constraints_gate_labels[i].config(text="PASS", foreground="#1f7a1f")
+                else:
+                    self.constraints_gate_labels[i].config(text="FAIL", foreground="#aa2c2c")
+
+                self.constraints_reason_labels[i].config(text=clean_text(result.get("gate_reason")))
+                self.constraints_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            else:
+                self.constraints_title_labels[i].config(text="")
+                self.constraints_score_labels[i].config(text="")
+                self.constraints_gate_labels[i].config(text="", foreground="black")
+                self.constraints_reason_labels[i].config(text="")
+                self.constraints_open_buttons[i].config(state=tk.DISABLED)
+
+        total = len(results)
+        passed = sum(1 for r in results if bool(r.get("gate_pass")))
+        failed = total - passed
+        self.constraints_status_var.set(f"Constraints gate: complete ({total} FAISS videos evaluated)")
+        self.constraints_summary_var.set(f"Pass={passed} | Fail={failed} | Rule set driven by constraints_gate.csv")
+
+    def _on_constraints_gate_error(self, error_message: str) -> None:
+        self.constraints_run_btn.config(state=tk.NORMAL)
+        self.constraints_status_var.set("Constraints gate: failed")
+        messagebox.showerror("Constraints Gate Error", error_message)
+
+    def _open_constraints_video(self, index_num: int) -> None:
+        if index_num < 0 or index_num >= len(self.constraints_results):
+            return
+        video_id = clean_text(self.constraints_results[index_num].get("video_id"))
+        if not video_id:
+            return
+        webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
 
     def _load_initial_data(self) -> None:
         """Entry point called after mainloop starts. Curriculum loads on main thread (fast);
@@ -434,6 +825,8 @@ class ImprovePickQAGUI:
                 label = f"{small_step_id} | {row['topic']} | {row['small_step_name']}"
                 self.step_labels_by_id[small_step_id] = label
                 labels.append(label)
+
+            self._load_constraints_gate_cases()
 
             self.step_combo["values"] = labels
             if labels:
@@ -486,11 +879,14 @@ class ImprovePickQAGUI:
         self.embedder = embedder
         self.scorer = scorer
         self.search_btn.config(state=tk.NORMAL)
+        self.constraints_run_btn.config(state=tk.NORMAL)
         self.status_var.set("Ready")
+        self.constraints_status_var.set("Constraints gate: ready")
         self._schedule_semantic_preview()
 
     def _on_heavy_assets_error(self, error_message: str) -> None:
         self.status_var.set("Failed to load retrieval assets")
+        self.constraints_status_var.set("Constraints gate: retrieval assets failed to load")
         messagebox.showerror("Initialization Error", error_message)
 
     def _selected_small_step_id(self) -> str:
@@ -539,6 +935,7 @@ class ImprovePickQAGUI:
             self.candidate_display_unlocked_steps.discard(small_step_id)
             self._set_candidate_panel_state("Candidate panel: locked until Save Approved Candidate + Update QA CSV")
         self.status_var.set("Ready")
+        self._sync_constraints_selection_from_main_step(small_step_id)
         self._schedule_semantic_preview()
 
     def _set_text(self, widget: scrolledtext.ScrolledText, content: str) -> None:

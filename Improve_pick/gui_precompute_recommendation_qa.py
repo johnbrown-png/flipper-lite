@@ -162,11 +162,13 @@ class ImprovePickQAGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Improve Pick - Targeted ss_wr_desc QA")
-        self.root.geometry("1300x860")
+        self.root.geometry("1240x760")
 
         self.status_var = tk.StringVar(value="Loading data...")
         self.step_var = tk.StringVar(value="")
+        self.progress_var = tk.StringVar(value="Done 0/0 (0%)")
         self.scenario_var = tk.StringVar(value="gui_mvp_approved")
+        self.show_unsaved_only_var = tk.BooleanVar(value=False)
         self.awaiting_download_faiss_var = tk.BooleanVar(value=False)
         self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until Save Approved Candidate + Update QA CSV")
         self.constraints_status_var = tk.StringVar(value="Constraints gate: idle")
@@ -177,7 +179,9 @@ class ImprovePickQAGUI:
         self.curriculum_df = pd.DataFrame()
         self.curriculum_by_id: dict[str, dict[str, object]] = {}
         self.step_labels_by_id: dict[str, str] = {}
+        self.step_label_to_id: dict[str, str] = {}
         self.sorted_step_ids: list[str] = []
+        self.saved_step_ids: set[str] = set()
         self.constraints_df: pd.DataFrame = pd.DataFrame()
         self.constraints_by_step_id: dict[str, dict[str, object]] = {}
         self.constraints_labels_by_step_id: dict[str, str] = {}
@@ -231,22 +235,48 @@ class ImprovePickQAGUI:
         self.root.after(100, self._load_initial_data)
 
     def _build_ui(self) -> None:
-        outer = ttk.Frame(self.root, padding=12)
-        outer.grid(row=0, column=0, sticky="nsew")
+        container = ttk.Frame(self.root)
+        container.grid(row=0, column=0, sticky="nsew")
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
+
+        container.columnconfigure(0, weight=1)
+        container.rowconfigure(0, weight=1)
+
+        self.main_canvas = tk.Canvas(container, highlightthickness=0)
+        self.main_canvas.grid(row=0, column=0, sticky="nsew")
+
+        self.main_scrollbar = ttk.Scrollbar(container, orient="vertical", command=self.main_canvas.yview)
+        self.main_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.main_canvas.configure(yscrollcommand=self.main_scrollbar.set)
+
+        outer = ttk.Frame(self.main_canvas, padding=8)
+        self._outer_canvas_window = self.main_canvas.create_window((0, 0), window=outer, anchor="nw")
+
+        def _on_outer_configure(_event) -> None:
+            self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+
+        def _on_canvas_configure(event) -> None:
+            self.main_canvas.itemconfigure(self._outer_canvas_window, width=event.width)
+
+        outer.bind("<Configure>", _on_outer_configure)
+        self.main_canvas.bind("<Configure>", _on_canvas_configure)
+
+        # Mouse wheel support for Windows to make vertical scrolling easier.
+        self.main_canvas.bind_all("<MouseWheel>", lambda event: self.main_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units"))
+
         outer.columnconfigure(0, weight=1)
         outer.rowconfigure(4, weight=1)
 
         title = ttk.Label(
             outer,
             text="Improve Pick - Manual Candidate QA",
-            font=("Segoe UI", 16, "bold"),
+            font=("Segoe UI", 13, "bold"),
         )
-        title.grid(row=0, column=0, sticky="w", pady=(0, 8))
+        title.grid(row=0, column=0, sticky="w", pady=(0, 4))
 
-        selector_frame = ttk.LabelFrame(outer, text="Small Step Selection", padding=10)
-        selector_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        selector_frame = ttk.LabelFrame(outer, text="Small Step Selection", padding=8)
+        selector_frame.grid(row=1, column=0, sticky="ew", pady=(0, 4))
         selector_frame.columnconfigure(1, weight=1)
 
         ttk.Label(selector_frame, text="Small step:").grid(row=0, column=0, sticky="w", padx=(0, 8))
@@ -257,8 +287,24 @@ class ImprovePickQAGUI:
         ttk.Label(selector_frame, text="Scenario label:").grid(row=0, column=2, sticky="w", padx=(12, 8))
         self.scenario_entry = ttk.Entry(selector_frame, textvariable=self.scenario_var, width=24)
         self.scenario_entry.grid(row=0, column=3, sticky="w")
-        text_frame = ttk.LabelFrame(outer, text="Query Text", padding=10)
-        text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 8))
+
+        ttk.Label(selector_frame, textvariable=self.progress_var, foreground="#1f7a1f").grid(row=1, column=0, sticky="w", pady=(4, 0))
+        self.jump_unsaved_btn = ttk.Button(
+            selector_frame,
+            text="Jump to Next Unsaved",
+            command=self._jump_to_next_unsaved,
+        )
+        self.jump_unsaved_btn.grid(row=1, column=1, sticky="w", pady=(4, 0))
+        self.show_unsaved_check = ttk.Checkbutton(
+            selector_frame,
+            text="Show unsaved only",
+            variable=self.show_unsaved_only_var,
+            command=self._on_show_unsaved_only_changed,
+        )
+        self.show_unsaved_check.grid(row=1, column=2, columnspan=2, sticky="w", padx=(12, 0), pady=(4, 0))
+
+        text_frame = ttk.LabelFrame(outer, text="Query Text", padding=8)
+        text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
         text_frame.columnconfigure(0, weight=1)
         text_frame.columnconfigure(1, weight=1)
 
@@ -267,7 +313,7 @@ class ImprovePickQAGUI:
         baseline_frame.columnconfigure(0, weight=1)
         baseline_frame.rowconfigure(1, weight=1)
         ttk.Label(baseline_frame, text="Current ss_wr_desc", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
-        self.baseline_text = scrolledtext.ScrolledText(baseline_frame, wrap=tk.WORD, height=4)
+        self.baseline_text = scrolledtext.ScrolledText(baseline_frame, wrap=tk.WORD, height=3)
         self.baseline_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
         self.baseline_text.config(state=tk.DISABLED)
 
@@ -276,12 +322,12 @@ class ImprovePickQAGUI:
         candidate_frame.columnconfigure(0, weight=1)
         candidate_frame.rowconfigure(1, weight=1)
         ttk.Label(candidate_frame, text="Candidate wording (candidate_ss_wr_desc)", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
-        self.candidate_text = scrolledtext.ScrolledText(candidate_frame, wrap=tk.WORD, height=8)
+        self.candidate_text = scrolledtext.ScrolledText(candidate_frame, wrap=tk.WORD, height=5)
         self.candidate_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
         self.candidate_text.bind("<<Modified>>", self._on_candidate_text_modified)
 
-        semantic_preview_frame = ttk.LabelFrame(candidate_frame, text="Live Semantic Preview (No Instruction Scoring)", padding=8)
-        semantic_preview_frame.grid(row=2, column=0, sticky="nsew", pady=(8, 0))
+        semantic_preview_frame = ttk.LabelFrame(candidate_frame, text="Live Semantic Preview (No Instruction Scoring)", padding=6)
+        semantic_preview_frame.grid(row=2, column=0, sticky="nsew", pady=(4, 0))
         semantic_preview_frame.columnconfigure(1, weight=1)
         candidate_frame.rowconfigure(2, weight=1)
 
@@ -291,24 +337,24 @@ class ImprovePickQAGUI:
 
         for i in range(SEMANTIC_PREVIEW_K):
             row_num = i + 1
-            ttk.Label(semantic_preview_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=3, pady=2)
+            ttk.Label(semantic_preview_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=3, pady=1)
 
             title_label = ttk.Label(semantic_preview_frame, text="", width=44)
-            title_label.grid(row=row_num, column=1, sticky="w", padx=3, pady=2)
+            title_label.grid(row=row_num, column=1, sticky="w", padx=3, pady=1)
             self.semantic_preview_title_labels.append(title_label)
 
             channel_label = ttk.Label(semantic_preview_frame, text="", width=20)
-            channel_label.grid(row=row_num, column=2, sticky="w", padx=3, pady=2)
+            channel_label.grid(row=row_num, column=2, sticky="w", padx=3, pady=1)
             self.semantic_preview_channel_labels.append(channel_label)
 
             score_label = ttk.Label(semantic_preview_frame, text="", width=10)
-            score_label.grid(row=row_num, column=3, sticky="w", padx=3, pady=2)
+            score_label.grid(row=row_num, column=3, sticky="w", padx=3, pady=1)
             self.semantic_preview_score_labels.append(score_label)
 
-        ttk.Label(candidate_frame, textvariable=self.semantic_preview_status_var, foreground="#555555").grid(row=3, column=0, sticky="w", pady=(4, 0))
+        ttk.Label(candidate_frame, textvariable=self.semantic_preview_status_var, foreground="#555555").grid(row=3, column=0, sticky="w", pady=(2, 0))
 
         control_frame = ttk.Frame(outer)
-        control_frame.grid(row=3, column=0, sticky="ew", pady=(0, 8))
+        control_frame.grid(row=3, column=0, sticky="ew", pady=(0, 4))
         self.search_btn = ttk.Button(control_frame, text="Search Top 3", command=self._run_search)
         self.search_btn.grid(row=0, column=0, padx=(0, 8))
         self.save_btn = ttk.Button(control_frame, text="Save Approved Candidate", command=self._save_candidate, state=tk.DISABLED)
@@ -331,21 +377,21 @@ class ImprovePickQAGUI:
         results_notebook = ttk.Notebook(outer)
         results_notebook.grid(row=4, column=0, sticky="nsew")
 
-        qa_results_tab = ttk.Frame(results_notebook, padding=8)
+        qa_results_tab = ttk.Frame(results_notebook, padding=6)
         qa_results_tab.columnconfigure(0, weight=1)
         qa_results_tab.columnconfigure(1, weight=1)
         qa_results_tab.rowconfigure(0, weight=1)
         results_notebook.add(qa_results_tab, text="QA Results")
 
-        constraints_tab = ttk.Frame(results_notebook, padding=8)
+        constraints_tab = ttk.Frame(results_notebook, padding=6)
         constraints_tab.columnconfigure(0, weight=1)
         constraints_tab.rowconfigure(2, weight=1)
         results_notebook.add(constraints_tab, text="Constraints Gate")
 
-        precomp_frame = ttk.LabelFrame(qa_results_tab, text="Precomputed Picks (Current)", padding=10)
+        precomp_frame = ttk.LabelFrame(qa_results_tab, text="Precomputed Picks (Current)", padding=6)
         precomp_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
         precomp_frame.columnconfigure(1, weight=1)
-        candidate_results_frame = ttk.LabelFrame(qa_results_tab, text="Candidate Search Results", padding=10)
+        candidate_results_frame = ttk.LabelFrame(qa_results_tab, text="Candidate Search Results", padding=6)
         candidate_results_frame.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
         candidate_results_frame.columnconfigure(1, weight=1)
 
@@ -353,44 +399,44 @@ class ImprovePickQAGUI:
             candidate_results_frame,
             textvariable=self.candidate_panel_state_var,
             foreground="#555555",
-        ).grid(row=0, column=0, columnspan=7, sticky="w", padx=4, pady=(0, 6))
+        ).grid(row=0, column=0, columnspan=7, sticky="w", padx=4, pady=(0, 4))
 
         headers = ["Rank", "Title", "Channel", "Score", "Open", "Delete", "Rating"]
         for col, header in enumerate(headers):
-            ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 6))
-            ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 6))
+            ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 4))
+            ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
 
         for i in range(TOP_K):
             row_num = i + 1
-            ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=4)
-            ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=4)
+            ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=2)
+            ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
 
             p_title = ttk.Label(precomp_frame, text="", width=44)
-            p_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=4)
+            p_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=2)
             self.precomputed_title_labels.append(p_title)
             c_title = ttk.Label(candidate_results_frame, text="", width=44)
-            c_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=4)
+            c_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
             self.result_title_labels.append(c_title)
 
             p_channel = ttk.Label(precomp_frame, text="", width=20)
-            p_channel.grid(row=row_num, column=2, sticky="w", padx=4, pady=4)
+            p_channel.grid(row=row_num, column=2, sticky="w", padx=4, pady=2)
             self.precomputed_channel_labels.append(p_channel)
             c_channel = ttk.Label(candidate_results_frame, text="", width=20)
-            c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=4)
+            c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
             self.result_channel_labels.append(c_channel)
 
             p_score = ttk.Label(precomp_frame, text="", width=10)
-            p_score.grid(row=row_num, column=3, sticky="w", padx=4, pady=4)
+            p_score.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
             self.precomputed_score_labels.append(p_score)
             c_score = ttk.Label(candidate_results_frame, text="", width=10)
-            c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=4)
+            c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.result_score_labels.append(c_score)
 
             p_open = ttk.Button(precomp_frame, text="Open", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
-            p_open.grid(row=row_num, column=4, sticky="w", padx=4, pady=4)
+            p_open.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
             self.precomputed_open_buttons.append(p_open)
             c_open = ttk.Button(candidate_results_frame, text="Open", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
-            c_open.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=4)
+            c_open.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
             self.result_open_buttons.append(c_open)
 
             p_delete = ttk.Button(
@@ -399,7 +445,7 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._append_result_to_videos_to_delete("current", idx),
                 state=tk.DISABLED,
             )
-            p_delete.grid(row=row_num, column=5, sticky="w", padx=4, pady=4)
+            p_delete.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
             self.precomputed_delete_buttons.append(p_delete)
 
             c_delete = ttk.Button(
@@ -408,13 +454,13 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._append_result_to_videos_to_delete("candidate", idx),
                 state=tk.DISABLED,
             )
-            c_delete.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=4)
+            c_delete.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
             self.candidate_delete_buttons.append(c_delete)
 
             p_rating_var = tk.StringVar(value="5")
             self.precomputed_rating_vars.append(p_rating_var)
             p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
-            p_menu.grid(row=row_num, column=6, sticky="w", padx=4, pady=4)
+            p_menu.grid(row=row_num, column=6, sticky="w", padx=4, pady=2)
             p_menu.config(width=4)
             self.precomputed_rating_dropdowns.append(p_menu)
             self._apply_precomputed_rating_color(i)
@@ -423,12 +469,12 @@ class ImprovePickQAGUI:
             self.rating_vars.append(c_rating_var)
             # tk.OptionMenu allows per-widget background color updates.
             c_menu = tk.OptionMenu(candidate_results_frame, c_rating_var, *rating_options, command=lambda _v, idx=i: self._on_rating_change(idx))
-            c_menu.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=4)
+            c_menu.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=2)
             c_menu.config(width=4)
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
 
-        constraints_controls = ttk.LabelFrame(constraints_tab, text="Stage 1.5 Constraints Gate", padding=10)
+        constraints_controls = ttk.LabelFrame(constraints_tab, text="Stage 1.5 Constraints Gate", padding=6)
         constraints_controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         constraints_controls.columnconfigure(1, weight=1)
 
@@ -468,11 +514,11 @@ class ImprovePickQAGUI:
             pady=(8, 0),
         )
 
-        summary_frame = ttk.LabelFrame(constraints_tab, text="Gate Summary", padding=10)
+        summary_frame = ttk.LabelFrame(constraints_tab, text="Gate Summary", padding=6)
         summary_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
         ttk.Label(summary_frame, textvariable=self.constraints_summary_var, foreground="#555555").grid(row=0, column=0, sticky="w")
 
-        constraints_results_frame = ttk.LabelFrame(constraints_tab, text="FAISS -> Gate Outcome", padding=10)
+        constraints_results_frame = ttk.LabelFrame(constraints_tab, text="FAISS -> Gate Outcome", padding=6)
         constraints_results_frame.grid(row=2, column=0, sticky="nsew")
         constraints_results_frame.columnconfigure(1, weight=1)
 
@@ -483,27 +529,27 @@ class ImprovePickQAGUI:
                 column=col,
                 sticky="w",
                 padx=4,
-                pady=(0, 6),
+                pady=(0, 4),
             )
 
         for i in range(10):
             row_num = i + 1
-            ttk.Label(constraints_results_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=3)
+            ttk.Label(constraints_results_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=2)
 
             title_label = ttk.Label(constraints_results_frame, text="", width=56)
-            title_label.grid(row=row_num, column=1, sticky="w", padx=4, pady=3)
+            title_label.grid(row=row_num, column=1, sticky="w", padx=4, pady=2)
             self.constraints_title_labels.append(title_label)
 
             semantic_label = ttk.Label(constraints_results_frame, text="", width=10)
-            semantic_label.grid(row=row_num, column=2, sticky="w", padx=4, pady=3)
+            semantic_label.grid(row=row_num, column=2, sticky="w", padx=4, pady=2)
             self.constraints_score_labels.append(semantic_label)
 
             gate_label = ttk.Label(constraints_results_frame, text="", width=8)
-            gate_label.grid(row=row_num, column=3, sticky="w", padx=4, pady=3)
+            gate_label.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
             self.constraints_gate_labels.append(gate_label)
 
             reason_label = ttk.Label(constraints_results_frame, text="", width=58)
-            reason_label.grid(row=row_num, column=4, sticky="w", padx=4, pady=3)
+            reason_label.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
             self.constraints_reason_labels.append(reason_label)
 
             open_btn = ttk.Button(
@@ -512,7 +558,7 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._open_constraints_video(idx),
                 state=tk.DISABLED,
             )
-            open_btn.grid(row=row_num, column=5, sticky="w", padx=4, pady=3)
+            open_btn.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
             self.constraints_open_buttons.append(open_btn)
 
     def _set_candidate_panel_state(self, text: str) -> None:
@@ -818,19 +864,12 @@ class ImprovePickQAGUI:
                 self.curriculum_by_id.keys(),
                 key=lambda sid: int(self.curriculum_by_id[sid].get("small_step_num", 0)),
             )
-            self.step_labels_by_id = {}
-            labels = []
-            for small_step_id in self.sorted_step_ids:
-                row = self.curriculum_by_id[small_step_id]
-                label = f"{small_step_id} | {row['topic']} | {row['small_step_name']}"
-                self.step_labels_by_id[small_step_id] = label
-                labels.append(label)
+            self.saved_step_ids = self._load_saved_step_ids_from_qa()
+            self._refresh_step_combo_labels()
 
             self._load_constraints_gate_cases()
 
-            self.step_combo["values"] = labels
-            if labels:
-                self.step_var.set(labels[0])
+            if self.step_var.get():
                 self._on_step_selected(None)
                 selected_step_id = self._selected_small_step_id()
                 if selected_step_id:
@@ -893,7 +932,126 @@ class ImprovePickQAGUI:
         label = self.step_var.get().strip()
         if not label:
             return ""
+
+        mapped = self.step_label_to_id.get(label)
+        if mapped:
+            return mapped
+
+        # Backward compatibility for plain labels without marker prefix.
+        if label.startswith("✓ ") or label.startswith("• "):
+            label = label[2:].strip()
         return label.split(" | ", 1)[0].strip()
+
+    def _load_saved_step_ids_from_qa(self) -> set[str]:
+        if not QA_TRACKING_PATH.exists():
+            return set()
+
+        try:
+            qa_df = self._load_qa_df()
+        except Exception:
+            return set()
+
+        if qa_df.empty:
+            return set()
+
+        candidate_rows = qa_df[qa_df["source"] == "candidate"].copy()
+        if candidate_rows.empty:
+            return set()
+
+        for col in ["candidate_ss_wr_desc", "video_title", "combined_score"]:
+            if col in candidate_rows.columns:
+                candidate_rows[col] = candidate_rows[col].map(clean_text)
+
+        # A small step counts as saved once any candidate QA row has meaningful persisted content.
+        has_persisted_content = (
+            (candidate_rows["candidate_ss_wr_desc"].str.len() > 0)
+            | (candidate_rows["video_id"].str.len() > 0)
+            | (candidate_rows["video_title"].str.len() > 0)
+            | (candidate_rows["combined_score"].str.len() > 0)
+        )
+
+        return set(candidate_rows.loc[has_persisted_content, "small_step_id"].tolist())
+
+    def _refresh_step_combo_labels(self, preserve_step_id: str = "") -> None:
+        self.step_labels_by_id = {}
+        self.step_label_to_id = {}
+
+        visible_step_ids = self.sorted_step_ids
+        if self.show_unsaved_only_var.get():
+            visible_step_ids = [sid for sid in self.sorted_step_ids if sid not in self.saved_step_ids]
+
+        labels: list[str] = []
+        for small_step_id in visible_step_ids:
+            row = self.curriculum_by_id.get(small_step_id, {})
+            marker = "✓" if small_step_id in self.saved_step_ids else "•"
+            label = f"{marker} {small_step_id} | {clean_text(row.get('topic'))} | {clean_text(row.get('small_step_name'))}"
+            self.step_labels_by_id[small_step_id] = label
+            self.step_label_to_id[label] = small_step_id
+            labels.append(label)
+
+        self.step_combo["values"] = labels
+
+        selected_step_id = preserve_step_id or self._selected_small_step_id()
+        if selected_step_id and selected_step_id in self.step_labels_by_id:
+            self.step_var.set(self.step_labels_by_id[selected_step_id])
+        elif labels:
+            self.step_var.set(labels[0])
+        else:
+            self.step_var.set("")
+
+        total_steps = len(self.sorted_step_ids)
+        done_steps = len(self.saved_step_ids)
+        percent = int((done_steps / total_steps) * 100) if total_steps else 0
+        self.progress_var.set(f"Done {done_steps}/{total_steps} ({percent}%)")
+
+        has_unsaved = done_steps < total_steps
+        self.jump_unsaved_btn.config(state=tk.NORMAL if has_unsaved else tk.DISABLED)
+
+    def _set_selected_step_by_id(self, small_step_id: str) -> bool:
+        label = self.step_labels_by_id.get(small_step_id)
+        if not label:
+            return False
+        self.step_var.set(label)
+        self._on_step_selected(None)
+        return True
+
+    def _jump_to_next_unsaved(self) -> None:
+        if not self.sorted_step_ids:
+            return
+
+        unsaved_step_ids = [sid for sid in self.sorted_step_ids if sid not in self.saved_step_ids]
+        if not unsaved_step_ids:
+            messagebox.showinfo("All complete", "All small steps are marked as saved in qa.csv.")
+            return
+
+        current_step_id = self._selected_small_step_id()
+        if current_step_id in self.sorted_step_ids:
+            current_idx = self.sorted_step_ids.index(current_step_id)
+        else:
+            current_idx = -1
+
+        next_step_id = ""
+        for offset in range(1, len(self.sorted_step_ids) + 1):
+            candidate_idx = (current_idx + offset) % len(self.sorted_step_ids)
+            candidate_step_id = self.sorted_step_ids[candidate_idx]
+            if candidate_step_id not in self.saved_step_ids:
+                next_step_id = candidate_step_id
+                break
+
+        if not next_step_id:
+            next_step_id = unsaved_step_ids[0]
+
+        if not self._set_selected_step_by_id(next_step_id):
+            # If filtered list hides the target, disable filter and try again.
+            self.show_unsaved_only_var.set(False)
+            self._refresh_step_combo_labels(preserve_step_id=next_step_id)
+            self._set_selected_step_by_id(next_step_id)
+
+    def _on_show_unsaved_only_changed(self) -> None:
+        current_step_id = self._selected_small_step_id()
+        self._refresh_step_combo_labels(preserve_step_id=current_step_id)
+        if self.step_var.get():
+            self._on_step_selected(None)
 
     def _get_saved_candidate_text(self, small_step_id: str) -> str:
         if not small_step_id or not APPROVED_CANDIDATES_PATH.exists():
@@ -1590,6 +1748,14 @@ class ImprovePickQAGUI:
             self._upsert_qa_rows(qa_rows)
         except Exception as exc:
             messagebox.showerror("QA Save Error", str(exc))
+            return
+
+        self.saved_step_ids = self._load_saved_step_ids_from_qa()
+        self._refresh_step_combo_labels(preserve_step_id=small_step_id)
+        small_step_id = self._selected_small_step_id()
+        if not small_step_id:
+            self.status_var.set("Updated qa/qa.csv. Current step is filtered out by Show unsaved only.")
+            messagebox.showinfo("QA Updated", f"Saved QA rows to:\n{QA_TRACKING_PATH}")
             return
 
         if self._populate_candidate_from_qa(small_step_id):

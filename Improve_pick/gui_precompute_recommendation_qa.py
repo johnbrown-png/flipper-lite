@@ -267,7 +267,7 @@ class ImprovePickQAGUI:
         baseline_frame.columnconfigure(0, weight=1)
         baseline_frame.rowconfigure(1, weight=1)
         ttk.Label(baseline_frame, text="Current ss_wr_desc", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
-        self.baseline_text = scrolledtext.ScrolledText(baseline_frame, wrap=tk.WORD, height=8)
+        self.baseline_text = scrolledtext.ScrolledText(baseline_frame, wrap=tk.WORD, height=4)
         self.baseline_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
         self.baseline_text.config(state=tk.DISABLED)
 

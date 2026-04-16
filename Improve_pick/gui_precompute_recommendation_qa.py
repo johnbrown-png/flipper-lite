@@ -6,7 +6,7 @@ This MVP focuses on fast manual iteration:
 - test a candidate wording
 - inspect top-3 results with quick open links
 - score each result with a color-coded 1-10 rating
-- save approved candidate text and ratings to CSV outputs
+- save candidate text and ratings to qa.csv outputs
 """
 
 from __future__ import annotations
@@ -40,13 +40,50 @@ TARGET_OVERRIDES_PATH = project_root / "qa" / "targeted_ss_wr_desc_overrides.csv
 APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates.csv"
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
-CONSTRAINTS_GATE_PATH = Path(__file__).resolve().parent / "constraints_gate.csv"
 TOP_K = 3
 SEMANTIC_PREVIEW_K = 5
 SEMANTIC_PREVIEW_CHUNKS = 40
 SEMANTIC_PREVIEW_DEBOUNCE_MS = 550
 CONSTRAINTS_GATE_DEFAULT_K = 20
 CONSTRAINTS_GATE_MAX_K = 80
+STAGE_PIPELINE_K = 10
+SEMANTIC_WEIGHT = 0.55
+ALIGNMENT_WEIGHT = 0.20
+INSTRUCTION_WEIGHT = 0.25
+
+
+def build_qa_columns() -> list[str]:
+    columns = [
+        "updated_at",
+        "small_step_id",
+        "topic",
+        "small_step_name",
+        "baseline_ss_wr_desc",
+        "candidate_ss_wr_desc",
+        "constraints_text",
+        "awaiting download and faiss update",
+    ]
+
+    for source in ("current", "candidate"):
+        for rank in range(1, TOP_K + 1):
+            prefix = f"{source}_{rank}"
+            columns.extend(
+                [
+                    f"{prefix}_video_id",
+                    f"{prefix}_video_title",
+                    f"{prefix}_channel",
+                    f"{prefix}_rating_1_10",
+                    f"{prefix}_combined_score",
+                    f"{prefix}_semantic_score",
+                    f"{prefix}_instruction_score",
+                    f"{prefix}_alignment_score",
+                ]
+            )
+
+    return columns
+
+
+QA_COLUMNS = build_qa_columns()
 
 
 def clean_text(value: object) -> str:
@@ -158,6 +195,66 @@ def parse_upper_bound(raw_value: object) -> int | None:
     return None
 
 
+def parse_constraints_text_block(raw_value: object) -> dict[str, str]:
+    """Parse free-form constraints text into simple gate rule buckets.
+
+    Supported line formats:
+    - must_include: term1, term2
+    - must_not_include: term3; term4
+    - numeric_bounds: up to 10
+    - reject_rule: divisible by 10
+
+    Any non-empty unlabeled line is treated as a must_not_include token.
+    """
+    text = clean_text(raw_value)
+    parsed = {
+        "must_include": "",
+        "must_not_include": "",
+        "numeric_bounds": "",
+        "reject_rule": "",
+    }
+
+    if not text:
+        return parsed
+
+    loose_not_include_terms: list[str] = []
+    for line in text.splitlines():
+        line_text = line.strip()
+        if not line_text:
+            continue
+
+        if ":" in line_text:
+            key, value = line_text.split(":", 1)
+        elif "=" in line_text:
+            key, value = line_text.split("=", 1)
+        else:
+            loose_not_include_terms.append(line_text)
+            continue
+
+        key_norm = key.strip().lower().replace("-", "_").replace(" ", "_").replace("/", "_")
+        value_norm = value.strip()
+        if not value_norm:
+            continue
+
+        if key_norm in parsed:
+            parsed[key_norm] = value_norm
+        elif key_norm in {"must_include_terms", "include"}:
+            parsed["must_include"] = value_norm
+        elif key_norm in {"must_not_include_terms", "exclude", "block", "blocked_terms"}:
+            parsed["must_not_include"] = value_norm
+        elif key_norm in {"numerical_domain", "numeric_domain", "numerical_domain_bounds"}:
+            parsed["numeric_bounds"] = value_norm
+        elif key_norm in {"reject_rule_fail_gate", "fail_gate", "reject"}:
+            parsed["reject_rule"] = value_norm
+
+    if loose_not_include_terms:
+        existing = parsed["must_not_include"]
+        extra = "; ".join(loose_not_include_terms)
+        parsed["must_not_include"] = f"{existing}; {extra}" if existing else extra
+
+    return parsed
+
+
 class ImprovePickQAGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -170,11 +267,16 @@ class ImprovePickQAGUI:
         self.scenario_var = tk.StringVar(value="gui_mvp_approved")
         self.show_unsaved_only_var = tk.BooleanVar(value=False)
         self.awaiting_download_faiss_var = tk.BooleanVar(value=False)
-        self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until Save Approved Candidate + Update QA CSV")
+        self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until Update QA CSV")
         self.constraints_status_var = tk.StringVar(value="Constraints gate: idle")
         self.constraints_summary_var = tk.StringVar(value="No constraint test run yet")
-        self.constraints_step_var = tk.StringVar(value="")
+        self.constraints_step_label_var = tk.StringVar(value="Selected small step: none")
         self.constraints_k_var = tk.StringVar(value=str(CONSTRAINTS_GATE_DEFAULT_K))
+        self.constraints_objective_core_var = tk.StringVar(value="")
+        self.constraints_must_include_var = tk.StringVar(value="")
+        self.constraints_must_not_include_var = tk.StringVar(value="")
+        self.constraints_numerical_domain_var = tk.StringVar(value="")
+        self.constraints_reject_rule_fail_gate_var = tk.StringVar(value="")
 
         self.curriculum_df = pd.DataFrame()
         self.curriculum_by_id: dict[str, dict[str, object]] = {}
@@ -182,9 +284,6 @@ class ImprovePickQAGUI:
         self.step_label_to_id: dict[str, str] = {}
         self.sorted_step_ids: list[str] = []
         self.saved_step_ids: set[str] = set()
-        self.constraints_df: pd.DataFrame = pd.DataFrame()
-        self.constraints_by_step_id: dict[str, dict[str, object]] = {}
-        self.constraints_labels_by_step_id: dict[str, str] = {}
 
         self.index = None
         self.metadata: list[dict[str, object]] = []
@@ -195,6 +294,8 @@ class ImprovePickQAGUI:
         self.video_lookup: dict[str, dict[str, str]] = {}
 
         self.latest_results: list[dict[str, object]] = []
+        self.latest_alignment_results: list[dict[str, object]] = []
+        self.latest_final_results: list[dict[str, object]] = []
         self.latest_query_text = ""
         self.semantic_preview_results: list[dict[str, object]] = []
         self.semantic_preview_status_var = tk.StringVar(value="Semantic preview: idle")
@@ -229,6 +330,18 @@ class ImprovePickQAGUI:
         self.constraints_reason_labels: list[ttk.Label] = []
         self.constraints_open_buttons: list[ttk.Button] = []
         self.constraints_score_labels: list[ttk.Label] = []
+        self.alignment_title_labels: list[ttk.Label] = []
+        self.alignment_channel_labels: list[ttk.Label] = []
+        self.alignment_gate_labels: list[ttk.Label] = []
+        self.alignment_score_labels: list[ttk.Label] = []
+        self.alignment_combined_labels: list[ttk.Label] = []
+        self.alignment_open_buttons: list[ttk.Button] = []
+        self.stage4_survivors_tree: ttk.Treeview | None = None
+        self.stage4_final_title_labels: list[ttk.Label] = []
+        self.stage4_final_stage3_labels: list[ttk.Label] = []
+        self.stage4_final_instruction_labels: list[ttk.Label] = []
+        self.stage4_final_score_labels: list[ttk.Label] = []
+        self.stage4_final_open_buttons: list[ttk.Button] = []
 
         self._build_ui()
         # Defer heavy loading until after mainloop starts so the window appears immediately.
@@ -358,19 +471,19 @@ class ImprovePickQAGUI:
         self.search_btn = ttk.Button(control_frame, text="Search Top 3", command=self._run_search)
         self.search_btn.grid(row=0, column=0, padx=(0, 8))
         self.save_btn = ttk.Button(control_frame, text="Save Approved Candidate", command=self._save_candidate, state=tk.DISABLED)
-        self.save_btn.grid(row=0, column=1, padx=(0, 8))
+        # Hidden intentionally: workflow now uses qa.csv via Update QA CSV.
         self.update_qa_btn = ttk.Button(control_frame, text="Update QA CSV", command=self._update_qa_csv)
-        self.update_qa_btn.grid(row=0, column=2, padx=(0, 8))
+        self.update_qa_btn.grid(row=0, column=1, padx=(0, 8))
 
         self.awaiting_download_check = ttk.Checkbutton(
             control_frame,
             text="Set 'Awaiting download/faiss rebuild' on Update QA CSV",
             variable=self.awaiting_download_faiss_var,
         )
-        self.awaiting_download_check.grid(row=0, column=3, padx=(0, 8), sticky="w")
+        self.awaiting_download_check.grid(row=0, column=2, padx=(0, 8), sticky="w")
 
         self.status_label = ttk.Label(control_frame, textvariable=self.status_var, foreground="blue")
-        self.status_label.grid(row=0, column=4, sticky="w")
+        self.status_label.grid(row=0, column=3, sticky="w")
 
         rating_options = [str(i) for i in range(1, 11)]
 
@@ -381,12 +494,23 @@ class ImprovePickQAGUI:
         qa_results_tab.columnconfigure(0, weight=1)
         qa_results_tab.columnconfigure(1, weight=1)
         qa_results_tab.rowconfigure(0, weight=1)
-        results_notebook.add(qa_results_tab, text="QA Results")
+        results_notebook.add(qa_results_tab, text="Stage 1 QA Results")
 
         constraints_tab = ttk.Frame(results_notebook, padding=6)
         constraints_tab.columnconfigure(0, weight=1)
         constraints_tab.rowconfigure(2, weight=1)
-        results_notebook.add(constraints_tab, text="Constraints Gate")
+        results_notebook.add(constraints_tab, text="Stage 2 Constraints Gate")
+
+        alignment_tab = ttk.Frame(results_notebook, padding=6)
+        alignment_tab.columnconfigure(0, weight=1)
+        alignment_tab.rowconfigure(1, weight=1)
+        results_notebook.add(alignment_tab, text="Stage 3 Alignment")
+
+        stage4_tab = ttk.Frame(results_notebook, padding=6)
+        stage4_tab.columnconfigure(0, weight=1)
+        stage4_tab.rowconfigure(1, weight=1)
+        stage4_tab.rowconfigure(3, weight=1)
+        results_notebook.add(stage4_tab, text="Stage 4 Pedagogy + Final Ranking")
 
         precomp_frame = ttk.LabelFrame(qa_results_tab, text="Precomputed Picks (Current)", padding=6)
         precomp_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
@@ -474,20 +598,83 @@ class ImprovePickQAGUI:
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
 
-        constraints_controls = ttk.LabelFrame(constraints_tab, text="Stage 1.5 Constraints Gate", padding=6)
+        constraints_controls = ttk.LabelFrame(constraints_tab, text="Stage 2 Constraints Gate", padding=6)
         constraints_controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         constraints_controls.columnconfigure(1, weight=1)
 
-        ttk.Label(constraints_controls, text="Test small step (not_aligned=1):").grid(row=0, column=0, sticky="w", padx=(0, 8))
-        self.constraints_step_combo = ttk.Combobox(
-            constraints_controls,
-            textvariable=self.constraints_step_var,
-            state="readonly",
+        ttk.Label(constraints_controls, textvariable=self.constraints_step_label_var).grid(
+            row=0,
+            column=0,
+            columnspan=5,
+            sticky="w",
+            pady=(0, 6),
         )
-        self.constraints_step_combo.grid(row=0, column=1, sticky="ew")
-        self.constraints_step_combo.bind("<<ComboboxSelected>>", self._on_constraints_step_selected)
 
-        ttk.Label(constraints_controls, text="FAISS shortlist k:").grid(row=0, column=2, sticky="w", padx=(12, 6))
+        ttk.Label(constraints_controls, text="objective_core (target objective terms for retrieval context):").grid(
+            row=1,
+            column=0,
+            sticky="nw",
+            padx=(0, 8),
+        )
+        self.constraints_objective_core_entry = ttk.Entry(
+            constraints_controls,
+            textvariable=self.constraints_objective_core_var,
+        )
+        self.constraints_objective_core_entry.grid(row=1, column=1, columnspan=4, sticky="ew")
+
+        ttk.Label(constraints_controls, text="must_include (comma/semicolon-separated terms, any match passes include rule):").grid(
+            row=2,
+            column=0,
+            sticky="nw",
+            padx=(0, 8),
+            pady=(6, 0),
+        )
+        self.constraints_must_include_entry = ttk.Entry(
+            constraints_controls,
+            textvariable=self.constraints_must_include_var,
+        )
+        self.constraints_must_include_entry.grid(row=2, column=1, columnspan=4, sticky="ew", pady=(6, 0))
+
+        ttk.Label(constraints_controls, text="must_not_include (comma/semicolon-separated blocked terms):").grid(
+            row=3,
+            column=0,
+            sticky="nw",
+            padx=(0, 8),
+            pady=(6, 0),
+        )
+        self.constraints_must_not_include_entry = ttk.Entry(
+            constraints_controls,
+            textvariable=self.constraints_must_not_include_var,
+        )
+        self.constraints_must_not_include_entry.grid(row=3, column=1, columnspan=4, sticky="ew", pady=(6, 0))
+
+        ttk.Label(constraints_controls, text="numerical/domain (e.g. up to 20):").grid(
+            row=4,
+            column=0,
+            sticky="nw",
+            padx=(0, 8),
+            pady=(6, 0),
+        )
+        self.constraints_numerical_domain_entry = ttk.Entry(
+            constraints_controls,
+            textvariable=self.constraints_numerical_domain_var,
+        )
+        self.constraints_numerical_domain_entry.grid(row=4, column=1, columnspan=4, sticky="ew", pady=(6, 0))
+
+        ttk.Label(constraints_controls, text="reject_rule_fail_gate (e.g. divisible by 10):").grid(
+            row=5,
+            column=0,
+            sticky="nw",
+            padx=(0, 8),
+            pady=(6, 0),
+        )
+        self.constraints_reject_rule_fail_gate_entry = ttk.Entry(
+            constraints_controls,
+            textvariable=self.constraints_reject_rule_fail_gate_var,
+        )
+        self.constraints_reject_rule_fail_gate_entry.grid(row=5, column=1, columnspan=4, sticky="ew", pady=(6, 0))
+
+        ttk.Label(constraints_controls, text="FAISS shortlist k:").grid(row=6, column=0, sticky="w", padx=(0, 6), pady=(8, 0))
         self.constraints_k_spin = tk.Spinbox(
             constraints_controls,
             from_=5,
@@ -496,7 +683,14 @@ class ImprovePickQAGUI:
             textvariable=self.constraints_k_var,
             increment=1,
         )
-        self.constraints_k_spin.grid(row=0, column=3, sticky="w")
+        self.constraints_k_spin.grid(row=6, column=1, sticky="w", pady=(8, 0))
+
+        self.constraints_save_btn = ttk.Button(
+            constraints_controls,
+            text="Save Constraints",
+            command=self._save_constraints_text,
+        )
+        self.constraints_save_btn.grid(row=6, column=2, sticky="w", padx=(8, 0), pady=(8, 0))
 
         self.constraints_run_btn = ttk.Button(
             constraints_controls,
@@ -504,10 +698,10 @@ class ImprovePickQAGUI:
             command=self._run_constraints_gate_test,
             state=tk.DISABLED,
         )
-        self.constraints_run_btn.grid(row=0, column=4, sticky="w", padx=(12, 0))
+        self.constraints_run_btn.grid(row=6, column=3, sticky="w", padx=(12, 0), pady=(8, 0))
 
         ttk.Label(constraints_controls, textvariable=self.constraints_status_var, foreground="blue").grid(
-            row=1,
+            row=7,
             column=0,
             columnspan=5,
             sticky="w",
@@ -561,82 +755,237 @@ class ImprovePickQAGUI:
             open_btn.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
             self.constraints_open_buttons.append(open_btn)
 
+        ttk.Label(
+            alignment_tab,
+            text="Stage 1 candidate picks filtered by Stage 2 constraints gate (PASS only).",
+            foreground="#555555",
+        ).grid(row=0, column=0, sticky="w", pady=(0, 6))
+
+        alignment_results_frame = ttk.LabelFrame(alignment_tab, text="Stage 3 Alignment Scoring Input Set", padding=6)
+        alignment_results_frame.grid(row=1, column=0, sticky="nsew")
+        alignment_results_frame.columnconfigure(1, weight=1)
+
+        alignment_headers = ["Rank", "Title (video_id)", "Channel", "Stage 2 Gate", "Stage 3 Alignment", "Combined", "Open"]
+        for col, header in enumerate(alignment_headers):
+            ttk.Label(alignment_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(
+                row=0,
+                column=col,
+                sticky="w",
+                padx=4,
+                pady=(0, 4),
+            )
+
+        for i in range(TOP_K):
+            row_num = i + 1
+            ttk.Label(alignment_results_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=2)
+
+            title_label = ttk.Label(alignment_results_frame, text="", width=46)
+            title_label.grid(row=row_num, column=1, sticky="w", padx=4, pady=2)
+            self.alignment_title_labels.append(title_label)
+
+            channel_label = ttk.Label(alignment_results_frame, text="", width=20)
+            channel_label.grid(row=row_num, column=2, sticky="w", padx=4, pady=2)
+            self.alignment_channel_labels.append(channel_label)
+
+            gate_label = ttk.Label(alignment_results_frame, text="", width=12)
+            gate_label.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
+            self.alignment_gate_labels.append(gate_label)
+
+            alignment_score_label = ttk.Label(alignment_results_frame, text="", width=10)
+            alignment_score_label.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
+            self.alignment_score_labels.append(alignment_score_label)
+
+            combined_score_label = ttk.Label(alignment_results_frame, text="", width=10)
+            combined_score_label.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
+            self.alignment_combined_labels.append(combined_score_label)
+
+            open_btn = ttk.Button(
+                alignment_results_frame,
+                text="Open",
+                command=lambda idx=i: self._open_alignment_video(idx),
+                state=tk.DISABLED,
+            )
+            open_btn.grid(row=row_num, column=6, sticky="w", padx=4, pady=2)
+            self.alignment_open_buttons.append(open_btn)
+
+        ttk.Label(
+            stage4_tab,
+            text="Stage 4 uses instruction (pedagogy) to rerank survivors from Stages 1-3.",
+            foreground="#555555",
+        ).grid(row=0, column=0, sticky="w", pady=(0, 6))
+
+        stage4_survivors_frame = ttk.LabelFrame(stage4_tab, text="Input Survivors (Stages 1-3)", padding=6)
+        stage4_survivors_frame.grid(row=1, column=0, sticky="nsew")
+        stage4_survivors_frame.columnconfigure(0, weight=1)
+        stage4_survivors_frame.rowconfigure(0, weight=1)
+
+        self.stage4_survivors_tree = ttk.Treeview(
+            stage4_survivors_frame,
+            columns=("rank", "title", "stage3", "instruction"),
+            show="headings",
+            height=8,
+        )
+        self.stage4_survivors_tree.grid(row=0, column=0, sticky="nsew")
+
+        self.stage4_survivors_tree.heading("rank", text="Rank")
+        self.stage4_survivors_tree.heading("title", text="Title (video_id)")
+        self.stage4_survivors_tree.heading("stage3", text="Stage 3 Alignment")
+        self.stage4_survivors_tree.heading("instruction", text="Stage 4 Instruction")
+
+        self.stage4_survivors_tree.column("rank", width=60, anchor="w")
+        self.stage4_survivors_tree.column("title", width=640, anchor="w")
+        self.stage4_survivors_tree.column("stage3", width=100, anchor="w")
+        self.stage4_survivors_tree.column("instruction", width=100, anchor="w")
+
+        survivors_scroll = ttk.Scrollbar(stage4_survivors_frame, orient="vertical", command=self.stage4_survivors_tree.yview)
+        survivors_scroll.grid(row=0, column=1, sticky="ns")
+        self.stage4_survivors_tree.configure(yscrollcommand=survivors_scroll.set)
+
+        stage4_final_frame = ttk.LabelFrame(stage4_tab, text="Final Ranking Top 3 (After Stage 4)", padding=6)
+        stage4_final_frame.grid(row=3, column=0, sticky="nsew", pady=(8, 0))
+        stage4_final_frame.columnconfigure(1, weight=1)
+
+        final_headers = ["Rank", "Title (video_id)", "Stage 3 Alignment", "Stage 4 Instruction", "Stage 5 Final", "Open"]
+        for col, header in enumerate(final_headers):
+            ttk.Label(stage4_final_frame, text=header, font=("Segoe UI", 10, "bold")).grid(
+                row=0,
+                column=col,
+                sticky="w",
+                padx=4,
+                pady=(0, 4),
+            )
+
+        for i in range(TOP_K):
+            row_num = i + 1
+            ttk.Label(stage4_final_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=2)
+
+            final_title = ttk.Label(stage4_final_frame, text="", width=56)
+            final_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=2)
+            self.stage4_final_title_labels.append(final_title)
+
+            final_stage3 = ttk.Label(stage4_final_frame, text="", width=10)
+            final_stage3.grid(row=row_num, column=2, sticky="w", padx=4, pady=2)
+            self.stage4_final_stage3_labels.append(final_stage3)
+
+            final_instruction = ttk.Label(stage4_final_frame, text="", width=10)
+            final_instruction.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
+            self.stage4_final_instruction_labels.append(final_instruction)
+
+            final_score = ttk.Label(stage4_final_frame, text="", width=10)
+            final_score.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
+            self.stage4_final_score_labels.append(final_score)
+
+            final_open = ttk.Button(
+                stage4_final_frame,
+                text="Open",
+                command=lambda idx=i: self._open_stage4_final_video(idx),
+                state=tk.DISABLED,
+            )
+            final_open.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
+            self.stage4_final_open_buttons.append(final_open)
+
+        self.stage4_save_btn = ttk.Button(
+            stage4_tab,
+            text="Save Final Ranking to QA CSV",
+            command=self._update_qa_csv,
+        )
+        self.stage4_save_btn.grid(row=2, column=0, sticky="w", pady=(8, 0))
+
     def _set_candidate_panel_state(self, text: str) -> None:
         self.candidate_panel_state_var.set(text)
 
-    def _load_constraints_gate_cases(self) -> None:
-        self.constraints_df = pd.DataFrame()
-        self.constraints_by_step_id = {}
-        self.constraints_labels_by_step_id = {}
+    def _set_constraints_text(self, value: str) -> None:
+        parsed = parse_constraints_text_block(value)
 
-        if not CONSTRAINTS_GATE_PATH.exists():
-            self.constraints_step_combo["values"] = []
-            self.constraints_summary_var.set("No constraints_gate.csv found")
-            return
+        objective_core = ""
+        numerical_domain = clean_text(parsed.get("numeric_bounds"))
+        reject_rule_fail_gate = clean_text(parsed.get("reject_rule"))
 
-        raw_df = pd.read_csv(CONSTRAINTS_GATE_PATH)
-        expected_cols = [
-            "small_step_id",
-            "not_aligned",
-            "ss_wr_desc",
-            "objective",
-            "must_include",
-            "must_not_include",
-            "numeric_bounds",
-            "reject_rule",
-        ]
-
-        renamed = raw_df.copy()
-        for idx, col in enumerate(raw_df.columns[: len(expected_cols)]):
-            renamed = renamed.rename(columns={col: expected_cols[idx]})
-
-        for col in expected_cols:
-            if col not in renamed.columns:
-                renamed[col] = ""
-
-        renamed["small_step_id"] = renamed["small_step_id"].map(clean_text)
-        renamed["not_aligned"] = pd.to_numeric(renamed["not_aligned"], errors="coerce").fillna(0).astype(int)
-        for col in ["ss_wr_desc", "objective", "must_include", "must_not_include", "numeric_bounds", "reject_rule"]:
-            renamed[col] = renamed[col].map(clean_text)
-
-        filtered = renamed[(renamed["small_step_id"].str.len() > 0) & (renamed["not_aligned"] == 1)].copy()
-        self.constraints_df = filtered
-
-        labels: list[str] = []
-        for _, row in filtered.iterrows():
-            step_id = clean_text(row.get("small_step_id"))
-            if not step_id or step_id in self.constraints_by_step_id:
+        for line in clean_text(value).splitlines():
+            line_text = line.strip()
+            if not line_text:
                 continue
 
-            self.constraints_by_step_id[step_id] = dict(row)
-            objective = clean_text(row.get("objective"))
-            short_objective = objective[:90] + "..." if len(objective) > 93 else objective
-            label = f"{step_id} | {short_objective}" if short_objective else step_id
-            self.constraints_labels_by_step_id[step_id] = label
-            labels.append(label)
+            if ":" in line_text:
+                key, raw_val = line_text.split(":", 1)
+            elif "=" in line_text:
+                key, raw_val = line_text.split("=", 1)
+            else:
+                continue
 
-        self.constraints_step_combo["values"] = labels
-        if labels:
-            self.constraints_step_var.set(labels[0])
-            self.constraints_summary_var.set(f"Loaded {len(labels)} not_aligned=1 test cases from constraints_gate.csv")
-        else:
-            self.constraints_summary_var.set("No not_aligned=1 test cases found in constraints_gate.csv")
+            key_norm = key.strip().lower().replace("-", "_").replace(" ", "_").replace("/", "_")
+            value_norm = raw_val.strip()
+            if key_norm == "objective_core":
+                objective_core = value_norm
+            elif key_norm in {"numerical_domain", "numeric_domain", "numerical_domain_bounds"}:
+                numerical_domain = value_norm
+            elif key_norm in {"reject_rule_fail_gate", "fail_gate"}:
+                reject_rule_fail_gate = value_norm
 
-    def _constraints_selected_small_step_id(self) -> str:
-        label = self.constraints_step_var.get().strip()
-        if not label:
-            return ""
-        return label.split(" | ", 1)[0].strip()
+        self.constraints_objective_core_var.set(objective_core)
+        self.constraints_must_include_var.set(clean_text(parsed.get("must_include")))
+        self.constraints_must_not_include_var.set(clean_text(parsed.get("must_not_include")))
+        self.constraints_numerical_domain_var.set(numerical_domain)
+        self.constraints_reject_rule_fail_gate_var.set(reject_rule_fail_gate)
 
-    def _sync_constraints_selection_from_main_step(self, small_step_id: str) -> None:
+    def _get_constraints_text(self) -> str:
+        lines: list[str] = []
+
+        objective_core = self.constraints_objective_core_var.get().strip()
+        must_include = self.constraints_must_include_var.get().strip()
+        must_not_include = self.constraints_must_not_include_var.get().strip()
+        numerical_domain = self.constraints_numerical_domain_var.get().strip()
+        reject_rule_fail_gate = self.constraints_reject_rule_fail_gate_var.get().strip()
+
+        if objective_core:
+            lines.append(f"objective_core: {objective_core}")
+        if must_include:
+            lines.append(f"must_include: {must_include}")
+        if must_not_include:
+            lines.append(f"must_not_include: {must_not_include}")
+        if numerical_domain:
+            lines.append(f"numerical/domain: {numerical_domain}")
+        if reject_rule_fail_gate:
+            lines.append(f"reject_rule_fail_gate: {reject_rule_fail_gate}")
+
+        return "\n".join(lines)
+
+    def _load_constraints_text_for_step(self, small_step_id: str) -> None:
         if not small_step_id:
+            self._set_constraints_text("")
+            self.constraints_step_label_var.set("Selected small step: none")
             return
-        label = self.constraints_labels_by_step_id.get(small_step_id)
-        if label:
-            self.constraints_step_var.set(label)
 
-    def _on_constraints_step_selected(self, _event) -> None:
-        self._clear_constraints_results()
+        qa_row = self._get_qa_row_for_step(small_step_id)
+        constraints_text = clean_text(qa_row.get("constraints_text")) if qa_row else ""
+        self._set_constraints_text(constraints_text)
+
+        row = self.curriculum_by_id.get(small_step_id, {})
+        topic = clean_text(row.get("topic"))
+        small_step_name = clean_text(row.get("small_step_name"))
+        self.constraints_step_label_var.set(f"Selected small step: {small_step_id} | {topic} | {small_step_name}")
+
+    def _save_constraints_text(self) -> None:
+        small_step_id = self._selected_small_step_id()
+        row = self.curriculum_by_id.get(small_step_id)
+        if row is None:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+
+        constraints_text = self._get_constraints_text()
+
+        qa_row = self._build_or_get_qa_row_template(row)
+        qa_row["constraints_text"] = constraints_text
+        qa_row["updated_at"] = datetime.now().isoformat(timespec="seconds")
+
+        try:
+            self._upsert_qa_row(qa_row)
+        except Exception as exc:
+            messagebox.showerror("Constraints Save Error", str(exc))
+            return
+
+        self.constraints_summary_var.set("Constraints fields saved to qa/qa.csv")
+        self.status_var.set("Saved constraints text to qa/qa.csv")
 
     def _clear_constraints_results(self) -> None:
         self.constraints_results = []
@@ -646,6 +995,147 @@ class ImprovePickQAGUI:
             self.constraints_gate_labels[i].config(text="")
             self.constraints_reason_labels[i].config(text="")
             self.constraints_open_buttons[i].config(state=tk.DISABLED)
+
+    def _clear_alignment_results(self) -> None:
+        self.latest_alignment_results = []
+        for i in range(TOP_K):
+            self.alignment_title_labels[i].config(text="")
+            self.alignment_channel_labels[i].config(text="")
+            self.alignment_gate_labels[i].config(text="")
+            self.alignment_score_labels[i].config(text="")
+            self.alignment_combined_labels[i].config(text="")
+            self.alignment_open_buttons[i].config(state=tk.DISABLED)
+
+    def _render_alignment_results(self, results: list[dict[str, object]]) -> None:
+        self._clear_alignment_results()
+        self.latest_alignment_results = results[:TOP_K]
+
+        for i in range(TOP_K):
+            if i >= len(self.latest_alignment_results):
+                continue
+
+            result = self.latest_alignment_results[i]
+            video_id = clean_text(result.get("video_id"))
+            title = clean_text(result.get("title"))
+            channel = clean_text(result.get("channel"))
+
+            self.alignment_title_labels[i].config(text=f"{title} ({video_id})" if video_id else title)
+            self.alignment_channel_labels[i].config(text=channel)
+
+            gate_pass = bool(result.get("gate_pass", True))
+            gate_text = "PASS" if gate_pass else "FAIL"
+            self.alignment_gate_labels[i].config(text=gate_text, foreground="#1f7a1f" if gate_pass else "#aa2c2c")
+
+            try:
+                self.alignment_score_labels[i].config(text=f"{float(result.get('alignment_score', 0.0)):.1f}")
+            except (TypeError, ValueError):
+                self.alignment_score_labels[i].config(text="")
+
+            try:
+                self.alignment_combined_labels[i].config(text=f"{float(result.get('combined_score', 0.0)):.4f}")
+            except (TypeError, ValueError):
+                self.alignment_combined_labels[i].config(text="")
+
+            self.alignment_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+
+    def _open_alignment_video(self, index_num: int) -> None:
+        if index_num < 0 or index_num >= len(self.latest_alignment_results):
+            return
+        video_id = clean_text(self.latest_alignment_results[index_num].get("video_id"))
+        if not video_id:
+            return
+        webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
+
+    def _compute_stage3_score(self, result: dict[str, object]) -> float:
+        semantic = float(result.get("semantic_score", 0.0))
+        alignment = float(result.get("alignment_score", 0.0)) / 100.0
+
+        components = [(semantic, SEMANTIC_WEIGHT)]
+        if alignment > 0:
+            components.append((alignment, ALIGNMENT_WEIGHT))
+
+        total_weight = sum(weight for _, weight in components)
+        if total_weight <= 0:
+            return semantic
+        return sum(value * weight for value, weight in components) / total_weight
+
+    def _compute_stage4_final_score(self, stage3_score: float, instruction_score_raw: float) -> float:
+        instruction = max(0.0, float(instruction_score_raw)) / 100.0
+        components = [(stage3_score, SEMANTIC_WEIGHT + ALIGNMENT_WEIGHT)]
+        if instruction > 0:
+            components.append((instruction, INSTRUCTION_WEIGHT))
+
+        total_weight = sum(weight for _, weight in components)
+        if total_weight <= 0:
+            return stage3_score
+        return sum(value * weight for value, weight in components) / total_weight
+
+    def _clear_stage4_results(self) -> None:
+        self.latest_final_results = []
+        if self.stage4_survivors_tree is not None:
+            for item in self.stage4_survivors_tree.get_children():
+                self.stage4_survivors_tree.delete(item)
+
+        for i in range(TOP_K):
+
+            self.stage4_final_title_labels[i].config(text="")
+            self.stage4_final_stage3_labels[i].config(text="")
+            self.stage4_final_instruction_labels[i].config(text="")
+            self.stage4_final_score_labels[i].config(text="")
+            self.stage4_final_open_buttons[i].config(state=tk.DISABLED)
+
+    def _render_stage4_results(self, survivors: list[dict[str, object]]) -> None:
+        self._clear_stage4_results()
+
+        enriched_survivors: list[dict[str, object]] = []
+        for result in survivors:
+            stage3_score = self._compute_stage3_score(result)
+            instruction_score = float(result.get("instruction_score", 0.0))
+            final_score = self._compute_stage4_final_score(stage3_score, instruction_score)
+            enriched_survivors.append(
+                {
+                    **result,
+                    "stage3_score": stage3_score,
+                    "final_score": final_score,
+                }
+            )
+
+        final_top3 = sorted(enriched_survivors, key=lambda item: float(item.get("final_score", 0.0)), reverse=True)[:TOP_K]
+        self.latest_final_results = final_top3
+
+        if self.stage4_survivors_tree is not None:
+            for idx, survivor in enumerate(enriched_survivors, start=1):
+                title = clean_text(survivor.get("title"))
+                video_id = clean_text(survivor.get("video_id"))
+                self.stage4_survivors_tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        idx,
+                        f"{title} ({video_id})" if video_id else title,
+                        f"{float(survivor.get('stage3_score', 0.0)):.4f}",
+                        f"{float(survivor.get('instruction_score', 0.0)):.1f}",
+                    ),
+                )
+
+        for i in range(TOP_K):
+            if i < len(final_top3):
+                final_row = final_top3[i]
+                title = clean_text(final_row.get("title"))
+                video_id = clean_text(final_row.get("video_id"))
+                self.stage4_final_title_labels[i].config(text=f"{title} ({video_id})" if video_id else title)
+                self.stage4_final_stage3_labels[i].config(text=f"{float(final_row.get('stage3_score', 0.0)):.4f}")
+                self.stage4_final_instruction_labels[i].config(text=f"{float(final_row.get('instruction_score', 0.0)):.1f}")
+                self.stage4_final_score_labels[i].config(text=f"{float(final_row.get('final_score', 0.0)):.4f}")
+                self.stage4_final_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+
+    def _open_stage4_final_video(self, index_num: int) -> None:
+        if index_num < 0 or index_num >= len(self.latest_final_results):
+            return
+        video_id = clean_text(self.latest_final_results[index_num].get("video_id"))
+        if not video_id:
+            return
+        webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
 
     def _evaluate_constraints_for_text(self, gate_row: dict[str, object], text: str) -> tuple[bool, str]:
         haystack = text.lower()
@@ -677,24 +1167,21 @@ class ImprovePickQAGUI:
         return passed, "PASS" if passed else "; ".join(reasons)
 
     def _run_constraints_gate_test(self) -> None:
-        step_id = self._constraints_selected_small_step_id()
+        step_id = self._selected_small_step_id()
         if not step_id:
-            messagebox.showwarning("Missing test case", "Select a constraints gate test case first.")
+            messagebox.showwarning("Missing small step", "Select a small step first.")
             return
 
         if self.embedder is None or self.index is None:
             messagebox.showwarning("Not ready", "Retrieval assets are still loading or failed.")
             return
 
-        gate_row = self.constraints_by_step_id.get(step_id)
-        if gate_row is None:
-            messagebox.showwarning("Missing test case", "Selected constraints case was not found.")
-            return
-
         curriculum_row = self.curriculum_by_id.get(step_id, {})
         topic = clean_text(curriculum_row.get("topic"))
         small_step_name = clean_text(curriculum_row.get("small_step_name"))
-        ss_wr_desc = clean_text(gate_row.get("ss_wr_desc")) or clean_text(curriculum_row.get("ss_wr_desc"))
+        candidate_desc = self.candidate_text.get("1.0", tk.END).strip()
+        ss_wr_desc = candidate_desc or clean_text(curriculum_row.get("ss_wr_desc"))
+        gate_row = parse_constraints_text_block(self._get_constraints_text())
 
         try:
             shortlist_k = int(self.constraints_k_var.get().strip())
@@ -810,7 +1297,7 @@ class ImprovePickQAGUI:
         passed = sum(1 for r in results if bool(r.get("gate_pass")))
         failed = total - passed
         self.constraints_status_var.set(f"Constraints gate: complete ({total} FAISS videos evaluated)")
-        self.constraints_summary_var.set(f"Pass={passed} | Fail={failed} | Rule set driven by constraints_gate.csv")
+        self.constraints_summary_var.set(f"Pass={passed} | Fail={failed} | Rule set from constraints text in qa/qa.csv")
 
     def _on_constraints_gate_error(self, error_message: str) -> None:
         self.constraints_run_btn.config(state=tk.NORMAL)
@@ -866,8 +1353,6 @@ class ImprovePickQAGUI:
             )
             self.saved_step_ids = self._load_saved_step_ids_from_qa()
             self._refresh_step_combo_labels()
-
-            self._load_constraints_gate_cases()
 
             if self.step_var.get():
                 self._on_step_selected(None)
@@ -954,23 +1439,16 @@ class ImprovePickQAGUI:
         if qa_df.empty:
             return set()
 
-        candidate_rows = qa_df[qa_df["source"] == "candidate"].copy()
-        if candidate_rows.empty:
-            return set()
+        persisted_mask = qa_df["candidate_ss_wr_desc"].map(clean_text).str.len() > 0
+        for rank in range(1, TOP_K + 1):
+            persisted_mask = (
+                persisted_mask
+                | (qa_df[f"candidate_{rank}_video_id"].map(clean_text).str.len() > 0)
+                | (qa_df[f"candidate_{rank}_video_title"].map(clean_text).str.len() > 0)
+                | (qa_df[f"candidate_{rank}_combined_score"].map(clean_text).str.len() > 0)
+            )
 
-        for col in ["candidate_ss_wr_desc", "video_title", "combined_score"]:
-            if col in candidate_rows.columns:
-                candidate_rows[col] = candidate_rows[col].map(clean_text)
-
-        # A small step counts as saved once any candidate QA row has meaningful persisted content.
-        has_persisted_content = (
-            (candidate_rows["candidate_ss_wr_desc"].str.len() > 0)
-            | (candidate_rows["video_id"].str.len() > 0)
-            | (candidate_rows["video_title"].str.len() > 0)
-            | (candidate_rows["combined_score"].str.len() > 0)
-        )
-
-        return set(candidate_rows.loc[has_persisted_content, "small_step_id"].tolist())
+        return set(qa_df.loc[persisted_mask, "small_step_id"].map(clean_text).tolist())
 
     def _refresh_step_combo_labels(self, preserve_step_id: str = "") -> None:
         self.step_labels_by_id = {}
@@ -1054,25 +1532,29 @@ class ImprovePickQAGUI:
             self._on_step_selected(None)
 
     def _get_saved_candidate_text(self, small_step_id: str) -> str:
-        if not small_step_id or not APPROVED_CANDIDATES_PATH.exists():
+        if not small_step_id:
             return ""
 
-        try:
-            approved_df = pd.read_csv(APPROVED_CANDIDATES_PATH)
-        except Exception:
-            return ""
+        if APPROVED_CANDIDATES_PATH.exists():
+            try:
+                approved_df = pd.read_csv(APPROVED_CANDIDATES_PATH)
+            except Exception:
+                approved_df = pd.DataFrame()
 
-        required_cols = {"small_step_id", "candidate_ss_wr_desc"}
-        if not required_cols.issubset(approved_df.columns):
-            return ""
+            required_cols = {"small_step_id", "candidate_ss_wr_desc"}
+            if not approved_df.empty and required_cols.issubset(approved_df.columns):
+                approved_df["small_step_id"] = approved_df["small_step_id"].map(clean_text)
+                approved_df["candidate_ss_wr_desc"] = approved_df["candidate_ss_wr_desc"].map(clean_text)
+                step_rows = approved_df[approved_df["small_step_id"] == small_step_id]
+                if not step_rows.empty:
+                    saved_candidate = clean_text(step_rows.iloc[-1].get("candidate_ss_wr_desc"))
+                    if saved_candidate:
+                        return saved_candidate
 
-        approved_df["small_step_id"] = approved_df["small_step_id"].map(clean_text)
-        approved_df["candidate_ss_wr_desc"] = approved_df["candidate_ss_wr_desc"].map(clean_text)
-        step_rows = approved_df[approved_df["small_step_id"] == small_step_id]
-        if step_rows.empty:
+        qa_row = self._get_qa_row_for_step(small_step_id)
+        if qa_row is None:
             return ""
-
-        return clean_text(step_rows.iloc[-1].get("candidate_ss_wr_desc"))
+        return clean_text(qa_row.get("candidate_ss_wr_desc"))
 
     def _on_step_selected(self, _event) -> None:
         small_step_id = self._selected_small_step_id()
@@ -1091,9 +1573,10 @@ class ImprovePickQAGUI:
             self.candidate_display_unlocked_steps.add(small_step_id)
         else:
             self.candidate_display_unlocked_steps.discard(small_step_id)
-            self._set_candidate_panel_state("Candidate panel: locked until Save Approved Candidate + Update QA CSV")
+            self._set_candidate_panel_state("Candidate panel: locked until Update QA CSV")
         self.status_var.set("Ready")
-        self._sync_constraints_selection_from_main_step(small_step_id)
+        self._load_constraints_text_for_step(small_step_id)
+        self.constraints_status_var.set("Constraints gate: ready")
         self._schedule_semantic_preview()
 
     def _set_text(self, widget: scrolledtext.ScrolledText, content: str) -> None:
@@ -1123,7 +1606,7 @@ class ImprovePickQAGUI:
             self.saved_candidate_steps.discard(step_id)
             self.candidate_display_unlocked_steps.discard(step_id)
         self._clear_results()
-        self._set_candidate_panel_state("Candidate panel: candidate edited, Save Approved Candidate + Update QA CSV required")
+        self._set_candidate_panel_state("Candidate panel: candidate edited, click Update QA CSV to persist")
         self._schedule_semantic_preview()
 
     def _schedule_semantic_preview(self) -> None:
@@ -1245,10 +1728,14 @@ class ImprovePickQAGUI:
 
     def _clear_results(self) -> None:
         self.latest_results = []
+        self.latest_alignment_results = []
+        self.latest_final_results = []
         self.latest_query_text = ""
 
         self._clear_candidate_result_widgets(reset_ratings=True)
-        self._set_candidate_panel_state("Candidate panel: locked until Save Approved Candidate + Update QA CSV")
+        self._clear_alignment_results()
+        self._clear_stage4_results()
+        self._set_candidate_panel_state("Candidate panel: locked until Update QA CSV")
         self.save_btn.config(state=tk.DISABLED)
 
     def _clear_candidate_result_widgets(self, reset_ratings: bool) -> None:
@@ -1316,24 +1803,26 @@ class ImprovePickQAGUI:
             messagebox.showwarning("Missing candidate", "Enter candidate wording before searching.")
             return
 
-        # Any new search requires Save + Update before candidate panel is shown again.
+        # Any new search requires Update QA CSV before persisted candidate picks are shown again.
         self.saved_candidate_steps.discard(small_step_id)
         self.candidate_display_unlocked_steps.discard(small_step_id)
         self._clear_candidate_result_widgets(reset_ratings=True)
-        self._set_candidate_panel_state("Candidate panel: search is transient until Save Approved Candidate + Update QA CSV")
+        self._set_candidate_panel_state("Candidate panel: search is transient until Update QA CSV")
 
         self.search_btn.config(state=tk.DISABLED)
         self.save_btn.config(state=tk.DISABLED)
         self.status_var.set("Searching top 3 recommendations...")
 
+        constraints_text = self._get_constraints_text()
+
         worker = threading.Thread(
             target=self._search_worker,
-            args=(row, candidate),
+            args=(row, candidate, constraints_text),
             daemon=True,
         )
         worker.start()
 
-    def _search_worker(self, row: dict[str, object], candidate: str) -> None:
+    def _search_worker(self, row: dict[str, object], candidate: str, constraints_text: str) -> None:
         try:
             query_text = build_query_text(
                 topic=clean_text(row.get("topic")),
@@ -1353,49 +1842,80 @@ class ImprovePickQAGUI:
                     embedder=self.embedder,
                     scorer=self.scorer,
                     deleted_videos=self.deleted_videos,
-                    k=TOP_K,
+                    k=STAGE_PIPELINE_K,
                 )
             )
 
             enriched = []
+            gate_rules = parse_constraints_text_block(constraints_text)
+            has_gate_rules = any(clean_text(value) for value in gate_rules.values())
+
             for result in results:
                 video_id = clean_text(result.get("video_id"))
                 meta = self.video_lookup.get(video_id) or self.fallback_lookup.get(video_id) or {}
+
+                title = clean_text(result.get("title"))
+                gate_pass = True
+                gate_reason = "PASS"
+                if has_gate_rules and video_id:
+                    transcript = ""
+                    if self.scorer is not None:
+                        transcript = clean_text(self.scorer._load_transcript(video_id))
+                    gate_pass, gate_reason = self._evaluate_constraints_for_text(gate_rules, f"{title} {transcript[:2000]}")
+
                 enriched.append(
                     {
                         "video_id": video_id,
-                        "title": clean_text(result.get("title")),
+                        "title": title,
                         "channel": clean_text(meta.get("channel")),
                         "combined_score": float(result.get("combined_score", 0.0)),
                         "semantic_score": float(result.get("semantic_score", 0.0)),
                         "instruction_score": float(result.get("instruction_score", 0.0)),
+                        "alignment_score": float(result.get("alignment_score", 0.0)),
+                        "gate_pass": gate_pass,
+                        "gate_reason": gate_reason if has_gate_rules else "PASS (no constraints)",
                     }
                 )
 
-            self.root.after(0, self._on_search_success, enriched, query_text)
+            alignment_input = [result for result in enriched if bool(result.get("gate_pass"))]
+            self.root.after(0, self._on_search_success, enriched, alignment_input, query_text)
         except Exception as exc:
             self.root.after(0, self._on_search_error, str(exc))
 
-    def _on_search_success(self, results: list[dict[str, object]], query_text: str) -> None:
+    def _on_search_success(
+        self,
+        results: list[dict[str, object]],
+        alignment_input: list[dict[str, object]],
+        query_text: str,
+    ) -> None:
         self.latest_results = results
+        self.latest_alignment_results = alignment_input[:TOP_K]
         self.latest_query_text = query_text
 
-        self._render_candidate_search_results(results)
+        self._render_stage4_results(alignment_input)
+        if self.latest_final_results:
+            # Candidate panel and downstream QA save should use final ranking after stage 4.
+            self.latest_results = self.latest_final_results
+
+        self._render_candidate_search_results(self.latest_results)
+        self._render_alignment_results(alignment_input)
         self._set_candidate_panel_state("Candidate panel: showing current Search Top 3 results (not yet persisted)")
 
         self.search_btn.config(state=tk.NORMAL)
         self.save_btn.config(state=tk.NORMAL if results else tk.DISABLED)
 
         if results:
-            self.status_var.set(f"Search complete. Found {len(results)} recommendation(s).")
+            passed_count = sum(1 for result in results if bool(result.get("gate_pass", True)))
+            self.status_var.set(
+                f"Search complete. Found {len(results)} recommendation(s); {passed_count} pass constraints gate; final ranking ready in Stage 4 tab."
+            )
         else:
             self.status_var.set("Search complete. No recommendations found.")
 
     def _populate_candidate_from_qa(self, small_step_id: str) -> bool:
         self._clear_candidate_result_widgets(reset_ratings=True)
-        qa_df = self._load_qa_df()
-        step_rows = qa_df[(qa_df["small_step_id"] == small_step_id) & (qa_df["source"] == "candidate")]
-        if step_rows.empty:
+        qa_row = self._get_qa_row_for_step(small_step_id)
+        if qa_row is None:
             self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
             return False
 
@@ -1403,19 +1923,13 @@ class ImprovePickQAGUI:
         has_persisted_picks = False
         for i in range(TOP_K):
             rank = i + 1
-            rank_rows = step_rows[step_rows["rank"] == rank]
-            if rank_rows.empty:
-                displayed_results.append({})
-                continue
-
-            qa_row = rank_rows.iloc[-1]
-            video_id = clean_text(qa_row.get("video_id"))
-            title = clean_text(qa_row.get("video_title"))
-            channel = clean_text(qa_row.get("channel"))
+            video_id = clean_text(qa_row.get(f"candidate_{rank}_video_id"))
+            title = clean_text(qa_row.get(f"candidate_{rank}_video_title"))
+            channel = clean_text(qa_row.get(f"candidate_{rank}_channel"))
 
             score_text = ""
             try:
-                score_value = float(qa_row.get("combined_score"))
+                score_value = float(qa_row.get(f"candidate_{rank}_combined_score"))
                 score_text = f"{score_value:.4f}"
             except (TypeError, ValueError):
                 score_value = ""
@@ -1433,7 +1947,7 @@ class ImprovePickQAGUI:
             self.result_score_labels[i].config(text=score_text)
             self.result_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
             self.candidate_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
-            self.rating_vars[i].set(str(self._safe_parse_rating(qa_row.get("rating"), default=5)))
+            self.rating_vars[i].set(str(self._safe_parse_rating(qa_row.get(f"candidate_{rank}_rating_1_10"), default=5)))
             self._apply_rating_color(i)
 
             if video_id or title:
@@ -1451,11 +1965,13 @@ class ImprovePickQAGUI:
         if not has_persisted_picks:
             self._clear_candidate_result_widgets(reset_ratings=True)
             self.latest_results = []
+            self._clear_stage4_results()
             self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
             self.save_btn.config(state=tk.DISABLED)
             return False
 
         self.latest_results = displayed_results
+        self.latest_final_results = displayed_results
         self._set_candidate_panel_state("Candidate panel: showing persisted candidate picks from qa.csv")
         self.save_btn.config(state=tk.DISABLED)
         return True
@@ -1515,6 +2031,9 @@ class ImprovePickQAGUI:
                 "title": title,
                 "channel": channel,
                 "combined_score": combined_score,
+                "semantic_score": clean_text(r.get("semantic_score")),
+                "instruction_score": clean_text(r.get("instruction_score")),
+                "alignment_score": clean_text(r.get("alignment_score")),
             })
             self.precomputed_title_labels[i].config(text=f"{title} ({video_id})")
             self.precomputed_channel_labels[i].config(text=channel)
@@ -1573,69 +2092,134 @@ class ImprovePickQAGUI:
         return max(1, min(10, parsed))
 
     def _load_qa_df(self) -> pd.DataFrame:
-        columns = [
-            "updated_at",
+        if QA_TRACKING_PATH.exists():
+            qa_df = pd.read_csv(QA_TRACKING_PATH)
+        else:
+            qa_df = pd.DataFrame(columns=QA_COLUMNS)
+
+        # Legacy schema migration: one row per (small_step_id, source, rank)
+        if "source" in qa_df.columns and "rank" in qa_df.columns:
+            qa_df = self._migrate_legacy_qa_df(qa_df)
+
+        for col in QA_COLUMNS:
+            if col not in qa_df.columns:
+                qa_df[col] = ""
+
+        qa_df = qa_df[QA_COLUMNS].copy()
+        qa_df["small_step_id"] = qa_df["small_step_id"].map(clean_text)
+
+        text_columns = [col for col in QA_COLUMNS if col not in {"updated_at"}]
+        for col in text_columns:
+            if col != "small_step_id":
+                qa_df[col] = qa_df[col].map(clean_text)
+
+        qa_df = qa_df[qa_df["small_step_id"].str.len() > 0].copy()
+        qa_df = qa_df.drop_duplicates(subset=["small_step_id"], keep="last")
+        return qa_df.sort_values(["small_step_id"], kind="stable")
+
+    def _migrate_legacy_qa_df(self, legacy_df: pd.DataFrame) -> pd.DataFrame:
+        migrated_rows: list[dict[str, object]] = []
+
+        legacy = legacy_df.copy()
+        for col in [
             "small_step_id",
             "topic",
             "small_step_name",
             "source",
-            "rank",
             "video_id",
             "video_title",
             "channel",
-            "combined_score",
-            "rating",
             "candidate_ss_wr_desc",
             "awaiting download and faiss update",
-        ]
+        ]:
+            if col not in legacy.columns:
+                legacy[col] = ""
 
-        if QA_TRACKING_PATH.exists():
-            qa_df = pd.read_csv(QA_TRACKING_PATH)
-        else:
-            qa_df = pd.DataFrame(columns=columns)
+        legacy["small_step_id"] = legacy["small_step_id"].map(clean_text)
+        legacy["source"] = legacy["source"].map(clean_text)
+        legacy["rank"] = pd.to_numeric(legacy.get("rank"), errors="coerce")
 
-        for col in columns:
-            if col not in qa_df.columns:
-                qa_df[col] = ""
+        for small_step_id in sorted(legacy["small_step_id"].unique()):
+            if not small_step_id:
+                continue
 
-        qa_df["small_step_id"] = qa_df["small_step_id"].map(clean_text)
-        qa_df["source"] = qa_df["source"].map(clean_text)
-        qa_df["video_id"] = qa_df["video_id"].map(clean_text)
-        qa_df["rank"] = pd.to_numeric(qa_df["rank"], errors="coerce")
-        qa_df["rating"] = pd.to_numeric(qa_df["rating"], errors="coerce")
-        return qa_df[columns]
+            step_rows = legacy[legacy["small_step_id"] == small_step_id].copy()
+            if step_rows.empty:
+                continue
+
+            base_row = {col: "" for col in QA_COLUMNS}
+            latest_row = step_rows.iloc[-1]
+            curriculum_row = self.curriculum_by_id.get(small_step_id, {})
+
+            base_row["updated_at"] = clean_text(latest_row.get("updated_at")) or datetime.now().isoformat(timespec="seconds")
+            base_row["small_step_id"] = small_step_id
+            base_row["topic"] = clean_text(latest_row.get("topic")) or clean_text(curriculum_row.get("topic"))
+            base_row["small_step_name"] = clean_text(latest_row.get("small_step_name")) or clean_text(curriculum_row.get("small_step_name"))
+            base_row["baseline_ss_wr_desc"] = clean_text(curriculum_row.get("ss_wr_desc"))
+            base_row["candidate_ss_wr_desc"] = clean_text(
+                step_rows[step_rows["source"] == "candidate"].tail(1).iloc[0].get("candidate_ss_wr_desc")
+            ) if not step_rows[step_rows["source"] == "candidate"].empty else ""
+
+            awaiting_series = step_rows["awaiting download and faiss update"].map(clean_text)
+            awaiting_values = awaiting_series[awaiting_series.str.len() > 0]
+            base_row["awaiting download and faiss update"] = awaiting_values.iloc[-1] if not awaiting_values.empty else ""
+
+            for source in ("current", "candidate"):
+                source_rows = step_rows[step_rows["source"] == source]
+                for rank in range(1, TOP_K + 1):
+                    slot = source_rows[source_rows["rank"] == rank]
+                    if slot.empty:
+                        continue
+                    pick = slot.iloc[-1]
+                    prefix = f"{source}_{rank}"
+                    base_row[f"{prefix}_video_id"] = clean_text(pick.get("video_id"))
+                    base_row[f"{prefix}_video_title"] = clean_text(pick.get("video_title"))
+                    base_row[f"{prefix}_channel"] = clean_text(pick.get("channel"))
+                    base_row[f"{prefix}_rating_1_10"] = str(self._safe_parse_rating(pick.get("rating"), default=5))
+                    base_row[f"{prefix}_combined_score"] = clean_text(pick.get("combined_score"))
+
+            migrated_rows.append(base_row)
+
+        return pd.DataFrame(migrated_rows, columns=QA_COLUMNS)
+
+    def _empty_qa_row(self, row: dict[str, object]) -> dict[str, object]:
+        qa_row = {col: "" for col in QA_COLUMNS}
+        qa_row["updated_at"] = datetime.now().isoformat(timespec="seconds")
+        qa_row["small_step_id"] = clean_text(row.get("small_step_id"))
+        qa_row["topic"] = clean_text(row.get("topic"))
+        qa_row["small_step_name"] = clean_text(row.get("small_step_name"))
+        qa_row["baseline_ss_wr_desc"] = clean_text(row.get("ss_wr_desc"))
+        return qa_row
+
+    def _get_qa_row_for_step(self, small_step_id: str) -> dict[str, object] | None:
+        if not small_step_id:
+            return None
+        qa_df = self._load_qa_df()
+        step_rows = qa_df[qa_df["small_step_id"] == small_step_id]
+        if step_rows.empty:
+            return None
+        return step_rows.iloc[-1].to_dict()
+
+    def _build_or_get_qa_row_template(self, row: dict[str, object]) -> dict[str, object]:
+        small_step_id = clean_text(row.get("small_step_id"))
+        existing = self._get_qa_row_for_step(small_step_id)
+        if existing is None:
+            return self._empty_qa_row(row)
+
+        qa_row = {col: clean_text(existing.get(col)) for col in QA_COLUMNS}
+        qa_row["updated_at"] = datetime.now().isoformat(timespec="seconds")
+        qa_row["small_step_id"] = small_step_id
+        qa_row["topic"] = clean_text(row.get("topic"))
+        qa_row["small_step_name"] = clean_text(row.get("small_step_name"))
+        qa_row["baseline_ss_wr_desc"] = clean_text(row.get("ss_wr_desc"))
+        return qa_row
 
     def _ensure_qa_template_exists(self) -> None:
         if QA_TRACKING_PATH.exists():
             return
 
         QA_TRACKING_PATH.parent.mkdir(parents=True, exist_ok=True)
-        rows: list[dict[str, object]] = []
-        now = datetime.now().isoformat(timespec="seconds")
-
-        for small_step_id in self.sorted_step_ids:
-            row = self.curriculum_by_id.get(small_step_id, {})
-            for source in ("current", "candidate"):
-                for rank in range(1, TOP_K + 1):
-                    rows.append(
-                        {
-                            "updated_at": now,
-                            "small_step_id": clean_text(small_step_id),
-                            "topic": clean_text(row.get("topic")),
-                            "small_step_name": clean_text(row.get("small_step_name")),
-                            "source": source,
-                            "rank": rank,
-                            "video_id": "",
-                            "video_title": "",
-                            "channel": "",
-                            "combined_score": "",
-                            "rating": 5,
-                            "candidate_ss_wr_desc": "",
-                            "awaiting download and faiss update": "",
-                        }
-                    )
-
-        pd.DataFrame(rows).to_csv(QA_TRACKING_PATH, index=False)
+        pd.DataFrame(columns=QA_COLUMNS).to_csv(QA_TRACKING_PATH, index=False)
 
     def _restore_saved_ratings(
         self,
@@ -1648,19 +2232,13 @@ class ImprovePickQAGUI:
         if not small_step_id:
             return
 
-        qa_df = self._load_qa_df()
-        step_rows = qa_df[(qa_df["small_step_id"] == small_step_id) & (qa_df["source"] == source)]
-        if step_rows.empty:
+        qa_row = self._get_qa_row_for_step(small_step_id)
+        if qa_row is None:
             return
 
         for i in range(TOP_K):
             rank = i + 1
-            candidate_rows = step_rows[step_rows["rank"] == rank]
-            if candidate_rows.empty:
-                continue
-
-            qa_row = candidate_rows.iloc[-1]
-            qa_video_id = clean_text(qa_row.get("video_id"))
+            qa_video_id = clean_text(qa_row.get(f"{source}_{rank}_video_id"))
             result_video_id = ""
             if i < len(results):
                 result_video_id = clean_text(results[i].get("video_id"))
@@ -1669,58 +2247,55 @@ class ImprovePickQAGUI:
             if qa_video_id and result_video_id and qa_video_id != result_video_id:
                 continue
 
-            rating_vars[i].set(str(self._safe_parse_rating(qa_row.get("rating"), default=5)))
+            rating_vars[i].set(str(self._safe_parse_rating(qa_row.get(f"{source}_{rank}_rating_1_10"), default=5)))
             apply_color_fn(i)
 
-    def _collect_qa_rows(
+    def _build_qa_row(
         self,
         row: dict[str, object],
         candidate_text: str,
         candidate_ratings: list[int],
         precomputed_ratings: list[int],
         awaiting_download_faiss_text: str,
-    ) -> list[dict[str, object]]:
-        now = datetime.now().isoformat(timespec="seconds")
-        rows: list[dict[str, object]] = []
+    ) -> dict[str, object]:
+        qa_row = self._build_or_get_qa_row_template(row)
+        qa_row["updated_at"] = datetime.now().isoformat(timespec="seconds")
+        qa_row["candidate_ss_wr_desc"] = candidate_text
+        qa_row["constraints_text"] = self._get_constraints_text()
+        qa_row["awaiting download and faiss update"] = awaiting_download_faiss_text
 
-        def append_rows(source: str, results: list[dict[str, object]], ratings: list[int]) -> None:
+        def fill_slots(source: str, results: list[dict[str, object]], ratings: list[int]) -> None:
             for idx in range(TOP_K):
+                rank = idx + 1
+                prefix = f"{source}_{rank}"
                 result = results[idx] if idx < len(results) else {}
-                rows.append(
-                    {
-                        "updated_at": now,
-                        "small_step_id": clean_text(row.get("small_step_id")),
-                        "topic": clean_text(row.get("topic")),
-                        "small_step_name": clean_text(row.get("small_step_name")),
-                        "source": source,
-                        "rank": idx + 1,
-                        "video_id": clean_text(result.get("video_id")),
-                        "video_title": clean_text(result.get("title")),
-                        "channel": clean_text(result.get("channel")),
-                        "combined_score": result.get("combined_score", ""),
-                        "rating": ratings[idx] if idx < len(ratings) else 5,
-                        "candidate_ss_wr_desc": candidate_text if source == "candidate" else "",
-                        "awaiting download and faiss update": awaiting_download_faiss_text,
-                    }
-                )
+                qa_row[f"{prefix}_video_id"] = clean_text(result.get("video_id"))
+                qa_row[f"{prefix}_video_title"] = clean_text(result.get("title"))
+                qa_row[f"{prefix}_channel"] = clean_text(result.get("channel"))
+                qa_row[f"{prefix}_rating_1_10"] = str(ratings[idx] if idx < len(ratings) else 5)
 
-        append_rows("current", self.precomputed_results, precomputed_ratings)
-        append_rows("candidate", self.latest_results, candidate_ratings)
-        return rows
+                combined_score = clean_text(result.get("combined_score"))
+                semantic_score = clean_text(result.get("semantic_score"))
+                instruction_score = clean_text(result.get("instruction_score"))
+                alignment_score = clean_text(result.get("alignment_score"))
 
-    def _upsert_qa_rows(self, qa_rows: list[dict[str, object]]) -> None:
+                qa_row[f"{prefix}_combined_score"] = combined_score
+                qa_row[f"{prefix}_semantic_score"] = semantic_score
+                qa_row[f"{prefix}_instruction_score"] = instruction_score
+                qa_row[f"{prefix}_alignment_score"] = alignment_score
+
+        fill_slots("current", self.precomputed_results, precomputed_ratings)
+        fill_slots("candidate", self.latest_results, candidate_ratings)
+        return qa_row
+
+    def _upsert_qa_row(self, qa_row: dict[str, object]) -> None:
         self._ensure_qa_template_exists()
         qa_df = self._load_qa_df()
-        new_df = pd.DataFrame(qa_rows)
+        new_df = pd.DataFrame([{col: qa_row.get(col, "") for col in QA_COLUMNS}], columns=QA_COLUMNS)
 
-        for col in qa_df.columns:
-            if col not in new_df.columns:
-                new_df[col] = ""
-
-        merged = pd.concat([qa_df, new_df[qa_df.columns]], ignore_index=True)
-        merged["rank"] = pd.to_numeric(merged["rank"], errors="coerce")
-        merged = merged.drop_duplicates(subset=["small_step_id", "source", "rank"], keep="last")
-        merged = merged.sort_values(["small_step_id", "source", "rank"], kind="stable")
+        merged = pd.concat([qa_df, new_df], ignore_index=True)
+        merged = merged.drop_duplicates(subset=["small_step_id"], keep="last")
+        merged = merged.sort_values(["small_step_id"], kind="stable")
         merged.to_csv(QA_TRACKING_PATH, index=False)
 
     def _update_qa_csv(self) -> None:
@@ -1736,7 +2311,7 @@ class ImprovePickQAGUI:
         candidate_ratings = [self._safe_parse_rating(var.get(), default=5) for var in self.rating_vars]
         precomputed_ratings = [self._safe_parse_rating(var.get(), default=5) for var in self.precomputed_rating_vars]
 
-        qa_rows = self._collect_qa_rows(
+        qa_row = self._build_qa_row(
             row=row,
             candidate_text=candidate_text,
             candidate_ratings=candidate_ratings,
@@ -1745,7 +2320,9 @@ class ImprovePickQAGUI:
         )
 
         try:
-            self._upsert_qa_rows(qa_rows)
+            self._upsert_qa_row(qa_row)
+            if candidate_text:
+                self._save_approved_candidate_mapping(row=row, candidate=candidate_text)
         except Exception as exc:
             messagebox.showerror("QA Save Error", str(exc))
             return
@@ -1755,7 +2332,7 @@ class ImprovePickQAGUI:
         small_step_id = self._selected_small_step_id()
         if not small_step_id:
             self.status_var.set("Updated qa/qa.csv. Current step is filtered out by Show unsaved only.")
-            messagebox.showinfo("QA Updated", f"Saved QA rows to:\n{QA_TRACKING_PATH}")
+            messagebox.showinfo("QA Updated", f"Saved QA row to:\n{QA_TRACKING_PATH}")
             return
 
         if self._populate_candidate_from_qa(small_step_id):
@@ -1764,10 +2341,10 @@ class ImprovePickQAGUI:
         else:
             self.candidate_display_unlocked_steps.discard(small_step_id)
             self._clear_candidate_result_widgets(reset_ratings=False)
-            self._set_candidate_panel_state("Candidate panel: Update QA CSV ran, but Save Approved Candidate has not been done yet")
-            self.status_var.set("Updated qa/qa.csv. Candidate panel remains blank until Save Approved Candidate, then Update QA CSV.")
+            self._set_candidate_panel_state("Candidate panel: Update QA CSV ran, but no persisted candidate picks were found")
+            self.status_var.set("Updated qa/qa.csv. Candidate panel remains blank because no candidate picks are stored yet.")
 
-        messagebox.showinfo("QA Updated", f"Saved QA rows to:\n{QA_TRACKING_PATH}")
+        messagebox.showinfo("QA Updated", f"Saved QA row to:\n{QA_TRACKING_PATH}")
 
     def _append_result_to_videos_to_delete(self, source: str, index_num: int) -> None:
         results = self.precomputed_results if source == "current" else self.latest_results

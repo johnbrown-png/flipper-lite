@@ -2261,7 +2261,8 @@ class ImprovePickQAGUI:
         qa_row = self._build_or_get_qa_row_template(row)
         qa_row["updated_at"] = datetime.now().isoformat(timespec="seconds")
         qa_row["candidate_ss_wr_desc"] = candidate_text
-        qa_row["constraints_text"] = self._get_constraints_text()
+        # constraints_text is intentionally NOT written here; it is managed
+        # exclusively by _save_constraints_text so constraints stay per-step.
         qa_row["awaiting download and faiss update"] = awaiting_download_faiss_text
 
         def fill_slots(source: str, results: list[dict[str, object]], ratings: list[int]) -> None:

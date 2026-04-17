@@ -436,7 +436,6 @@ def render_result_card(result):
                 use_container_width=True,
                 type="primary"
             ):
-                st.session_state.viewing_video = True
                 st.session_state.current_video = result
                 st.rerun()
         
@@ -484,11 +483,6 @@ def main():
         st.session_state.viewing_video = False
     if 'current_video' not in st.session_state:
         st.session_state.current_video = None
-    
-    # If in video viewing mode, show video player instead of search interface
-    if st.session_state.viewing_video and st.session_state.current_video:
-        render_video_player(st.session_state.current_video)
-        return
     
     # ========== COLOR SCHEME ==========
     # Professional Blue (Trustworthy, Clean, Modern)
@@ -634,6 +628,41 @@ def main():
     # ==========================================
     st.markdown("---")
     
+    # ==========================================
+    # INLINE VIDEO PANEL (shown when a video is selected)
+    # ==========================================
+    if st.session_state.current_video:
+        vid = st.session_state.current_video
+        video_id = vid['video_id']
+        title = vid['title']
+        channel = vid.get('channel', '').replace('_', ' ')
+        duration = format_duration(vid.get('duration', ''))
+        embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1&autoplay=1"
+        meta_parts = [p for p in [channel, duration] if p]
+        meta_str = " | ".join(meta_parts)
+        meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
+        st.markdown(
+            f"""
+            <div style="background:#1e3a5f; border-radius:10px; padding:0.75rem 0.75rem 0.5rem 0.75rem; margin-bottom:0.75rem;">
+                <div style="color:#f0f4f8; font-size:1rem; font-weight:600; margin-bottom:0.5rem;">
+                    &#9654; Now Playing: {title}{meta_html}
+                </div>
+                <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:6px;">
+                    <iframe src="{embed_url}"
+                        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        if st.button("✕  Close video", key="close_inline_video", type="secondary"):
+            st.session_state.current_video = None
+            st.rerun()
+        st.markdown("---")
+
     if st.session_state.display_status == 'idle':
         # Empty state - no message
         pass

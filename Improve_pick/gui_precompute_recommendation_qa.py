@@ -17,6 +17,7 @@ from pathlib import Path
 import re
 import sys
 import threading
+from typing import Any
 import webbrowser
 
 import pandas as pd
@@ -28,7 +29,7 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from precompute_curriculum_recommendations import calculate_cosine_similarity, load_faiss_index, search_and_score_async
+from precompute_curriculum_recommendations import calculate_cosine_similarity, load_faiss_index
 from query_embedder import QueryEmbedder
 from data_pipeline.deletion_tracker import DeletionTracker
 from data_pipeline.instruction_quality_scorer import InstructionQualityScorer
@@ -46,7 +47,6 @@ SEMANTIC_PREVIEW_CHUNKS = 40
 SEMANTIC_PREVIEW_DEBOUNCE_MS = 550
 CONSTRAINTS_GATE_DEFAULT_K = 20
 CONSTRAINTS_GATE_MAX_K = 80
-STAGE_PIPELINE_K = 10
 SEMANTIC_WEIGHT = 0.55
 ALIGNMENT_WEIGHT = 0.20
 INSTRUCTION_WEIGHT = 0.25
@@ -294,6 +294,7 @@ class ImprovePickQAGUI:
         self.video_lookup: dict[str, dict[str, str]] = {}
 
         self.latest_results: list[dict[str, object]] = []
+        self.latest_enriched_results: list[dict[str, object]] = []
         self.latest_alignment_results: list[dict[str, object]] = []
         self.latest_final_results: list[dict[str, object]] = []
         self.latest_query_text = ""
@@ -330,12 +331,7 @@ class ImprovePickQAGUI:
         self.constraints_reason_labels: list[ttk.Label] = []
         self.constraints_open_buttons: list[ttk.Button] = []
         self.constraints_score_labels: list[ttk.Label] = []
-        self.alignment_title_labels: list[ttk.Label] = []
-        self.alignment_channel_labels: list[ttk.Label] = []
-        self.alignment_gate_labels: list[ttk.Label] = []
-        self.alignment_score_labels: list[ttk.Label] = []
-        self.alignment_combined_labels: list[ttk.Label] = []
-        self.alignment_open_buttons: list[ttk.Button] = []
+        self.alignment_tree: ttk.Treeview | None = None
         self.stage4_survivors_tree: ttk.Treeview | None = None
         self.stage4_final_title_labels: list[ttk.Label] = []
         self.stage4_final_stage3_labels: list[ttk.Label] = []
@@ -763,50 +759,39 @@ class ImprovePickQAGUI:
 
         alignment_results_frame = ttk.LabelFrame(alignment_tab, text="Stage 3 Alignment Scoring Input Set", padding=6)
         alignment_results_frame.grid(row=1, column=0, sticky="nsew")
-        alignment_results_frame.columnconfigure(1, weight=1)
+        alignment_results_frame.columnconfigure(0, weight=1)
+        alignment_results_frame.rowconfigure(0, weight=1)
 
-        alignment_headers = ["Rank", "Title (video_id)", "Channel", "Stage 2 Gate", "Stage 3 Alignment", "Combined", "Open"]
-        for col, header in enumerate(alignment_headers):
-            ttk.Label(alignment_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(
-                row=0,
-                column=col,
-                sticky="w",
-                padx=4,
-                pady=(0, 4),
-            )
+        self.alignment_tree = ttk.Treeview(
+            alignment_results_frame,
+            columns=("rank", "title", "channel", "gate", "alignment", "combined"),
+            show="headings",
+            height=8,
+        )
+        self.alignment_tree.grid(row=0, column=0, sticky="nsew")
+        self.alignment_tree.heading("rank", text="Rank")
+        self.alignment_tree.heading("title", text="Title (video_id)")
+        self.alignment_tree.heading("channel", text="Channel")
+        self.alignment_tree.heading("gate", text="Stage 2 Gate")
+        self.alignment_tree.heading("alignment", text="Stage 3 Alignment")
+        self.alignment_tree.heading("combined", text="Combined")
+        self.alignment_tree.column("rank", width=60, anchor="w")
+        self.alignment_tree.column("title", width=520, anchor="w")
+        self.alignment_tree.column("channel", width=180, anchor="w")
+        self.alignment_tree.column("gate", width=100, anchor="w")
+        self.alignment_tree.column("alignment", width=110, anchor="w")
+        self.alignment_tree.column("combined", width=110, anchor="w")
+        self.alignment_tree.bind("<Double-1>", self._open_selected_alignment_video)
 
-        for i in range(TOP_K):
-            row_num = i + 1
-            ttk.Label(alignment_results_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=2)
+        alignment_scroll = ttk.Scrollbar(alignment_results_frame, orient="vertical", command=self.alignment_tree.yview)
+        alignment_scroll.grid(row=0, column=1, sticky="ns")
+        self.alignment_tree.configure(yscrollcommand=alignment_scroll.set)
 
-            title_label = ttk.Label(alignment_results_frame, text="", width=46)
-            title_label.grid(row=row_num, column=1, sticky="w", padx=4, pady=2)
-            self.alignment_title_labels.append(title_label)
-
-            channel_label = ttk.Label(alignment_results_frame, text="", width=20)
-            channel_label.grid(row=row_num, column=2, sticky="w", padx=4, pady=2)
-            self.alignment_channel_labels.append(channel_label)
-
-            gate_label = ttk.Label(alignment_results_frame, text="", width=12)
-            gate_label.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
-            self.alignment_gate_labels.append(gate_label)
-
-            alignment_score_label = ttk.Label(alignment_results_frame, text="", width=10)
-            alignment_score_label.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
-            self.alignment_score_labels.append(alignment_score_label)
-
-            combined_score_label = ttk.Label(alignment_results_frame, text="", width=10)
-            combined_score_label.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
-            self.alignment_combined_labels.append(combined_score_label)
-
-            open_btn = ttk.Button(
-                alignment_results_frame,
-                text="Open",
-                command=lambda idx=i: self._open_alignment_video(idx),
-                state=tk.DISABLED,
-            )
-            open_btn.grid(row=row_num, column=6, sticky="w", padx=4, pady=2)
-            self.alignment_open_buttons.append(open_btn)
+        ttk.Label(
+            alignment_results_frame,
+            text="All Stage 2 PASS survivors are scored here. Double-click a row to open the video.",
+            foreground="#555555",
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
 
         ttk.Label(
             stage4_tab,
@@ -998,45 +983,46 @@ class ImprovePickQAGUI:
 
     def _clear_alignment_results(self) -> None:
         self.latest_alignment_results = []
-        for i in range(TOP_K):
-            self.alignment_title_labels[i].config(text="")
-            self.alignment_channel_labels[i].config(text="")
-            self.alignment_gate_labels[i].config(text="")
-            self.alignment_score_labels[i].config(text="")
-            self.alignment_combined_labels[i].config(text="")
-            self.alignment_open_buttons[i].config(state=tk.DISABLED)
+        if self.alignment_tree is not None:
+            for item in self.alignment_tree.get_children():
+                self.alignment_tree.delete(item)
 
     def _render_alignment_results(self, results: list[dict[str, object]]) -> None:
         self._clear_alignment_results()
-        self.latest_alignment_results = results[:TOP_K]
+        self.latest_alignment_results = list(results)
 
-        for i in range(TOP_K):
-            if i >= len(self.latest_alignment_results):
-                continue
+        if self.alignment_tree is None:
+            return
 
-            result = self.latest_alignment_results[i]
+        for i, result in enumerate(self.latest_alignment_results, start=1):
             video_id = clean_text(result.get("video_id"))
             title = clean_text(result.get("title"))
             channel = clean_text(result.get("channel"))
-
-            self.alignment_title_labels[i].config(text=f"{title} ({video_id})" if video_id else title)
-            self.alignment_channel_labels[i].config(text=channel)
-
-            gate_pass = bool(result.get("gate_pass", True))
-            gate_text = "PASS" if gate_pass else "FAIL"
-            self.alignment_gate_labels[i].config(text=gate_text, foreground="#1f7a1f" if gate_pass else "#aa2c2c")
+            gate_text = "PASS" if bool(result.get("gate_pass", True)) else "FAIL"
 
             try:
-                self.alignment_score_labels[i].config(text=f"{float(result.get('alignment_score', 0.0)):.1f}")
+                alignment_score = f"{float(result.get('alignment_score', 0.0)):.1f}"
             except (TypeError, ValueError):
-                self.alignment_score_labels[i].config(text="")
+                alignment_score = ""
 
             try:
-                self.alignment_combined_labels[i].config(text=f"{float(result.get('combined_score', 0.0)):.4f}")
+                combined_score = f"{float(result.get('combined_score', 0.0)):.4f}"
             except (TypeError, ValueError):
-                self.alignment_combined_labels[i].config(text="")
+                combined_score = ""
 
-            self.alignment_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.alignment_tree.insert(
+                "",
+                tk.END,
+                iid=str(i - 1),
+                values=(
+                    i,
+                    f"{title} ({video_id})" if video_id else title,
+                    channel,
+                    gate_text,
+                    alignment_score,
+                    combined_score,
+                ),
+            )
 
     def _open_alignment_video(self, index_num: int) -> None:
         if index_num < 0 or index_num >= len(self.latest_alignment_results):
@@ -1045,6 +1031,18 @@ class ImprovePickQAGUI:
         if not video_id:
             return
         webbrowser.open(f"https://www.youtube.com/watch?v={video_id}")
+
+    def _open_selected_alignment_video(self, _event=None) -> None:
+        if self.alignment_tree is None:
+            return
+        selection = self.alignment_tree.selection()
+        if not selection:
+            return
+        try:
+            index_num = int(selection[0])
+        except ValueError:
+            return
+        self._open_alignment_video(index_num)
 
     def _compute_stage3_score(self, result: dict[str, object]) -> float:
         semantic = float(result.get("semantic_score", 0.0))
@@ -1166,6 +1164,139 @@ class ImprovePickQAGUI:
         passed = len(reasons) == 0
         return passed, "PASS" if passed else "; ".join(reasons)
 
+    def _get_constraints_shortlist_k(self) -> int:
+        try:
+            shortlist_k = int(self.constraints_k_var.get().strip())
+        except ValueError:
+            shortlist_k = CONSTRAINTS_GATE_DEFAULT_K
+        shortlist_k = max(5, min(CONSTRAINTS_GATE_MAX_K, shortlist_k))
+        self.constraints_k_var.set(str(shortlist_k))
+        return shortlist_k
+
+    def _build_stage2_shortlist(
+        self,
+        query_text: str,
+        gate_row: dict[str, object],
+        shortlist_k: int,
+    ) -> list[dict[str, Any]]:
+        embedding = self.embedder.embed_query(query_text).reshape(1, -1)
+        distances, indices = self.index.search(embedding, shortlist_k)
+
+        video_chunks: dict[str, list[dict[str, object]]] = {}
+        for dist, idx in zip(distances[0], indices[0]):
+            if idx == -1 or idx >= len(self.metadata):
+                continue
+
+            video_meta = self.metadata[int(idx)]
+            video_id = clean_text(video_meta.get("video_id"))
+            if not video_id or video_id in self.deleted_videos:
+                continue
+
+            cosine_sim = calculate_cosine_similarity(float(dist))
+            video_chunks.setdefault(video_id, []).append(
+                {
+                    "cosine_similarity": float(cosine_sim),
+                    "video_meta": video_meta,
+                    "chunk_text": clean_text(video_meta.get("text")),
+                }
+            )
+
+        ranked_results: list[dict[str, Any]] = []
+        for video_id, chunks in video_chunks.items():
+            sims = [float(chunk["cosine_similarity"]) for chunk in chunks]
+            good_chunks = [sim for sim in sims if sim >= 0.6]
+            median_sim = sorted(sims)[len(sims) // 2]
+            ranking_score = median_sim + (len(good_chunks) * 0.02)
+
+            sorted_chunks = sorted(chunks, key=lambda item: float(item["cosine_similarity"]), reverse=True)
+            evidence_text = " ".join(clean_text(chunk.get("chunk_text")) for chunk in sorted_chunks[:3])
+            best_meta = sorted_chunks[0]["video_meta"]
+            title = clean_text(best_meta.get("video_title") or best_meta.get("title"))
+            meta = self.video_lookup.get(video_id) or self.fallback_lookup.get(video_id) or {}
+            gate_eval_text = f"{title} {evidence_text}".strip()
+            gate_pass, gate_reason = self._evaluate_constraints_for_text(gate_row, gate_eval_text)
+
+            ranked_results.append(
+                {
+                    "video_id": video_id,
+                    "title": title,
+                    "channel": clean_text(meta.get("channel") or best_meta.get("channel")),
+                    "semantic_score": ranking_score,
+                    "gate_pass": gate_pass,
+                    "gate_reason": gate_reason,
+                    "gate_eval_text": gate_eval_text,
+                }
+            )
+
+        ranked_results.sort(key=lambda item: float(item["semantic_score"]), reverse=True)
+        return ranked_results
+
+    async def _score_stage2_survivors_async(
+        self,
+        survivors: list[dict[str, Any]],
+        age: str,
+        topic: str,
+        small_step_name: str,
+        small_step_desc: str,
+    ) -> list[dict[str, Any]]:
+        if not survivors:
+            return []
+
+        video_ids = [clean_text(result.get("video_id")) for result in survivors if clean_text(result.get("video_id"))]
+        if not video_ids:
+            return []
+
+        instruction_scores, alignment_scores = await asyncio.gather(
+            asyncio.gather(
+                *[
+                    self.scorer.score_for_curriculum_context_async(
+                        video_id=video_id,
+                        age=age,
+                        topic=topic,
+                        small_step=small_step_name,
+                        small_step_desc=small_step_desc,
+                        use_cache=True,
+                    )
+                    for video_id in video_ids
+                ]
+            ),
+            asyncio.gather(
+                *[
+                    self.scorer.score_alignment_for_curriculum_context_async(
+                        video_id=video_id,
+                        age=age,
+                        topic=topic,
+                        small_step=small_step_name,
+                        small_step_desc=small_step_desc,
+                        use_cache=True,
+                    )
+                    for video_id in video_ids
+                ]
+            ),
+        )
+
+        instruction_map = {item["video_id"]: item for item in instruction_scores if item}
+        alignment_map = {item["video_id"]: item for item in alignment_scores if item}
+
+        scored_results: list[dict[str, Any]] = []
+        for survivor in survivors:
+            video_id = clean_text(survivor.get("video_id"))
+            instruction_score_raw = instruction_map.get(video_id, {}).get("score") or 0.0
+            alignment_score_raw = alignment_map.get(video_id, {}).get("score") or 0.0
+
+            scored_result = {
+                **survivor,
+                "instruction_score": float(instruction_score_raw),
+                "instruction_justification": clean_text(instruction_map.get(video_id, {}).get("justification")),
+                "alignment_score": float(alignment_score_raw),
+                "alignment_justification": clean_text(alignment_map.get(video_id, {}).get("justification")),
+            }
+            scored_result["combined_score"] = self._compute_stage3_score(scored_result)
+            scored_results.append(scored_result)
+
+        scored_results.sort(key=lambda item: float(item.get("combined_score", 0.0)), reverse=True)
+        return scored_results
+
     def _run_constraints_gate_test(self) -> None:
         step_id = self._selected_small_step_id()
         if not step_id:
@@ -1183,14 +1314,7 @@ class ImprovePickQAGUI:
         ss_wr_desc = candidate_desc or clean_text(curriculum_row.get("ss_wr_desc"))
         gate_row = parse_constraints_text_block(self._get_constraints_text())
 
-        try:
-            shortlist_k = int(self.constraints_k_var.get().strip())
-        except ValueError:
-            shortlist_k = CONSTRAINTS_GATE_DEFAULT_K
-            self.constraints_k_var.set(str(shortlist_k))
-
-        shortlist_k = max(5, min(CONSTRAINTS_GATE_MAX_K, shortlist_k))
-        self.constraints_k_var.set(str(shortlist_k))
+        shortlist_k = self._get_constraints_shortlist_k()
 
         self.constraints_run_btn.config(state=tk.DISABLED)
         self.constraints_status_var.set("Constraints gate: running FAISS shortlist and hard-rule gate...")
@@ -1213,55 +1337,7 @@ class ImprovePickQAGUI:
     ) -> None:
         try:
             query_text = build_query_text(topic=topic, small_step_name=small_step_name, ss_wr_desc=ss_wr_desc)
-            embedding = self.embedder.embed_query(query_text).reshape(1, -1)
-            distances, indices = self.index.search(embedding, shortlist_k)
-
-            video_chunks: dict[str, list[dict[str, object]]] = {}
-            for dist, idx in zip(distances[0], indices[0]):
-                if idx == -1 or idx >= len(self.metadata):
-                    continue
-
-                video_meta = self.metadata[int(idx)]
-                video_id = clean_text(video_meta.get("video_id"))
-                if not video_id or video_id in self.deleted_videos:
-                    continue
-
-                cosine_sim = calculate_cosine_similarity(float(dist))
-                if video_id not in video_chunks:
-                    video_chunks[video_id] = []
-
-                video_chunks[video_id].append(
-                    {
-                        "cosine_similarity": float(cosine_sim),
-                        "video_meta": video_meta,
-                        "chunk_text": clean_text(video_meta.get("text")),
-                    }
-                )
-
-            ranked_results: list[dict[str, object]] = []
-            for video_id, chunks in video_chunks.items():
-                sims = [float(c["cosine_similarity"]) for c in chunks]
-                good_chunks = [sim for sim in sims if sim >= 0.6]
-                median_sim = sorted(sims)[len(sims) // 2]
-                ranking_score = median_sim + (len(good_chunks) * 0.02)
-
-                sorted_chunks = sorted(chunks, key=lambda item: float(item["cosine_similarity"]), reverse=True)
-                evidence_text = " ".join(chunk.get("chunk_text", "") for chunk in sorted_chunks[:3])
-                best_meta = sorted_chunks[0]["video_meta"]
-                title = clean_text(best_meta.get("video_title") or best_meta.get("title"))
-
-                gate_pass, gate_reason = self._evaluate_constraints_for_text(gate_row, f"{title} {evidence_text}")
-                ranked_results.append(
-                    {
-                        "video_id": video_id,
-                        "title": title,
-                        "semantic_score": ranking_score,
-                        "gate_pass": gate_pass,
-                        "gate_reason": gate_reason,
-                    }
-                )
-
-            ranked_results.sort(key=lambda item: float(item["semantic_score"]), reverse=True)
+            ranked_results = self._build_stage2_shortlist(query_text, gate_row, shortlist_k)
             self.root.after(0, self._on_constraints_gate_success, ranked_results)
         except Exception as exc:
             self.root.after(0, self._on_constraints_gate_error, str(exc))
@@ -1298,6 +1374,28 @@ class ImprovePickQAGUI:
         failed = total - passed
         self.constraints_status_var.set(f"Constraints gate: complete ({total} FAISS videos evaluated)")
         self.constraints_summary_var.set(f"Pass={passed} | Fail={failed} | Rule set from constraints text in qa/qa.csv")
+
+        # Re-apply current gate rules to the main search results so Stage 3/4 stay in sync.
+        if self.latest_enriched_results:
+            current_gate_row = parse_constraints_text_block(self._get_constraints_text())
+            has_rules = any(clean_text(v) for v in current_gate_row.values())
+            for result in self.latest_enriched_results:
+                if has_rules:
+                    eval_text = clean_text(result.get("gate_eval_text")) or clean_text(result.get("title", ""))
+                    gate_pass, gate_reason = self._evaluate_constraints_for_text(current_gate_row, eval_text)
+                    result["gate_pass"] = gate_pass
+                    result["gate_reason"] = gate_reason
+                else:
+                    result["gate_pass"] = True
+                    result["gate_reason"] = "PASS (no constraints)"
+            alignment_input = [r for r in self.latest_enriched_results if bool(r.get("gate_pass"))]
+            self._render_stage4_results(alignment_input)
+            if self.latest_final_results:
+                self.latest_results = self.latest_final_results
+            else:
+                self.latest_results = []
+            self._render_candidate_search_results(self.latest_results)
+            self._render_alignment_results(alignment_input)
 
     def _on_constraints_gate_error(self, error_message: str) -> None:
         self.constraints_run_btn.config(state=tk.NORMAL)
@@ -1728,6 +1826,7 @@ class ImprovePickQAGUI:
 
     def _clear_results(self) -> None:
         self.latest_results = []
+        self.latest_enriched_results = []
         self.latest_alignment_results = []
         self.latest_final_results = []
         self.latest_query_text = ""
@@ -1829,67 +1928,33 @@ class ImprovePickQAGUI:
                 small_step_name=clean_text(row.get("small_step_name")),
                 ss_wr_desc=candidate,
             )
-
-            results = asyncio.run(
-                search_and_score_async(
-                    query_text=query_text,
+            gate_rules = parse_constraints_text_block(constraints_text)
+            shortlist_k = self._get_constraints_shortlist_k()
+            stage2_results = self._build_stage2_shortlist(query_text, gate_rules, shortlist_k)
+            stage2_survivors = [result for result in stage2_results if bool(result.get("gate_pass"))]
+            scored_survivors = asyncio.run(
+                self._score_stage2_survivors_async(
+                    survivors=stage2_survivors,
                     age=clean_text(row.get("age")),
                     topic=clean_text(row.get("topic")),
-                    small_step=clean_text(row.get("small_step_name")),
+                    small_step_name=clean_text(row.get("small_step_name")),
                     small_step_desc=candidate,
-                    index=self.index,
-                    metadata=self.metadata,
-                    embedder=self.embedder,
-                    scorer=self.scorer,
-                    deleted_videos=self.deleted_videos,
-                    k=STAGE_PIPELINE_K,
                 )
             )
-
-            enriched = []
-            gate_rules = parse_constraints_text_block(constraints_text)
-            has_gate_rules = any(clean_text(value) for value in gate_rules.values())
-
-            for result in results:
-                video_id = clean_text(result.get("video_id"))
-                meta = self.video_lookup.get(video_id) or self.fallback_lookup.get(video_id) or {}
-
-                title = clean_text(result.get("title"))
-                gate_pass = True
-                gate_reason = "PASS"
-                if has_gate_rules and video_id:
-                    transcript = ""
-                    if self.scorer is not None:
-                        transcript = clean_text(self.scorer._load_transcript(video_id))
-                    gate_pass, gate_reason = self._evaluate_constraints_for_text(gate_rules, f"{title} {transcript[:2000]}")
-
-                enriched.append(
-                    {
-                        "video_id": video_id,
-                        "title": title,
-                        "channel": clean_text(meta.get("channel")),
-                        "combined_score": float(result.get("combined_score", 0.0)),
-                        "semantic_score": float(result.get("semantic_score", 0.0)),
-                        "instruction_score": float(result.get("instruction_score", 0.0)),
-                        "alignment_score": float(result.get("alignment_score", 0.0)),
-                        "gate_pass": gate_pass,
-                        "gate_reason": gate_reason if has_gate_rules else "PASS (no constraints)",
-                    }
-                )
-
-            alignment_input = [result for result in enriched if bool(result.get("gate_pass"))]
-            self.root.after(0, self._on_search_success, enriched, alignment_input, query_text)
+            self.root.after(0, self._on_search_success, stage2_results, scored_survivors, query_text)
         except Exception as exc:
             self.root.after(0, self._on_search_error, str(exc))
 
     def _on_search_success(
         self,
-        results: list[dict[str, object]],
+        stage2_results: list[dict[str, object]],
         alignment_input: list[dict[str, object]],
         query_text: str,
     ) -> None:
-        self.latest_results = results
-        self.latest_alignment_results = alignment_input[:TOP_K]
+        self.constraints_results = stage2_results
+        self.latest_enriched_results = alignment_input
+        self.latest_results = alignment_input
+        self.latest_alignment_results = list(alignment_input)
         self.latest_query_text = query_text
 
         self._render_stage4_results(alignment_input)
@@ -1902,12 +1967,12 @@ class ImprovePickQAGUI:
         self._set_candidate_panel_state("Candidate panel: showing current Search Top 3 results (not yet persisted)")
 
         self.search_btn.config(state=tk.NORMAL)
-        self.save_btn.config(state=tk.NORMAL if results else tk.DISABLED)
+        self.save_btn.config(state=tk.NORMAL if alignment_input else tk.DISABLED)
 
-        if results:
-            passed_count = sum(1 for result in results if bool(result.get("gate_pass", True)))
+        if stage2_results:
+            passed_count = sum(1 for result in stage2_results if bool(result.get("gate_pass", True)))
             self.status_var.set(
-                f"Search complete. Found {len(results)} recommendation(s); {passed_count} pass constraints gate; final ranking ready in Stage 4 tab."
+                f"Search complete. Evaluated {len(stage2_results)} Stage 2 candidates; {passed_count} pass constraints gate and were scored in Stages 3-4."
             )
         else:
             self.status_var.set("Search complete. No recommendations found.")

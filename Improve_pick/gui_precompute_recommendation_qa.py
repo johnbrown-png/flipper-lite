@@ -42,6 +42,7 @@ APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
 TOP_K = 3
+LOW_CANDIDATE_RATING_THRESHOLD = 7
 SEMANTIC_PREVIEW_K = 5
 SEMANTIC_PREVIEW_CHUNKS = 40
 SEMANTIC_PREVIEW_DEBOUNCE_MS = 550
@@ -404,13 +405,21 @@ class ImprovePickQAGUI:
             command=self._jump_to_next_unsaved,
         )
         self.jump_unsaved_btn.grid(row=1, column=1, sticky="w", pady=(4, 0))
+
+        self.jump_low_candidate_btn = ttk.Button(
+            selector_frame,
+            text=f"Jump to Next Candidate <= {LOW_CANDIDATE_RATING_THRESHOLD}",
+            command=self._jump_to_next_low_candidate_rating,
+        )
+        self.jump_low_candidate_btn.grid(row=1, column=2, sticky="w", padx=(12, 0), pady=(4, 0))
+
         self.show_unsaved_check = ttk.Checkbutton(
             selector_frame,
             text="Show unsaved only",
             variable=self.show_unsaved_only_var,
             command=self._on_show_unsaved_only_changed,
         )
-        self.show_unsaved_check.grid(row=1, column=2, columnspan=2, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.show_unsaved_check.grid(row=1, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
 
         text_frame = ttk.LabelFrame(outer, text="Query Text", padding=8)
         text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
@@ -1583,6 +1592,53 @@ class ImprovePickQAGUI:
         has_unsaved = done_steps < total_steps
         self.jump_unsaved_btn.config(state=tk.NORMAL if has_unsaved else tk.DISABLED)
 
+        low_candidate_step_ids = self._load_low_candidate_rating_step_ids()
+        self.jump_low_candidate_btn.config(state=tk.NORMAL if low_candidate_step_ids else tk.DISABLED)
+
+    def _load_low_candidate_rating_step_ids(self) -> set[str]:
+        """Return step ids where any persisted candidate rating is <= threshold.
+
+        Empty candidate slots are ignored so template/default values do not count.
+        """
+        if not QA_TRACKING_PATH.exists():
+            return set()
+
+        try:
+            qa_df = self._load_qa_df()
+        except Exception:
+            return set()
+
+        if qa_df.empty:
+            return set()
+
+        low_step_ids: set[str] = set()
+        for _, qa_row in qa_df.iterrows():
+            small_step_id = clean_text(qa_row.get("small_step_id"))
+            if not small_step_id:
+                continue
+
+            for rank in range(1, TOP_K + 1):
+                video_id = clean_text(qa_row.get(f"candidate_{rank}_video_id"))
+                video_title = clean_text(qa_row.get(f"candidate_{rank}_video_title"))
+                if not video_id and not video_title:
+                    # Ignore empty candidate slots.
+                    continue
+
+                rating_text = clean_text(qa_row.get(f"candidate_{rank}_rating_1_10"))
+                if not rating_text:
+                    continue
+
+                try:
+                    rating_value = int(rating_text)
+                except ValueError:
+                    continue
+
+                if rating_value <= LOW_CANDIDATE_RATING_THRESHOLD:
+                    low_step_ids.add(small_step_id)
+                    break
+
+        return low_step_ids
+
     def _set_selected_step_by_id(self, small_step_id: str) -> bool:
         label = self.step_labels_by_id.get(small_step_id)
         if not label:
@@ -1616,6 +1672,51 @@ class ImprovePickQAGUI:
 
         if not next_step_id:
             next_step_id = unsaved_step_ids[0]
+
+        if not self._set_selected_step_by_id(next_step_id):
+            # If filtered list hides the target, disable filter and try again.
+            self.show_unsaved_only_var.set(False)
+            self._refresh_step_combo_labels(preserve_step_id=next_step_id)
+            self._set_selected_step_by_id(next_step_id)
+
+    def _jump_to_next_low_candidate_rating(self) -> None:
+        if not self.sorted_step_ids:
+            return
+
+        low_step_ids = self._load_low_candidate_rating_step_ids()
+        if not low_step_ids:
+            messagebox.showinfo(
+                "No low candidate ratings",
+                f"No small steps found with any candidate rating <= {LOW_CANDIDATE_RATING_THRESHOLD}.",
+            )
+            return
+
+        current_step_id = self._selected_small_step_id()
+        if current_step_id in self.sorted_step_ids:
+            current_idx = self.sorted_step_ids.index(current_step_id)
+        else:
+            current_idx = -1
+
+        next_step_id = ""
+        for offset in range(1, len(self.sorted_step_ids) + 1):
+            candidate_idx = (current_idx + offset) % len(self.sorted_step_ids)
+            candidate_step_id = self.sorted_step_ids[candidate_idx]
+            if candidate_step_id in low_step_ids:
+                next_step_id = candidate_step_id
+                break
+
+        if not next_step_id:
+            for step_id in self.sorted_step_ids:
+                if step_id in low_step_ids:
+                    next_step_id = step_id
+                    break
+
+        if not next_step_id:
+            messagebox.showinfo(
+                "No low candidate ratings",
+                f"No small steps found with any candidate rating <= {LOW_CANDIDATE_RATING_THRESHOLD}.",
+            )
+            return
 
         if not self._set_selected_step_by_id(next_step_id):
             # If filtered list hides the target, disable filter and try again.
@@ -1659,6 +1760,9 @@ class ImprovePickQAGUI:
         row = self.curriculum_by_id.get(small_step_id)
         if row is None:
             return
+
+        # Default to unchecked when navigating between small steps.
+        self.awaiting_download_faiss_var.set(False)
 
         baseline = clean_text(row.get("ss_wr_desc"))
         candidate_default = self._get_saved_candidate_text(small_step_id) or baseline
@@ -2395,6 +2499,7 @@ class ImprovePickQAGUI:
 
         self.saved_step_ids = self._load_saved_step_ids_from_qa()
         self._refresh_step_combo_labels(preserve_step_id=small_step_id)
+        self.awaiting_download_faiss_var.set(False)
         small_step_id = self._selected_small_step_id()
         if not small_step_id:
             self.status_var.set("Updated qa/qa.csv. Current step is filtered out by Show unsaved only.")

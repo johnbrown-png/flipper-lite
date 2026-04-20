@@ -63,6 +63,7 @@ def build_qa_columns() -> list[str]:
         "candidate_ss_wr_desc",
         "constraints_text",
         "awaiting download and faiss update",
+        "notes",
     ]
 
     for source in ("current", "candidate"):
@@ -278,6 +279,7 @@ class ImprovePickQAGUI:
         self.constraints_must_not_include_var = tk.StringVar(value="")
         self.constraints_numerical_domain_var = tk.StringVar(value="")
         self.constraints_reject_rule_fail_gate_var = tk.StringVar(value="")
+        self.notes_var = tk.StringVar(value="")
 
         self.curriculum_df = pd.DataFrame()
         self.curriculum_by_id: dict[str, dict[str, object]] = {}
@@ -376,7 +378,7 @@ class ImprovePickQAGUI:
         self.main_canvas.bind_all("<MouseWheel>", lambda event: self.main_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units"))
 
         outer.columnconfigure(0, weight=1)
-        outer.rowconfigure(4, weight=1)
+        outer.rowconfigure(5, weight=1)
 
         title = ttk.Label(
             outer,
@@ -490,10 +492,17 @@ class ImprovePickQAGUI:
         self.status_label = ttk.Label(control_frame, textvariable=self.status_var, foreground="blue")
         self.status_label.grid(row=0, column=3, sticky="w")
 
+        notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=6)
+        notes_frame.grid(row=4, column=0, sticky="ew", pady=(0, 4))
+        notes_frame.columnconfigure(1, weight=1)
+        ttk.Label(notes_frame, text="QA note (~15 words):").grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self.notes_entry = ttk.Entry(notes_frame, textvariable=self.notes_var)
+        self.notes_entry.grid(row=0, column=1, sticky="ew")
+
         rating_options = [str(i) for i in range(1, 11)]
 
         results_notebook = ttk.Notebook(outer)
-        results_notebook.grid(row=4, column=0, sticky="nsew")
+        results_notebook.grid(row=5, column=0, sticky="nsew")
 
         qa_results_tab = ttk.Frame(results_notebook, padding=6)
         qa_results_tab.columnconfigure(0, weight=1)
@@ -1951,6 +1960,7 @@ class ImprovePickQAGUI:
             if reset_ratings:
                 self.rating_vars[i].set("5")
                 self._apply_rating_color(i)
+        self.notes_var.set("")
 
     def _render_candidate_search_results(self, results: list[dict[str, object]]) -> None:
         self._clear_candidate_result_widgets(reset_ratings=True)
@@ -2087,6 +2097,10 @@ class ImprovePickQAGUI:
         if qa_row is None:
             self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
             return False
+
+        # Load notes from qa_row
+        notes = clean_text(qa_row.get("notes", ""))
+        self.notes_var.set(notes)
 
         displayed_results: list[dict[str, object]] = []
         has_persisted_picks = False
@@ -2433,6 +2447,7 @@ class ImprovePickQAGUI:
         # constraints_text is intentionally NOT written here; it is managed
         # exclusively by _save_constraints_text so constraints stay per-step.
         qa_row["awaiting download and faiss update"] = awaiting_download_faiss_text
+        qa_row["notes"] = self.notes_var.get().strip()
 
         def fill_slots(source: str, results: list[dict[str, object]], ratings: list[int]) -> None:
             for idx in range(TOP_K):

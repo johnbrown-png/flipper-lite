@@ -29,16 +29,28 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from precompute_curriculum_recommendations import calculate_cosine_similarity, load_faiss_index
+from precompute_curriculum_recommendations import load_faiss_index
 from query_embedder import QueryEmbedder
 from data_pipeline.deletion_tracker import DeletionTracker
 from data_pipeline.instruction_quality_scorer import InstructionQualityScorer
 from shared.curriculum_schema import curriculum_to_long_df
+from shared.pick_engine import (
+    build_query_text,
+    build_stage2_shortlist as shared_build_stage2_shortlist,
+    calculate_cosine_similarity,
+    compute_stage3_score as shared_compute_stage3_score,
+    compute_stage4_final_score as shared_compute_stage4_final_score,
+    load_validated_override_map,
+    resolve_validated_desc,
+    score_stage2_survivors_async as shared_score_stage2_survivors_async,
+    upsert_validated_override,
+)
 
 
 CURRICULUM_PATH = project_root / "Curriculum" / "Maths" / "curriculum_22032026_small_steps.csv"
 TARGET_OVERRIDES_PATH = project_root / "qa" / "targeted_ss_wr_desc_overrides.csv"
 APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates.csv"
+CANONICAL_OVERRIDE_PATH = project_root / "qa" / "ss_desc_validated_overrides.csv"
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
 TOP_K = 3
@@ -93,13 +105,6 @@ def clean_text(value: object) -> str:
         return ""
     text = str(value).strip()
     return "" if text.lower() == "nan" else text
-
-
-def build_query_text(topic: str, small_step_name: str, ss_wr_desc: str) -> str:
-    query_text = f"{topic}: {small_step_name}"
-    if ss_wr_desc:
-        query_text += f" - {ss_wr_desc}"
-    return query_text
 
 
 def format_duration_hms(seconds: object) -> str:
@@ -491,6 +496,18 @@ class ImprovePickQAGUI:
 
         self.status_label = ttk.Label(control_frame, textvariable=self.status_var, foreground="blue")
         self.status_label.grid(row=0, column=3, sticky="w")
+
+        self.promote_canonical_btn = ttk.Button(
+            control_frame,
+            text="⭐ Promote to Canonical",
+            command=self._promote_to_canonical,
+        )
+        self.promote_canonical_btn.grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        ttk.Label(
+            control_frame,
+            text="Writes candidate text → qa/ss_desc_validated_overrides.csv (read by precompute)",
+            foreground="#555555",
+        ).grid(row=1, column=2, columnspan=2, sticky="w", pady=(4, 0))
 
         notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=6)
         notes_frame.grid(row=4, column=0, sticky="ew", pady=(0, 4))
@@ -1063,28 +1080,10 @@ class ImprovePickQAGUI:
         self._open_alignment_video(index_num)
 
     def _compute_stage3_score(self, result: dict[str, object]) -> float:
-        semantic = float(result.get("semantic_score", 0.0))
-        alignment = float(result.get("alignment_score", 0.0)) / 100.0
-
-        components = [(semantic, SEMANTIC_WEIGHT)]
-        if alignment > 0:
-            components.append((alignment, ALIGNMENT_WEIGHT))
-
-        total_weight = sum(weight for _, weight in components)
-        if total_weight <= 0:
-            return semantic
-        return sum(value * weight for value, weight in components) / total_weight
+        return shared_compute_stage3_score(result)
 
     def _compute_stage4_final_score(self, stage3_score: float, instruction_score_raw: float) -> float:
-        instruction = max(0.0, float(instruction_score_raw)) / 100.0
-        components = [(stage3_score, SEMANTIC_WEIGHT + ALIGNMENT_WEIGHT)]
-        if instruction > 0:
-            components.append((instruction, INSTRUCTION_WEIGHT))
-
-        total_weight = sum(weight for _, weight in components)
-        if total_weight <= 0:
-            return stage3_score
-        return sum(value * weight for value, weight in components) / total_weight
+        return shared_compute_stage4_final_score(stage3_score, instruction_score_raw)
 
     def _clear_stage4_results(self) -> None:
         self.latest_final_results = []
@@ -1197,57 +1196,17 @@ class ImprovePickQAGUI:
         gate_row: dict[str, object],
         shortlist_k: int,
     ) -> list[dict[str, Any]]:
-        embedding = self.embedder.embed_query(query_text).reshape(1, -1)
-        distances, indices = self.index.search(embedding, shortlist_k)
-
-        video_chunks: dict[str, list[dict[str, object]]] = {}
-        for dist, idx in zip(distances[0], indices[0]):
-            if idx == -1 or idx >= len(self.metadata):
-                continue
-
-            video_meta = self.metadata[int(idx)]
-            video_id = clean_text(video_meta.get("video_id"))
-            if not video_id or video_id in self.deleted_videos:
-                continue
-
-            cosine_sim = calculate_cosine_similarity(float(dist))
-            video_chunks.setdefault(video_id, []).append(
-                {
-                    "cosine_similarity": float(cosine_sim),
-                    "video_meta": video_meta,
-                    "chunk_text": clean_text(video_meta.get("text")),
-                }
-            )
-
-        ranked_results: list[dict[str, Any]] = []
-        for video_id, chunks in video_chunks.items():
-            sims = [float(chunk["cosine_similarity"]) for chunk in chunks]
-            good_chunks = [sim for sim in sims if sim >= 0.6]
-            median_sim = sorted(sims)[len(sims) // 2]
-            ranking_score = median_sim + (len(good_chunks) * 0.02)
-
-            sorted_chunks = sorted(chunks, key=lambda item: float(item["cosine_similarity"]), reverse=True)
-            evidence_text = " ".join(clean_text(chunk.get("chunk_text")) for chunk in sorted_chunks[:3])
-            best_meta = sorted_chunks[0]["video_meta"]
-            title = clean_text(best_meta.get("video_title") or best_meta.get("title"))
-            meta = self.video_lookup.get(video_id) or self.fallback_lookup.get(video_id) or {}
-            gate_eval_text = f"{title} {evidence_text}".strip()
-            gate_pass, gate_reason = self._evaluate_constraints_for_text(gate_row, gate_eval_text)
-
-            ranked_results.append(
-                {
-                    "video_id": video_id,
-                    "title": title,
-                    "channel": clean_text(meta.get("channel") or best_meta.get("channel")),
-                    "semantic_score": ranking_score,
-                    "gate_pass": gate_pass,
-                    "gate_reason": gate_reason,
-                    "gate_eval_text": gate_eval_text,
-                }
-            )
-
-        ranked_results.sort(key=lambda item: float(item["semantic_score"]), reverse=True)
-        return ranked_results
+        return shared_build_stage2_shortlist(
+            query_text=query_text,
+            embedder=self.embedder,
+            index=self.index,
+            metadata=self.metadata,
+            shortlist_k=shortlist_k,
+            deleted_videos=self.deleted_videos,
+            video_lookup=self.video_lookup,
+            fallback_lookup=self.fallback_lookup,
+            gate_evaluator=lambda gate_eval_text: self._evaluate_constraints_for_text(gate_row, gate_eval_text),
+        )
 
     async def _score_stage2_survivors_async(
         self,
@@ -1257,63 +1216,14 @@ class ImprovePickQAGUI:
         small_step_name: str,
         small_step_desc: str,
     ) -> list[dict[str, Any]]:
-        if not survivors:
-            return []
-
-        video_ids = [clean_text(result.get("video_id")) for result in survivors if clean_text(result.get("video_id"))]
-        if not video_ids:
-            return []
-
-        instruction_scores, alignment_scores = await asyncio.gather(
-            asyncio.gather(
-                *[
-                    self.scorer.score_for_curriculum_context_async(
-                        video_id=video_id,
-                        age=age,
-                        topic=topic,
-                        small_step=small_step_name,
-                        small_step_desc=small_step_desc,
-                        use_cache=True,
-                    )
-                    for video_id in video_ids
-                ]
-            ),
-            asyncio.gather(
-                *[
-                    self.scorer.score_alignment_for_curriculum_context_async(
-                        video_id=video_id,
-                        age=age,
-                        topic=topic,
-                        small_step=small_step_name,
-                        small_step_desc=small_step_desc,
-                        use_cache=True,
-                    )
-                    for video_id in video_ids
-                ]
-            ),
+        return await shared_score_stage2_survivors_async(
+            survivors=survivors,
+            scorer=self.scorer,
+            age=age,
+            topic=topic,
+            small_step_name=small_step_name,
+            small_step_desc=small_step_desc,
         )
-
-        instruction_map = {item["video_id"]: item for item in instruction_scores if item}
-        alignment_map = {item["video_id"]: item for item in alignment_scores if item}
-
-        scored_results: list[dict[str, Any]] = []
-        for survivor in survivors:
-            video_id = clean_text(survivor.get("video_id"))
-            instruction_score_raw = instruction_map.get(video_id, {}).get("score") or 0.0
-            alignment_score_raw = alignment_map.get(video_id, {}).get("score") or 0.0
-
-            scored_result = {
-                **survivor,
-                "instruction_score": float(instruction_score_raw),
-                "instruction_justification": clean_text(instruction_map.get(video_id, {}).get("justification")),
-                "alignment_score": float(alignment_score_raw),
-                "alignment_justification": clean_text(alignment_map.get(video_id, {}).get("justification")),
-            }
-            scored_result["combined_score"] = self._compute_stage3_score(scored_result)
-            scored_results.append(scored_result)
-
-        scored_results.sort(key=lambda item: float(item.get("combined_score", 0.0)), reverse=True)
-        return scored_results
 
     def _run_constraints_gate_test(self) -> None:
         step_id = self._selected_small_step_id()
@@ -1354,7 +1264,7 @@ class ImprovePickQAGUI:
         shortlist_k: int,
     ) -> None:
         try:
-            query_text = build_query_text(topic=topic, small_step_name=small_step_name, ss_wr_desc=ss_wr_desc)
+            query_text = build_query_text(topic=topic, small_step_name=small_step_name, ss_desc_validated=ss_wr_desc)
             ranked_results = self._build_stage2_shortlist(query_text, gate_row, shortlist_k)
             self.root.after(0, self._on_constraints_gate_success, ranked_results)
         except Exception as exc:
@@ -1743,6 +1653,11 @@ class ImprovePickQAGUI:
         if not small_step_id:
             return ""
 
+        override_map = load_validated_override_map(CANONICAL_OVERRIDE_PATH)
+        override_text = clean_text(override_map.get(small_step_id, ""))
+        if override_text:
+            return override_text
+
         if APPROVED_CANDIDATES_PATH.exists():
             try:
                 approved_df = pd.read_csv(APPROVED_CANDIDATES_PATH)
@@ -1774,8 +1689,14 @@ class ImprovePickQAGUI:
         self.awaiting_download_faiss_var.set(False)
 
         baseline = clean_text(row.get("ss_wr_desc"))
+        override_map = load_validated_override_map(CANONICAL_OVERRIDE_PATH)
+        ss_desc_validated, _ = resolve_validated_desc(
+            small_step_id=small_step_id,
+            baseline_ss_wr_desc=baseline,
+            override_map=override_map,
+        )
         candidate_default = self._get_saved_candidate_text(small_step_id) or baseline
-        self._set_text(self.baseline_text, baseline)
+        self._set_text(self.baseline_text, ss_desc_validated)
         self._set_text(self.candidate_text, candidate_default)
         self._clear_results()
         self._clear_semantic_preview()
@@ -1863,7 +1784,7 @@ class ImprovePickQAGUI:
             query_text = build_query_text(
                 topic=clean_text(row.get("topic")),
                 small_step_name=clean_text(row.get("small_step_name")),
-                ss_wr_desc=candidate,
+                ss_desc_validated=candidate,
             )
 
             embedding = self.embedder.embed_query(query_text).reshape(1, -1)
@@ -2040,7 +1961,7 @@ class ImprovePickQAGUI:
             query_text = build_query_text(
                 topic=clean_text(row.get("topic")),
                 small_step_name=clean_text(row.get("small_step_name")),
-                ss_wr_desc=candidate,
+                ss_desc_validated=candidate,
             )
             gate_rules = parse_constraints_text_block(constraints_text)
             shortlist_k = self._get_constraints_shortlist_k()
@@ -2532,6 +2453,37 @@ class ImprovePickQAGUI:
 
         messagebox.showinfo("QA Updated", f"Saved QA row to:\n{QA_TRACKING_PATH}")
 
+    def _promote_to_canonical(self) -> None:
+        """Write the current candidate text to the canonical ss_desc_validated_overrides.csv."""
+        small_step_id = self._selected_small_step_id()
+        row = self.curriculum_by_id.get(small_step_id)
+        if row is None:
+            messagebox.showwarning("No small step", "Select a small step first.")
+            return
+
+        candidate_text = self.candidate_text.get("1.0", tk.END).strip()
+        if not candidate_text:
+            messagebox.showwarning("Empty candidate", "Enter a candidate wording before promoting.")
+            return
+
+        try:
+            upsert_validated_override(
+                override_path=CANONICAL_OVERRIDE_PATH,
+                small_step_id=clean_text(row.get("small_step_id")),
+                ss_desc_validated=candidate_text,
+                source="qa_promoted",
+            )
+        except Exception as exc:
+            messagebox.showerror("Promote Error", str(exc))
+            return
+
+        self.status_var.set(f"Promoted to canonical: {clean_text(row.get('small_step_id'))}")
+        messagebox.showinfo(
+            "Promoted",
+            f"Candidate written to canonical overrides:\n{CANONICAL_OVERRIDE_PATH}\n\n"
+            f"Run precompute_curriculum_recommendations.py to rebuild recommendations.",
+        )
+
     def _append_result_to_videos_to_delete(self, source: str, index_num: int) -> None:
         results = self.precomputed_results if source == "current" else self.latest_results
         if index_num < 0 or index_num >= len(results):
@@ -2591,6 +2543,12 @@ class ImprovePickQAGUI:
                 ratings.append(5)
 
         try:
+            upsert_validated_override(
+                override_path=CANONICAL_OVERRIDE_PATH,
+                small_step_id=clean_text(row.get("small_step_id")),
+                ss_desc_validated=candidate,
+                source="gui_save_candidate",
+            )
             self._save_approved_candidate_mapping(row=row, candidate=candidate)
             self._upsert_targeted_override(row=row, candidate=candidate, scenario_label=scenario_label, ratings=ratings)
             self.saved_candidate_steps.add(small_step_id)
@@ -2599,7 +2557,7 @@ class ImprovePickQAGUI:
             self.status_var.set("Saved approved candidate and override row.")
             messagebox.showinfo(
                 "Saved",
-                f"Saved to:\n{APPROVED_CANDIDATES_PATH}\n{TARGET_OVERRIDES_PATH}",
+                f"Saved to:\n{CANONICAL_OVERRIDE_PATH}\n{APPROVED_CANDIDATES_PATH}\n{TARGET_OVERRIDES_PATH}",
             )
         except Exception as exc:
             messagebox.showerror("Save Error", str(exc))

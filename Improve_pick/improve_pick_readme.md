@@ -1,5 +1,67 @@
 # Improve Pick
 
+## Session Summary - GUI Top-3 vs Batch Precompute Reconciliation (April 20, 2026)
+
+### Current conclusion
+
+Manual QA in `Improve_pick/gui_precompute_recommendation_qa.py` is currently producing better top-3 picks than `precompute_curriculum_recommendations.py` and the resulting `precomputed_recommendations_flat.csv`.
+
+This improvement very often happens **without** editing `ss_wr_desc` candidate wording. However, for some difficult small steps, QA still clearly benefits from manually editing `ss_wr_desc` to make the learning objective more explicit and retrieval-friendly.
+
+The working assumption from this session is that the **GUI top-3 search mechanism is likely the stronger process** and may become the future canonical pick pipeline.
+
+### Why the GUI appears to be doing better
+
+The investigation found that the difference is **not** mainly that one path uses a different instruction scorer. Both paths call `data_pipeline/instruction_quality_scorer.py`.
+
+The more important finding is that the two paths are currently using **different overall ranking pipelines**:
+
+- `precompute_curriculum_recommendations.py` performs FAISS retrieval, aggregates chunk hits to video scores, truncates to top `k` videos early, and then applies LLM alignment/instruction scoring to only that already-truncated set.
+- `gui_precompute_recommendation_qa.py` builds a larger shortlist first, applies the Stage 2 constraints gate, scores the surviving candidates, computes a Stage 3 semantic+alignment score, and then does a Stage 4 pedagogy rerank before showing the final top 3.
+- This means the GUI is not just a thin front end over the batch precompute logic. It is running a materially different selection path, even when both use the same query text and the same scorer module.
+
+This is the main reason the GUI and batch outputs should not currently be expected to match.
+
+### Additional factors identified
+
+- The GUI can run from the existing baseline wording or a manually edited candidate wording, so it has an editorial advantage when a small step is semantically under-specified.
+- Even when wording is unchanged, the GUI still benefits from the wider shortlist, hard-rule gate, and later rerank stages.
+- The current production flat CSV reflects the **batch precompute pipeline**, not the GUI pipeline.
+- `flipper_lite.py` still reads `precomputed_recommendations_flat.csv`, so runtime production is tied to the older batch path rather than the newer GUI QA path.
+
+### Immediate user goal captured here
+
+Before changing architecture, the next priority is to **review, read, and understand the GUI top-3 pick mechanism in detail** to explain why it is outperforming batch precompute.
+
+The main code areas to study are:
+
+- query construction in `gui_precompute_recommendation_qa.py`
+- Stage 2 shortlist building and constraints gate
+- Stage 3 semantic + alignment weighting
+- Stage 4 pedagogy rerank
+- final top-3 selection and what gets persisted to QA files
+
+### Direction of travel
+
+The likely future direction is:
+
+1. Treat the GUI top-3 mechanism as the leading candidate for the canonical recommendation process.
+2. Understand exactly why it is outperforming batch precompute.
+3. Later, refactor so that automated precompute and GUI QA use the **same underlying pick process**.
+4. Retain a manual override path for difficult or ambiguous small steps where human intervention still materially improves appositeness.
+
+### Important architectural note from this session
+
+If the project moves to a hybrid model later, the preferred direction is **not** to keep two different ranking systems indefinitely.
+
+Instead, the long-term goal should be:
+
+- one canonical recommendation pipeline
+- reusable by both batch precompute and GUI QA
+- with optional manual override / approval for challenging rows
+
+That keeps QA standards high without making the workflow operationally brittle or excessively expensive.
+
 ## Summary
 
 This sub-project is dedicated to investigating and improving the semantic retrieval stage that powers curriculum video recommendations in `precompute_curriculum_recommendations.py`.

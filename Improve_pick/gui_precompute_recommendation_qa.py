@@ -333,6 +333,8 @@ class ImprovePickQAGUI:
         self.semantic_preview_score_labels: list[ttk.Label] = []
         self.saved_candidate_steps: set[str] = set()
         self.candidate_display_unlocked_steps: set[str] = set()
+        self.promoted_step_ids: set[str] = set()
+        self.promoted_status_var = tk.StringVar(value="")
         self.constraints_results: list[dict[str, object]] = []
         self.constraints_title_labels: list[ttk.Label] = []
         self.constraints_gate_labels: list[ttk.Label] = []
@@ -450,6 +452,11 @@ class ImprovePickQAGUI:
         self.candidate_text = scrolledtext.ScrolledText(candidate_frame, wrap=tk.WORD, height=5)
         self.candidate_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
         self.candidate_text.bind("<<Modified>>", self._on_candidate_text_modified)
+
+        promoted_status_frame = ttk.Frame(candidate_frame)
+        promoted_status_frame.grid(row=2, column=0, sticky="ew", pady=(4, 0))
+        self.promoted_status_label = ttk.Label(promoted_status_frame, textvariable=self.promoted_status_var, foreground="green", font=("Segoe UI", 9, "bold"))
+        self.promoted_status_label.grid(row=0, column=0, sticky="w")
 
         semantic_preview_frame = ttk.LabelFrame(candidate_frame, text="Live Semantic Preview (No Instruction Scoring)", padding=6)
         semantic_preview_frame.grid(row=2, column=0, sticky="nsew", pady=(4, 0))
@@ -1378,6 +1385,9 @@ class ImprovePickQAGUI:
                 key=lambda sid: int(self.curriculum_by_id[sid].get("small_step_num", 0)),
             )
             self.saved_step_ids = self._load_saved_step_ids_from_qa()
+            # Load promoted steps from canonical overrides
+            override_map = load_validated_override_map(CANONICAL_OVERRIDE_PATH)
+            self.promoted_step_ids = set(override_map.keys())
             self._refresh_step_combo_labels()
 
             if self.step_var.get():
@@ -1487,7 +1497,12 @@ class ImprovePickQAGUI:
         labels: list[str] = []
         for small_step_id in visible_step_ids:
             row = self.curriculum_by_id.get(small_step_id, {})
-            marker = "✓" if small_step_id in self.saved_step_ids else "•"
+            if small_step_id in self.promoted_step_ids:
+                marker = "⭐"
+            elif small_step_id in self.saved_step_ids:
+                marker = "✓"
+            else:
+                marker = "•"
             label = f"{marker} {small_step_id} | {clean_text(row.get('topic'))} | {clean_text(row.get('small_step_name'))}"
             self.step_labels_by_id[small_step_id] = label
             self.step_label_to_id[label] = small_step_id
@@ -1706,6 +1721,11 @@ class ImprovePickQAGUI:
         else:
             self.candidate_display_unlocked_steps.discard(small_step_id)
             self._set_candidate_panel_state("Candidate panel: locked until Update QA CSV")
+        # Update promoted status indicator
+        if small_step_id in self.promoted_step_ids:
+            self.promoted_status_var.set("✓ Promoted to canonical")
+        else:
+            self.promoted_status_var.set("")
         self.status_var.set("Ready")
         self._load_constraints_text_for_step(small_step_id)
         self.constraints_status_var.set("Constraints gate: ready")
@@ -2477,7 +2497,11 @@ class ImprovePickQAGUI:
             messagebox.showerror("Promote Error", str(exc))
             return
 
+        # Track promoted step and update UI
+        self.promoted_step_ids.add(small_step_id)
+        self.promoted_status_var.set("✓ Promoted to canonical")
         self.status_var.set(f"Promoted to canonical: {clean_text(row.get('small_step_id'))}")
+        self._refresh_step_combo_labels(preserve_step_id=small_step_id)
         messagebox.showinfo(
             "Promoted",
             f"Candidate written to canonical overrides:\n{CANONICAL_OVERRIDE_PATH}\n\n"

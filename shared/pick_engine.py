@@ -74,6 +74,7 @@ def build_stage2_shortlist(
     *,
     query_text: str,
     embedder,
+    query_embedding: Any | None = None,
     index,
     metadata: list[dict[str, object]],
     shortlist_k: int,
@@ -82,7 +83,7 @@ def build_stage2_shortlist(
     fallback_lookup: dict[str, dict[str, str]],
     gate_evaluator: Callable[[str], tuple[bool, str]] | None = None,
 ) -> list[dict[str, Any]]:
-    embedding = embedder.embed_query(query_text).reshape(1, -1)
+    embedding = query_embedding.reshape(1, -1) if query_embedding is not None else embedder.embed_query(query_text).reshape(1, -1)
     distances, indices = index.search(embedding, shortlist_k)
 
     video_chunks: dict[str, list[dict[str, object]]] = {}
@@ -217,6 +218,7 @@ async def run_pick_pipeline_async(
     small_step_name: str,
     small_step_desc: str,
     embedder,
+    query_embedding: Any | None = None,
     index,
     metadata: list[dict[str, object]],
     scorer,
@@ -231,6 +233,7 @@ async def run_pick_pipeline_async(
     stage2_results = build_stage2_shortlist(
         query_text=query_text,
         embedder=embedder,
+        query_embedding=query_embedding,
         index=index,
         metadata=metadata,
         shortlist_k=shortlist_k,

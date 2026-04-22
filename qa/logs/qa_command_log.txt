@@ -1,0 +1,64 @@
+[2026-04-22T14:03:44] HEALTH CHECK
+qa.csv: ok
+videos_to_delete.csv: ok
+manual_precomputed_overrides.csv: missing
+faiss index: ok
+faiss metadata: ok
+retrieval assets loaded: no
+delete queue rows: 45
+[2026-04-22T14:03:45] MANUAL OVERRIDE applied for Sort objects
+[2026-04-22T14:03:45] MANUAL OVERRIDE cleared for Sort objects; rows_removed=3
+[2026-04-22T14:27:46] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Place value within 10_1_Sort objects
+[2026-04-22T14:51:24] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Place value within 10_10_Compare groups by matching
+[2026-04-22T14:54:53] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Place value within 10_11_Fewer, more, same
+[2026-04-22T15:00:09] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Place value within 10_15_The number line
+[2026-04-22T15:02:29] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Addition and subtraction within 10_14_Subtraction – take away/cross out (How many left?)
+[2026-04-22T15:16:58] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Addition and subtraction within 10_17_Add or subtract 1 or 2
+[2026-04-22T15:17:06] START Approve + Update QA CSV
+[2026-04-22T15:17:09] DONE Approve + Update QA CSV
+[2026-04-22T15:23:09] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Shape_2_Sort 3-D shapes
+[2026-04-22T15:37:21] MANUAL OVERRIDE applied for Year 1_5-6_Spring__Place value within 20_8_The number line to 20
+[2026-04-22T15:41:39] MANUAL OVERRIDE applied for Year 1_5-6_Spring__Place value within 20_9_Use a number line to 20
+[2026-04-22T15:49:39] START Sync New Downloads: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\pythonw.exe data_pipeline/run_pipeline.py --index-only
+[2026-04-22T15:49:45] ================================================================================
+NUMBERBLOCKS DATA PIPELINE
+================================================================================
+Traceback (most recent call last):
+  File "C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\data_pipeline\run_pipeline.py", line 199, in <module>
+    run_pipeline(
+    ~~~~~~~~~~~~^
+        extract_captions=False,
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        incremental_index=not args.rebuild_index
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\data_pipeline\run_pipeline.py", line 94, in run_pipeline
+    print("\n\u2298 Skipping caption extraction")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\johnf\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2298' in position 2: character maps to <undefined>
+[2026-04-22T15:49:45] FAIL Sync New Downloads: Sync New Downloads failed with exit code 1. See log for details.
+[2026-04-22T15:54:32] START Sync New Downloads: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe data_pipeline/run_pipeline.py --index-only
+[2026-04-22T15:54:55] FAIL Sync New Downloads: Sync New Downloads failed with exit code 3221225786. See log for details.
+[2026-04-22T16:03:03] START Runner Smoke: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe -c print('runner-ok')
+[2026-04-22T16:03:04] runner-ok
+[2026-04-22T16:04:17] START Runner Smoke: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe -c print('runner-ok')
+[2026-04-22T16:04:18] runner-ok
+[2026-04-22T16:05:34] START Runner Smoke: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe -c print('runner-ok')
+[2026-04-22T16:05:34] runner-ok
+[2026-04-22T16:05:39] DONE Runner Smoke
+[2026-04-22T16:36:12] START Sync New Downloads: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe data_pipeline/run_pipeline.py --index-only
+[2026-04-22T16:36:24] FAIL Sync New Downloads: Sync New Downloads was interrupted (exit code 3221225786, Windows 0xC000013A). This usually means the process received an external stop signal.
+[2026-04-22T16:39:48] MANUAL OVERRIDE applied for Year 1_5-6_Spring__Addition and subtraction within 20_2_Add ones using number bonds
+[2026-04-22T16:43:41] START Sync New Downloads: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe data_pipeline/run_pipeline.py --index-only
+[2026-04-22T16:45:00] FAIL Sync New Downloads: 'charmap' codec can't decode byte 0x81 in position 589: character maps to <undefined>
+[2026-04-22T16:52:00] MANUAL OVERRIDE applied for Year 1_5-6_Spring__Addition and subtraction within 20_6_Subtract ones using number bonds
+[2026-04-22T17:06:41] MANUAL OVERRIDE applied for Year 1_5-6_Spring__Place value within 50_2_Skip count in tens
+[2026-04-22T17:19:13] MANUAL OVERRIDE applied for Year 1_5-6_Spring__Place value within 50_6_The number line to 50
+[2026-04-22T17:28:45] MANUAL OVERRIDE applied for Year 1_5-6_Spring__Mass and volume_2_Measure mass
+[2026-04-22T19:28:02] START Sync New Downloads: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe data_pipeline/run_pipeline.py --index-only
+[2026-04-22T19:29:01] FAIL Sync New Downloads: 'charmap' codec can't decode byte 0x81 in position 589: character maps to <undefined>

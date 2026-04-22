@@ -13,10 +13,13 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
+import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import threading
+import time
 from typing import Any
 import webbrowser
 
@@ -53,6 +56,8 @@ APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates
 CANONICAL_OVERRIDE_PATH = project_root / "qa" / "ss_desc_validated_overrides.csv"
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
+MANUAL_PRECOMP_OVERRIDE_PATH = project_root / "qa" / "manual_precomputed_overrides.csv"
+QA_COMMAND_LOG_PATH = project_root / "qa" / "logs" / "qa_command_log.txt"
 TOP_K = 3
 LOW_CANDIDATE_RATING_THRESHOLD = 7
 SEMANTIC_PREVIEW_K = 5
@@ -63,6 +68,13 @@ CONSTRAINTS_GATE_MAX_K = 80
 SEMANTIC_WEIGHT = 0.55
 ALIGNMENT_WEIGHT = 0.20
 INSTRUCTION_WEIGHT = 0.25
+
+JOB_STATE_IDLE = "idle"
+JOB_STATE_RUNNING = "running"
+JOB_STATE_FAILED = "failed"
+JOB_STATE_DONE = "done"
+JOB_STATE_CANCELLED = "cancelled"
+WINDOWS_CTRL_C_EXIT_CODES = {3221225786, -1073741510}
 
 
 def build_qa_columns() -> list[str]:
@@ -262,6 +274,48 @@ def parse_constraints_text_block(raw_value: object) -> dict[str, str]:
     return parsed
 
 
+class ToolTip:
+    def __init__(self, widget: tk.Widget, text: str, wraplength: int = 320):
+        self.widget = widget
+        self.text = text
+        self.wraplength = wraplength
+        self.tip_window: tk.Toplevel | None = None
+
+        self.widget.bind("<Enter>", self._show, add="+")
+        self.widget.bind("<Leave>", self._hide, add="+")
+        self.widget.bind("<ButtonPress>", self._hide, add="+")
+
+    def _show(self, _event=None) -> None:
+        if self.tip_window is not None or not self.text:
+            return
+
+        x = self.widget.winfo_rootx() + 16
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 8
+
+        self.tip_window = tk.Toplevel(self.widget)
+        self.tip_window.wm_overrideredirect(True)
+        self.tip_window.wm_geometry(f"+{x}+{y}")
+
+        label = tk.Label(
+            self.tip_window,
+            text=self.text,
+            justify=tk.LEFT,
+            background="#fffbe6",
+            foreground="#333333",
+            relief=tk.SOLID,
+            borderwidth=1,
+            padx=8,
+            pady=5,
+            wraplength=self.wraplength,
+        )
+        label.pack()
+
+    def _hide(self, _event=None) -> None:
+        if self.tip_window is not None:
+            self.tip_window.destroy()
+            self.tip_window = None
+
+
 class ImprovePickQAGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -285,6 +339,9 @@ class ImprovePickQAGUI:
         self.constraints_numerical_domain_var = tk.StringVar(value="")
         self.constraints_reject_rule_fail_gate_var = tk.StringVar(value="")
         self.notes_var = tk.StringVar(value="")
+        self.job_state_var = tk.StringVar(value="Job state: idle")
+        self.job_step_var = tk.StringVar(value="Current step status: ready")
+        self.job_error_var = tk.StringVar(value="")
 
         self.curriculum_df = pd.DataFrame()
         self.curriculum_by_id: dict[str, dict[str, object]] = {}
@@ -348,6 +405,21 @@ class ImprovePickQAGUI:
         self.stage4_final_instruction_labels: list[ttk.Label] = []
         self.stage4_final_score_labels: list[ttk.Label] = []
         self.stage4_final_open_buttons: list[ttk.Button] = []
+        self.command_buttons: list[ttk.Button] = []
+        self.command_tooltips: list[ToolTip] = []
+        self.cancel_job_btn: ttk.Button | None = None
+        self.retry_job_btn: ttk.Button | None = None
+        self.job_status_label: ttk.Label | None = None
+        self.job_step_label: ttk.Label | None = None
+        self.job_error_label: ttk.Label | None = None
+
+        self.active_job_state = JOB_STATE_IDLE
+        self.active_job_name = ""
+        self.active_job_thread: threading.Thread | None = None
+        self.active_process: subprocess.Popen[str] | None = None
+        self.cancel_requested = False
+        self.log_lock = threading.Lock()
+        self.last_failed_subprocess_spec: tuple[str, list[str], bool] | None = None
 
         self._build_ui()
         # Defer heavy loading until after mainloop starts so the window appears immediately.
@@ -385,7 +457,7 @@ class ImprovePickQAGUI:
         self.main_canvas.bind_all("<MouseWheel>", lambda event: self.main_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units"))
 
         outer.columnconfigure(0, weight=1)
-        outer.rowconfigure(5, weight=1)
+        outer.rowconfigure(6, weight=1)
 
         title = ttk.Label(
             outer,
@@ -516,8 +588,89 @@ class ImprovePickQAGUI:
             foreground="#555555",
         ).grid(row=1, column=2, columnspan=2, sticky="w", pady=(4, 0))
 
+        command_frame = ttk.LabelFrame(outer, text="QA Command Center", padding=8)
+        command_frame.grid(row=4, column=0, sticky="ew", pady=(0, 4))
+        for col in range(5):
+            command_frame.columnconfigure(col, weight=1)
+
+        apply_delete_btn = ttk.Button(command_frame, text="Apply Delete Queue", command=self._command_apply_delete_queue)
+        apply_delete_btn.grid(row=0, column=0, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(apply_delete_btn)
+        self._attach_tooltip(apply_delete_btn, "Runs delete_content.py on videos_to_delete.csv. Use this after appending bad videos to the delete queue.")
+
+        full_rebuild_btn = ttk.Button(command_frame, text="Full Rebuild FAISS", command=self._command_full_rebuild_faiss)
+        full_rebuild_btn.grid(row=0, column=1, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(full_rebuild_btn)
+        self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. This is the slow, clean rebuild path.")
+
+        sync_btn = ttk.Button(command_frame, text="Sync New Downloads", command=self._command_sync_new_downloads)
+        sync_btn.grid(row=0, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(sync_btn)
+        self._attach_tooltip(sync_btn, "Runs the incremental chunk/embed/index pipeline so newly downloaded material becomes searchable without a full rebuild.")
+
+        recompute_btn = ttk.Button(command_frame, text="Recompute Current Step", command=self._command_recompute_current_step)
+        recompute_btn.grid(row=0, column=3, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(recompute_btn)
+        self._attach_tooltip(recompute_btn, "Re-runs Search Top 3 for the currently selected small step using the current candidate text and constraints.")
+
+        finalize_btn = ttk.Button(command_frame, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
+        finalize_btn.grid(row=0, column=4, sticky="w", pady=(0, 4))
+        self.command_buttons.append(finalize_btn)
+        self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
+
+        manual_override_btn = ttk.Button(
+            command_frame,
+            text="Apply Manual Precomputed Override",
+            command=self._command_apply_manual_override,
+        )
+        manual_override_btn.grid(row=1, column=0, columnspan=2, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(manual_override_btn)
+        self._attach_tooltip(manual_override_btn, "Copies the current candidate-panel top picks into qa/manual_precomputed_overrides.csv so they temporarily override current precomputed picks for this step.")
+
+        clear_override_btn = ttk.Button(command_frame, text="Clear Manual Override", command=self._command_clear_manual_override)
+        clear_override_btn.grid(row=1, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(clear_override_btn)
+        self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
+
+        health_btn = ttk.Button(command_frame, text="Health Check", command=self._command_health_check)
+        health_btn.grid(row=1, column=3, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(health_btn)
+        self._attach_tooltip(health_btn, "Checks whether the key QA files and FAISS assets exist and whether retrieval assets are loaded in this GUI session.")
+
+        open_log_btn = ttk.Button(command_frame, text="Open Log", command=self._command_open_log)
+        open_log_btn.grid(row=1, column=4, sticky="w", pady=(0, 4))
+        self.command_buttons.append(open_log_btn)
+        self._attach_tooltip(open_log_btn, "Opens the QA command log file that records command starts, completions, failures, cancels, and health checks.")
+
+        self.cancel_job_btn = ttk.Button(
+            command_frame,
+            text="Cancel Active Job",
+            command=self._command_cancel_active_job,
+            state=tk.DISABLED,
+        )
+        self.cancel_job_btn.grid(row=2, column=0, sticky="w")
+        self._attach_tooltip(self.cancel_job_btn, "Requests cancellation of the currently running subprocess-backed QA command.")
+
+        self.retry_job_btn = ttk.Button(
+            command_frame,
+            text="Retry Last Failed Job",
+            command=self._command_retry_last_failed,
+            state=tk.DISABLED,
+        )
+        self.retry_job_btn.grid(row=2, column=1, sticky="w", padx=(0, 8))
+        self._attach_tooltip(self.retry_job_btn, "Re-runs the last subprocess-backed QA command that ended in failure.")
+
+        self.job_status_label = ttk.Label(command_frame, textvariable=self.job_state_var, foreground="#1f4d7a")
+        self.job_status_label.grid(row=3, column=0, columnspan=5, sticky="w", pady=(4, 0))
+
+        self.job_step_label = ttk.Label(command_frame, textvariable=self.job_step_var, foreground="#444444")
+        self.job_step_label.grid(row=4, column=0, columnspan=5, sticky="w")
+
+        self.job_error_label = ttk.Label(command_frame, textvariable=self.job_error_var, foreground="#aa2c2c")
+        self.job_error_label.grid(row=5, column=0, columnspan=5, sticky="w")
+
         notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=6)
-        notes_frame.grid(row=4, column=0, sticky="ew", pady=(0, 4))
+        notes_frame.grid(row=5, column=0, sticky="ew", pady=(0, 4))
         notes_frame.columnconfigure(1, weight=1)
         ttk.Label(notes_frame, text="QA note (~15 words):").grid(row=0, column=0, sticky="w", padx=(0, 8))
         self.notes_entry = ttk.Entry(notes_frame, textvariable=self.notes_var)
@@ -526,7 +679,7 @@ class ImprovePickQAGUI:
         rating_options = [str(i) for i in range(1, 11)]
 
         results_notebook = ttk.Notebook(outer)
-        results_notebook.grid(row=5, column=0, sticky="nsew")
+        results_notebook.grid(row=6, column=0, sticky="nsew")
 
         qa_results_tab = ttk.Frame(results_notebook, padding=6)
         qa_results_tab.columnconfigure(0, weight=1)
@@ -917,6 +1070,415 @@ class ImprovePickQAGUI:
             command=self._update_qa_csv,
         )
         self.stage4_save_btn.grid(row=2, column=0, sticky="w", pady=(8, 0))
+
+        self._refresh_command_controls()
+
+    def _attach_tooltip(self, widget: tk.Widget, text: str) -> None:
+        tooltip = ToolTip(widget, text)
+        self.command_tooltips.append(tooltip)
+
+    def _python_cmd_prefix(self) -> list[str]:
+        exe_path = Path(sys.executable)
+        exe_name = exe_path.name.lower()
+        if exe_name == "pythonw.exe":
+            candidate = exe_path.with_name("python.exe")
+            if candidate.exists():
+                return [str(candidate)]
+        return [str(exe_path)]
+
+    def _append_command_log(self, message: str) -> None:
+        QA_COMMAND_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        stamped = f"[{datetime.now().isoformat(timespec='seconds')}] {message}\n"
+        with self.log_lock:
+            with QA_COMMAND_LOG_PATH.open("a", encoding="utf-8") as handle:
+                handle.write(stamped)
+
+    def _set_job_state(self, state: str, step_text: str = "", error_text: str = "") -> None:
+        self.active_job_state = state
+        if state == JOB_STATE_RUNNING:
+            self.job_state_var.set(f"Job state: running ({self.active_job_name or 'job'})")
+        else:
+            self.job_state_var.set(f"Job state: {state}")
+        if step_text:
+            self.job_step_var.set(f"Current step status: {step_text}")
+        if error_text:
+            self.job_error_var.set(error_text)
+        elif state != JOB_STATE_FAILED:
+            self.job_error_var.set("")
+        self._refresh_command_controls()
+
+    def _refresh_command_controls(self) -> None:
+        running = self.active_job_state == JOB_STATE_RUNNING
+        for btn in self.command_buttons:
+            btn.config(state=tk.DISABLED if running else tk.NORMAL)
+        if self.cancel_job_btn is not None:
+            self.cancel_job_btn.config(state=tk.NORMAL if running else tk.DISABLED)
+        if self.retry_job_btn is not None:
+            self.retry_job_btn.config(
+                state=tk.NORMAL if (not running and self.last_failed_subprocess_spec is not None) else tk.DISABLED
+            )
+
+    def _start_subprocess_job(self, job_name: str, command: list[str], reload_assets: bool) -> None:
+        if self.active_job_state == JOB_STATE_RUNNING:
+            messagebox.showwarning("Job running", "Another QA command is already running.")
+            return
+
+        self.active_job_name = job_name
+        self.cancel_requested = False
+        self._set_job_state(JOB_STATE_RUNNING, step_text=f"Starting {job_name}...")
+        self._append_command_log(f"START {job_name}: {' '.join(command)}")
+
+        worker = threading.Thread(
+            target=self._subprocess_job_worker,
+            args=(job_name, command, reload_assets),
+            daemon=True,
+        )
+        self.active_job_thread = worker
+        worker.start()
+
+    def _subprocess_job_worker(self, job_name: str, command: list[str], reload_assets: bool) -> None:
+        process: subprocess.Popen | None = None
+        output_lines: list[str] = []
+        was_cancelled = False
+        try:
+            child_env = dict(os.environ)
+            child_env["PYTHONUTF8"] = "1"
+            child_env["PYTHONIOENCODING"] = "utf-8"
+            process = subprocess.Popen(
+                command,
+                cwd=str(project_root),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=child_env,
+                bufsize=1,
+            )
+            self.active_process = process
+
+            while True:
+                if self.cancel_requested and process.poll() is None:
+                    was_cancelled = True
+                    process.terminate()
+
+                if process.stdout is None:
+                    break
+
+                line = process.stdout.readline()
+                if line:
+                    output_lines.append(line.decode("utf-8", errors="replace"))
+                elif process.poll() is not None:
+                    break
+                else:
+                    time.sleep(0.05)
+
+            return_code = process.wait()
+            captured_output = "".join(output_lines).strip()
+            if captured_output:
+                self._append_command_log(captured_output)
+
+            if was_cancelled:
+                self.root.after(0, self._on_subprocess_job_cancelled, job_name)
+                return
+
+            if return_code in WINDOWS_CTRL_C_EXIT_CODES:
+                interruption_message = (
+                    f"{job_name} was interrupted (exit code {return_code}, Windows 0xC000013A). "
+                    "This usually means the process received an external stop signal."
+                )
+                self.root.after(0, self._on_subprocess_job_error, job_name, interruption_message, command, reload_assets)
+                return
+
+            if return_code != 0:
+                raise RuntimeError(f"{job_name} failed with exit code {return_code}. See log for details.")
+
+            self.root.after(0, self._on_subprocess_job_success, job_name, reload_assets)
+        except Exception as exc:
+            self.root.after(0, self._on_subprocess_job_error, job_name, str(exc), command, reload_assets)
+        finally:
+            self.active_process = None
+
+    def _on_subprocess_job_success(self, job_name: str, reload_assets: bool) -> None:
+        self._append_command_log(f"DONE {job_name}")
+        self._set_job_state(JOB_STATE_DONE, step_text=f"Completed {job_name}")
+        self.status_var.set(f"{job_name} completed.")
+        self.last_failed_subprocess_spec = None
+        if reload_assets:
+            self.status_var.set(f"{job_name} completed. Reloading retrieval assets...")
+            worker = threading.Thread(target=self._load_heavy_assets, daemon=True)
+            worker.start()
+
+    def _on_subprocess_job_error(
+        self,
+        job_name: str,
+        error_message: str,
+        command: list[str],
+        reload_assets: bool,
+    ) -> None:
+        self._append_command_log(f"FAIL {job_name}: {error_message}")
+        self.last_failed_subprocess_spec = (job_name, list(command), reload_assets)
+        self._set_job_state(JOB_STATE_FAILED, step_text=f"Failed {job_name}", error_text=error_message)
+        self.status_var.set(f"{job_name} failed")
+        messagebox.showerror("QA Command Error", error_message)
+
+    def _on_subprocess_job_cancelled(self, job_name: str) -> None:
+        self._append_command_log(f"CANCELLED {job_name}")
+        self._set_job_state(JOB_STATE_CANCELLED, step_text=f"Cancelled {job_name}")
+        self.status_var.set(f"{job_name} cancelled")
+
+    def _command_apply_delete_queue(self) -> None:
+        if not VIDEOS_TO_DELETE_PATH.exists():
+            messagebox.showwarning("Missing delete queue", f"Delete queue file not found:\n{VIDEOS_TO_DELETE_PATH}")
+            return
+
+        try:
+            delete_df = pd.read_csv(VIDEOS_TO_DELETE_PATH)
+        except Exception as exc:
+            messagebox.showerror("Delete queue error", str(exc))
+            return
+
+        if delete_df.empty:
+            messagebox.showinfo("Delete queue", "Delete queue is empty. Nothing to apply.")
+            return
+
+        if not messagebox.askyesno(
+            "Confirm delete queue",
+            "Apply queued deletions now? This removes associated local assets for queued videos.",
+        ):
+            return
+
+        command = self._python_cmd_prefix() + [
+            "delete_content.py",
+            "--batch",
+            str(VIDEOS_TO_DELETE_PATH),
+            "--yes",
+        ]
+        self._start_subprocess_job("Apply Delete Queue", command, reload_assets=True)
+
+    def _command_full_rebuild_faiss(self) -> None:
+        if not messagebox.askyesno(
+            "Confirm full rebuild",
+            "Run full chunk/embed/index rebuild now? This can take significant time.",
+        ):
+            return
+
+        command = self._python_cmd_prefix() + [
+            "data_pipeline/run_pipeline.py",
+            "--index-only",
+            "--rebuild-index",
+        ]
+        self._start_subprocess_job("Full Rebuild FAISS", command, reload_assets=True)
+
+    def _command_sync_new_downloads(self) -> None:
+        command = self._python_cmd_prefix() + [
+            "data_pipeline/run_pipeline.py",
+            "--index-only",
+        ]
+        self._start_subprocess_job("Sync New Downloads", command, reload_assets=True)
+
+    def _command_recompute_current_step(self) -> None:
+        if self.active_job_state == JOB_STATE_RUNNING:
+            messagebox.showwarning("Job running", "Another QA command is already running.")
+            return
+        self._set_job_state(JOB_STATE_RUNNING, step_text="Recomputing selected step")
+        self._append_command_log("START Recompute Current Step")
+        self.active_job_name = "Recompute Current Step"
+        try:
+            self._run_search()
+        except Exception as exc:
+            error_text = str(exc)
+            self._set_job_state(JOB_STATE_FAILED, step_text="Recompute failed", error_text=error_text)
+            self._append_command_log(f"FAIL Recompute Current Step: {error_text}")
+
+    def _command_finalize_current_step(self) -> None:
+        if self.active_job_state == JOB_STATE_RUNNING:
+            messagebox.showwarning("Job running", "Another QA command is already running.")
+            return
+        self._set_job_state(JOB_STATE_RUNNING, step_text="Updating qa.csv for selected step")
+        self._append_command_log("START Approve + Update QA CSV")
+        try:
+            self._update_qa_csv()
+            self._set_job_state(JOB_STATE_DONE, step_text="Updated qa.csv for selected step")
+            self._append_command_log("DONE Approve + Update QA CSV")
+        except Exception as exc:
+            error_text = str(exc)
+            self._set_job_state(JOB_STATE_FAILED, step_text="Approve/finalize failed", error_text=error_text)
+            self._append_command_log(f"FAIL Approve + Update QA CSV: {error_text}")
+
+    def _load_manual_precomputed_overrides_df(self) -> pd.DataFrame:
+        columns = [
+            "updated_at",
+            "small_step_id",
+            "rank",
+            "video_id",
+            "video_title",
+            "channel",
+            "combined_score",
+            "source",
+            "status",
+            "notes",
+        ]
+        if MANUAL_PRECOMP_OVERRIDE_PATH.exists():
+            overrides_df = pd.read_csv(MANUAL_PRECOMP_OVERRIDE_PATH)
+        else:
+            overrides_df = pd.DataFrame(columns=columns)
+
+        for col in columns:
+            if col not in overrides_df.columns:
+                overrides_df[col] = ""
+
+        overrides_df = overrides_df[columns].copy()
+        overrides_df["small_step_id"] = overrides_df["small_step_id"].map(clean_text)
+        overrides_df["video_id"] = overrides_df["video_id"].map(clean_text)
+        overrides_df["video_title"] = overrides_df["video_title"].map(clean_text)
+        overrides_df["channel"] = overrides_df["channel"].map(clean_text)
+        overrides_df["source"] = overrides_df["source"].map(clean_text)
+        overrides_df["status"] = overrides_df["status"].map(clean_text)
+        overrides_df["notes"] = overrides_df["notes"].map(clean_text)
+        overrides_df["rank"] = pd.to_numeric(overrides_df["rank"], errors="coerce").fillna(0).astype(int)
+        return overrides_df
+
+    def _read_manual_override_for_step(self, small_step_id: str) -> list[dict[str, object]]:
+        if not small_step_id:
+            return []
+        overrides_df = self._load_manual_precomputed_overrides_df()
+        step_df = overrides_df[
+            (overrides_df["small_step_id"] == small_step_id)
+            & (overrides_df["status"].str.lower() != "inactive")
+        ].copy()
+        if step_df.empty:
+            return []
+        step_df = step_df.sort_values(["rank", "updated_at"], kind="stable")
+
+        rows: list[dict[str, object]] = []
+        for _, override_row in step_df.head(TOP_K).iterrows():
+            try:
+                combined = float(clean_text(override_row.get("combined_score")) or 0.0)
+            except ValueError:
+                combined = 0.0
+            rows.append(
+                {
+                    "video_id": clean_text(override_row.get("video_id")),
+                    "title": clean_text(override_row.get("video_title")),
+                    "channel": clean_text(override_row.get("channel")),
+                    "combined_score": combined,
+                    "semantic_score": "",
+                    "instruction_score": "",
+                    "alignment_score": "",
+                }
+            )
+        return rows
+
+    def _command_apply_manual_override(self) -> None:
+        small_step_id = self._selected_small_step_id()
+        if not small_step_id:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+
+        if not self.latest_results:
+            messagebox.showwarning("No candidate picks", "Run Search Top 3 first; then apply manual override.")
+            return
+
+        rows: list[dict[str, object]] = []
+        for idx, result in enumerate(self.latest_results[:TOP_K], start=1):
+            video_id = clean_text(result.get("video_id"))
+            title = clean_text(result.get("title"))
+            if not video_id and not title:
+                continue
+            rows.append(
+                {
+                    "updated_at": datetime.now().isoformat(timespec="seconds"),
+                    "small_step_id": small_step_id,
+                    "rank": idx,
+                    "video_id": video_id,
+                    "video_title": title,
+                    "channel": clean_text(result.get("channel")),
+                    "combined_score": clean_text(result.get("combined_score")),
+                    "source": "qa_manual_override",
+                    "status": "active",
+                    "notes": "applied_from_candidate_panel",
+                }
+            )
+
+        if not rows:
+            messagebox.showwarning("No override rows", "Current candidate panel has no rows to override.")
+            return
+
+        overrides_df = self._load_manual_precomputed_overrides_df()
+        overrides_df = overrides_df[overrides_df["small_step_id"] != small_step_id].copy()
+        overrides_df = pd.concat([overrides_df, pd.DataFrame(rows)], ignore_index=True)
+
+        MANUAL_PRECOMP_OVERRIDE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        overrides_df.to_csv(MANUAL_PRECOMP_OVERRIDE_PATH, index=False)
+
+        self._append_command_log(f"MANUAL OVERRIDE applied for {small_step_id}")
+        self.status_var.set(f"Applied manual precomputed override for {small_step_id}")
+        self._populate_precomputed(small_step_id)
+        messagebox.showinfo(
+            "Manual override applied",
+            f"Saved manual precomputed override rows to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}",
+        )
+
+    def _command_clear_manual_override(self) -> None:
+        small_step_id = self._selected_small_step_id()
+        if not small_step_id:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+        overrides_df = self._load_manual_precomputed_overrides_df()
+        before = len(overrides_df)
+        overrides_df = overrides_df[overrides_df["small_step_id"] != small_step_id].copy()
+        removed = before - len(overrides_df)
+        MANUAL_PRECOMP_OVERRIDE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        overrides_df.to_csv(MANUAL_PRECOMP_OVERRIDE_PATH, index=False)
+        self._append_command_log(f"MANUAL OVERRIDE cleared for {small_step_id}; rows_removed={removed}")
+        self.status_var.set(f"Cleared manual override for {small_step_id}")
+        self._populate_precomputed(small_step_id)
+
+    def _command_cancel_active_job(self) -> None:
+        if self.active_job_state != JOB_STATE_RUNNING:
+            return
+        self.cancel_requested = True
+        self.job_step_var.set("Current step status: cancellation requested")
+        self._append_command_log(f"CANCEL REQUESTED for {self.active_job_name}")
+
+    def _command_retry_last_failed(self) -> None:
+        if self.active_job_state == JOB_STATE_RUNNING:
+            return
+        if self.last_failed_subprocess_spec is None:
+            messagebox.showinfo("Retry", "No failed subprocess command to retry.")
+            return
+        job_name, command, reload_assets = self.last_failed_subprocess_spec
+        self._start_subprocess_job(job_name, command, reload_assets)
+
+    def _command_health_check(self) -> None:
+        checks: list[str] = []
+        checks.append(f"qa.csv: {'ok' if QA_TRACKING_PATH.exists() else 'missing'}")
+        checks.append(f"videos_to_delete.csv: {'ok' if VIDEOS_TO_DELETE_PATH.exists() else 'missing'}")
+        checks.append(f"manual_precomputed_overrides.csv: {'ok' if MANUAL_PRECOMP_OVERRIDE_PATH.exists() else 'missing'}")
+
+        faiss_bin = project_root / "data" / "faiss_index" / "faiss_index.bin"
+        faiss_meta = project_root / "data" / "faiss_index" / "faiss_index_metadata.json"
+        checks.append(f"faiss index: {'ok' if faiss_bin.exists() else 'missing'}")
+        checks.append(f"faiss metadata: {'ok' if faiss_meta.exists() else 'missing'}")
+        checks.append(f"retrieval assets loaded: {'yes' if (self.index is not None and self.embedder is not None) else 'no'}")
+
+        pending_delete_count = 0
+        if VIDEOS_TO_DELETE_PATH.exists():
+            try:
+                delete_df = pd.read_csv(VIDEOS_TO_DELETE_PATH)
+                pending_delete_count = len(delete_df)
+            except Exception:
+                pending_delete_count = 0
+        checks.append(f"delete queue rows: {pending_delete_count}")
+
+        message = "\n".join(checks)
+        self.status_var.set("Health check complete")
+        self._append_command_log(f"HEALTH CHECK\n{message}")
+        messagebox.showinfo("QA Health Check", message)
+
+    def _command_open_log(self) -> None:
+        QA_COMMAND_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if not QA_COMMAND_LOG_PATH.exists():
+            QA_COMMAND_LOG_PATH.write_text("", encoding="utf-8")
+        webbrowser.open(str(QA_COMMAND_LOG_PATH))
 
     def _set_candidate_panel_state(self, text: str) -> None:
         self.candidate_panel_state_var.set(text)
@@ -1443,10 +2005,14 @@ class ImprovePickQAGUI:
         self.status_var.set("Ready")
         self.constraints_status_var.set("Constraints gate: ready")
         self._schedule_semantic_preview()
+        if self.active_job_state == JOB_STATE_RUNNING:
+            self._set_job_state(JOB_STATE_DONE, step_text="Retrieval assets reloaded")
 
     def _on_heavy_assets_error(self, error_message: str) -> None:
         self.status_var.set("Failed to load retrieval assets")
         self.constraints_status_var.set("Constraints gate: retrieval assets failed to load")
+        if self.active_job_state == JOB_STATE_RUNNING:
+            self._set_job_state(JOB_STATE_FAILED, step_text="Retrieval asset reload failed", error_text=error_message)
         messagebox.showerror("Initialization Error", error_message)
 
     def _selected_small_step_id(self) -> str:
@@ -2032,6 +2598,10 @@ class ImprovePickQAGUI:
         else:
             self.status_var.set("Search complete. No recommendations found.")
 
+        if self.active_job_state == JOB_STATE_RUNNING and self.active_job_name == "Recompute Current Step":
+            self._set_job_state(JOB_STATE_DONE, step_text="Recomputed selected step")
+            self._append_command_log("DONE Recompute Current Step")
+
     def _populate_candidate_from_qa(self, small_step_id: str) -> bool:
         self._clear_candidate_result_widgets(reset_ratings=True)
         qa_row = self._get_qa_row_for_step(small_step_id)
@@ -2104,6 +2674,9 @@ class ImprovePickQAGUI:
         self.search_btn.config(state=tk.NORMAL)
         self.save_btn.config(state=tk.DISABLED)
         self.status_var.set("Search failed")
+        if self.active_job_state == JOB_STATE_RUNNING and self.active_job_name == "Recompute Current Step":
+            self._set_job_state(JOB_STATE_FAILED, step_text="Recompute failed", error_text=error_message)
+            self._append_command_log(f"FAIL Recompute Current Step: {error_message}")
         messagebox.showerror("Search Error", error_message)
 
     def _open_video(self, index_num: int) -> None:
@@ -2136,43 +2709,58 @@ class ImprovePickQAGUI:
 
     def _populate_precomputed(self, small_step_id: str) -> None:
         self.precomputed_results = []
-        if self.precomputed_df.empty:
-            return
+        manual_override_rows = self._read_manual_override_for_step(small_step_id)
 
-        step_rows = self.precomputed_df[self.precomputed_df["small_step_id"] == small_step_id]
-        if "rank" in step_rows.columns:
-            step_rows = step_rows.sort_values("rank")
-        picks = step_rows.head(TOP_K).reset_index(drop=True)
+        if manual_override_rows:
+            self.precomputed_results = manual_override_rows
+            self.status_var.set("Manual precomputed override is active for this step")
+        elif not self.precomputed_df.empty:
+            step_rows = self.precomputed_df[self.precomputed_df["small_step_id"] == small_step_id]
+            if "rank" in step_rows.columns:
+                step_rows = step_rows.sort_values("rank")
+            picks = step_rows.head(TOP_K).reset_index(drop=True)
 
-        for i in range(len(picks)):
-            r = picks.iloc[i]
-            video_id = clean_text(r.get("video_id"))
-            title = clean_text(r.get("title") or r.get("video_title"))
-            channel = clean_text(r.get("channel"))
-            combined_score = float(r.get("combined_score") or 0.0)
-            self.precomputed_results.append({
-                "video_id": video_id,
-                "title": title,
-                "channel": channel,
-                "combined_score": combined_score,
-                "semantic_score": clean_text(r.get("semantic_score")),
-                "instruction_score": clean_text(r.get("instruction_score")),
-                "alignment_score": clean_text(r.get("alignment_score")),
-            })
-            self.precomputed_title_labels[i].config(text=f"{title} ({video_id})")
-            self.precomputed_channel_labels[i].config(text=channel)
-            self.precomputed_score_labels[i].config(text=f"{combined_score:.4f}")
-            self.precomputed_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
-            self.precomputed_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
-            self.precomputed_rating_vars[i].set("5")
-            self._apply_precomputed_rating_color(i)
+            for i in range(len(picks)):
+                r = picks.iloc[i]
+                video_id = clean_text(r.get("video_id"))
+                title = clean_text(r.get("title") or r.get("video_title"))
+                channel = clean_text(r.get("channel"))
+                combined_score = float(r.get("combined_score") or 0.0)
+                self.precomputed_results.append(
+                    {
+                        "video_id": video_id,
+                        "title": title,
+                        "channel": channel,
+                        "combined_score": combined_score,
+                        "semantic_score": clean_text(r.get("semantic_score")),
+                        "instruction_score": clean_text(r.get("instruction_score")),
+                        "alignment_score": clean_text(r.get("alignment_score")),
+                    }
+                )
 
-        for i in range(len(picks), TOP_K):
+        for i in range(len(self.precomputed_results), TOP_K):
             self.precomputed_title_labels[i].config(text="")
             self.precomputed_channel_labels[i].config(text="")
             self.precomputed_score_labels[i].config(text="")
             self.precomputed_open_buttons[i].config(state=tk.DISABLED)
             self.precomputed_delete_buttons[i].config(state=tk.DISABLED)
+            self.precomputed_rating_vars[i].set("5")
+            self._apply_precomputed_rating_color(i)
+
+        for i in range(min(TOP_K, len(self.precomputed_results))):
+            result = self.precomputed_results[i]
+            video_id = clean_text(result.get("video_id"))
+            title = clean_text(result.get("title"))
+            channel = clean_text(result.get("channel"))
+            try:
+                combined_score = float(result.get("combined_score") or 0.0)
+            except (TypeError, ValueError):
+                combined_score = 0.0
+            self.precomputed_title_labels[i].config(text=f"{title} ({video_id})")
+            self.precomputed_channel_labels[i].config(text=channel)
+            self.precomputed_score_labels[i].config(text=f"{combined_score:.4f}")
+            self.precomputed_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.precomputed_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
             self.precomputed_rating_vars[i].set("5")
             self._apply_precomputed_rating_color(i)
 

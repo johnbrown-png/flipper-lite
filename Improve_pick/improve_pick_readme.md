@@ -357,3 +357,11 @@ When comparing variants, track both quality and efficiency:
 3. LLM calls per small step (and cache hit rate).
 
 Do not promote a heavier configuration unless appositeness gain justifies call growth.
+
+### speed up precompute_recommendations.py
+
+My practical recommendation is:
+
+Let the current run continue if it is still actively updating the cache.
+After it finishes, make two changes first: transcript path indexing and batched cache saves.
+Add checkpoint CSV writes next, so future interruptions are much less costly.

@@ -175,9 +175,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-@st.cache_data
+@st.cache_data(ttl=300)  # Cache for 5 minutes; file changes detected immediately via mtime
 def load_precomputed_recommendations_flat():
-    """Load precomputed curriculum recommendations CSV"""
+    """Load precomputed curriculum recommendations CSV.
+    
+    Cache expires every 5 minutes to pick up updates from precompute_curriculum_recommendations.py runs.
+    File modification time is automatically included in Streamlit's cache key.
+    """
     try:
         csv_path = project_root / 'precomputed_recommendations_flat.csv'
         df = pd.read_csv(csv_path)
@@ -187,7 +191,7 @@ def load_precomputed_recommendations_flat():
         return None
 
 
-@st.cache_data
+@st.cache_data(ttl=300)  # Cache for 5 minutes for consistency
 def load_video_inventory():
     """
     DEPRECATED: Channel and duration now included in precomputed_recommendations_flat.csv
@@ -767,6 +771,12 @@ def main():
         - **Video Count:** {len(recommendations_df)} curriculum items
         - **Top Videos per Step:** 3
         """)
+        
+        # Add reload data button
+        st.markdown("---")
+        if st.button("🔄 Reload Data", use_container_width=True, help="Force refresh precomputed recommendations from CSV (cache updates every 5 mins automatically)"):
+            st.cache_data.clear()
+            st.rerun()
         
         st.markdown("---")
         st.markdown("### 💡 About This Version")

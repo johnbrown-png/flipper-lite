@@ -20,7 +20,7 @@ class CurriculumAssistant:
         self.df = None
         self._load_curriculum()
     
-    @st.cache_data
+    @st.cache_data(ttl=300)  # Cache for 5 minutes to allow for curriculum updates
     def _load_curriculum(_self):
         """Load and cache the curriculum data"""
         try:

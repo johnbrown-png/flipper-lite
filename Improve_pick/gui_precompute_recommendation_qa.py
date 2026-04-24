@@ -596,12 +596,12 @@ class ImprovePickQAGUI:
         apply_delete_btn = ttk.Button(command_frame, text="Apply Delete Queue", command=self._command_apply_delete_queue)
         apply_delete_btn.grid(row=0, column=0, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(apply_delete_btn)
-        self._attach_tooltip(apply_delete_btn, "Runs delete_content.py on videos_to_delete.csv. Use this after appending bad videos to the delete queue.")
+        self._attach_tooltip(apply_delete_btn, "Runs delete_content.py on videos_to_delete.csv in soft-delete mode only. Local files and metadata are removed immediately, but this button does not perform the full FAISS rebuild.")
 
         full_rebuild_btn = ttk.Button(command_frame, text="Full Rebuild FAISS", command=self._command_full_rebuild_faiss)
         full_rebuild_btn.grid(row=0, column=1, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(full_rebuild_btn)
-        self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. This is the slow, clean rebuild path.")
+        self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. Use this when you want to physically purge deleted vectors and fully realign FAISS with current local assets.")
 
         sync_btn = ttk.Button(command_frame, text="Sync New Downloads", command=self._command_sync_new_downloads)
         sync_btn.grid(row=0, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
@@ -1202,9 +1202,13 @@ class ImprovePickQAGUI:
         self.status_var.set(f"{job_name} completed.")
         self.last_failed_subprocess_spec = None
         if reload_assets:
-            self.status_var.set(f"{job_name} completed. Reloading retrieval assets...")
-            worker = threading.Thread(target=self._load_heavy_assets, daemon=True)
-            worker.start()
+            if job_name == "Apply Delete Queue":
+                self.status_var.set(f"{job_name} completed. Soft delete finished; refreshing deleted-video state...")
+                self._refresh_after_soft_delete()
+            else:
+                self.status_var.set(f"{job_name} completed. Reloading retrieval assets...")
+                worker = threading.Thread(target=self._load_heavy_assets, daemon=True)
+                worker.start()
 
     def _on_subprocess_job_error(
         self,
@@ -1241,7 +1245,7 @@ class ImprovePickQAGUI:
 
         if not messagebox.askyesno(
             "Confirm delete queue",
-            "Apply queued deletions now? This removes associated local assets for queued videos.",
+            "Apply queued deletions now? This performs soft delete only: local assets and metadata are removed now, deleted-video tracking is updated, and full FAISS rebuild remains a separate step.",
         ):
             return
 
@@ -1899,6 +1903,32 @@ class ImprovePickQAGUI:
         self.constraints_status_var.set("Constraints gate: failed")
         messagebox.showerror("Constraints Gate Error", error_message)
 
+    def _refresh_after_soft_delete(self) -> None:
+        try:
+            self.deleted_videos = DeletionTracker().get_deleted_video_ids()
+            self.video_lookup = load_video_lookup()
+
+            precomputed_path = project_root / "precomputed_recommendations_flat.csv"
+            if precomputed_path.exists():
+                precomp_df = pd.read_csv(precomputed_path)
+                for col in ["small_step_id", "video_id", "title", "video_title", "channel"]:
+                    if col in precomp_df.columns:
+                        precomp_df[col] = precomp_df[col].map(clean_text)
+                self.precomputed_df = precomp_df
+
+            selected_step_id = self._selected_small_step_id()
+            if selected_step_id:
+                self._populate_precomputed(selected_step_id)
+
+            if self.active_job_state == JOB_STATE_RUNNING:
+                self._set_job_state(JOB_STATE_DONE, step_text="Deleted-video state refreshed")
+            self.status_var.set("Ready (soft delete applied; run Full Rebuild FAISS to physically purge deleted vectors)")
+        except Exception as exc:
+            if self.active_job_state == JOB_STATE_RUNNING:
+                self._set_job_state(JOB_STATE_FAILED, step_text="Deleted-video refresh failed", error_text=str(exc))
+            self.status_var.set("Failed to refresh deleted-video state")
+            messagebox.showerror("Delete Queue Refresh Error", str(exc))
+
     def _open_constraints_video(self, index_num: int) -> None:
         if index_num < 0 or index_num >= len(self.constraints_results):
             return
@@ -2451,13 +2481,13 @@ class ImprovePickQAGUI:
         self.latest_final_results = []
         self.latest_query_text = ""
 
-        self._clear_candidate_result_widgets(reset_ratings=True)
+        self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
         self._clear_alignment_results()
         self._clear_stage4_results()
         self._set_candidate_panel_state("Candidate panel: locked until Update QA CSV")
         self.save_btn.config(state=tk.DISABLED)
 
-    def _clear_candidate_result_widgets(self, reset_ratings: bool) -> None:
+    def _clear_candidate_result_widgets(self, reset_ratings: bool, reset_notes: bool = True) -> None:
         for i in range(TOP_K):
             self.result_title_labels[i].config(text="")
             self.result_channel_labels[i].config(text="")
@@ -2467,10 +2497,11 @@ class ImprovePickQAGUI:
             if reset_ratings:
                 self.rating_vars[i].set("5")
                 self._apply_rating_color(i)
-        self.notes_var.set("")
+        if reset_notes:
+            self.notes_var.set("")
 
     def _render_candidate_search_results(self, results: list[dict[str, object]]) -> None:
-        self._clear_candidate_result_widgets(reset_ratings=True)
+        self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
 
         for i in range(TOP_K):
             if i >= len(results):
@@ -2526,7 +2557,7 @@ class ImprovePickQAGUI:
         # Any new search requires Update QA CSV before persisted candidate picks are shown again.
         self.saved_candidate_steps.discard(small_step_id)
         self.candidate_display_unlocked_steps.discard(small_step_id)
-        self._clear_candidate_result_widgets(reset_ratings=True)
+        self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
         self._set_candidate_panel_state("Candidate panel: search is transient until Update QA CSV")
 
         self.search_btn.config(state=tk.DISABLED)
@@ -2603,7 +2634,7 @@ class ImprovePickQAGUI:
             self._append_command_log("DONE Recompute Current Step")
 
     def _populate_candidate_from_qa(self, small_step_id: str) -> bool:
-        self._clear_candidate_result_widgets(reset_ratings=True)
+        self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
         qa_row = self._get_qa_row_for_step(small_step_id)
         if qa_row is None:
             self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
@@ -2657,7 +2688,7 @@ class ImprovePickQAGUI:
             )
 
         if not has_persisted_picks:
-            self._clear_candidate_result_widgets(reset_ratings=True)
+            self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
             self.latest_results = []
             self._clear_stage4_results()
             self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
@@ -3055,7 +3086,7 @@ class ImprovePickQAGUI:
             self.status_var.set("Updated qa/qa.csv and loaded persisted candidate picks.")
         else:
             self.candidate_display_unlocked_steps.discard(small_step_id)
-            self._clear_candidate_result_widgets(reset_ratings=False)
+            self._clear_candidate_result_widgets(reset_ratings=False, reset_notes=False)
             self._set_candidate_panel_state("Candidate panel: Update QA CSV ran, but no persisted candidate picks were found")
             self.status_var.set("Updated qa/qa.csv. Candidate panel remains blank because no candidate picks are stored yet.")
 
@@ -3127,6 +3158,10 @@ class ImprovePickQAGUI:
         delete_df = pd.concat([delete_df, pd.DataFrame([{"video_id": video_id}])], ignore_index=True)
         delete_df.to_csv(VIDEOS_TO_DELETE_PATH, index=False)
         self.status_var.set(f"Appended {video_id} to videos_to_delete.csv")
+
+    def _clear_for_new_step_selection(self) -> None:
+        """Clear UI when loading a new step, preserving notes from qa.csv."""
+        self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
 
     def _save_candidate(self) -> None:
         small_step_id = self._selected_small_step_id()

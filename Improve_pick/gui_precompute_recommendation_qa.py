@@ -57,6 +57,7 @@ CANONICAL_OVERRIDE_PATH = project_root / "qa" / "ss_desc_validated_overrides.csv
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
 MANUAL_PRECOMP_OVERRIDE_PATH = project_root / "qa" / "manual_precomputed_overrides.csv"
+STEP_KNOCKOUT_PATH = project_root / "qa" / "step_video_knockouts.csv"
 QA_COMMAND_LOG_PATH = project_root / "qa" / "logs" / "qa_command_log.txt"
 TOP_K = 3
 LOW_CANDIDATE_RATING_THRESHOLD = 7
@@ -374,6 +375,9 @@ class ImprovePickQAGUI:
         self.result_open_buttons: list[ttk.Button] = []
         self.rating_vars: list[tk.StringVar] = []
         self.rating_dropdowns: list[tk.OptionMenu] = []
+        self.candidate_rank_vars: list[tk.StringVar] = []
+        self.candidate_rank_dropdowns: list[tk.OptionMenu] = []
+        self.candidate_knockout_buttons: list[ttk.Button] = []
 
         self.precomputed_df: pd.DataFrame = pd.DataFrame()
         self.precomputed_results: list[dict[str, object]] = []
@@ -487,12 +491,19 @@ class ImprovePickQAGUI:
         )
         self.jump_unsaved_btn.grid(row=1, column=1, sticky="w", pady=(4, 0))
 
+        self.next_small_step_btn = ttk.Button(
+            selector_frame,
+            text="Next Small Step",
+            command=self._jump_to_next_small_step,
+        )
+        self.next_small_step_btn.grid(row=1, column=2, sticky="w", padx=(12, 0), pady=(4, 0))
+
         self.jump_low_candidate_btn = ttk.Button(
             selector_frame,
             text=f"Jump to Next Candidate <= {LOW_CANDIDATE_RATING_THRESHOLD}",
             command=self._jump_to_next_low_candidate_rating,
         )
-        self.jump_low_candidate_btn.grid(row=1, column=2, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.jump_low_candidate_btn.grid(row=1, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
 
         self.show_unsaved_check = ttk.Checkbutton(
             selector_frame,
@@ -500,7 +511,7 @@ class ImprovePickQAGUI:
             variable=self.show_unsaved_only_var,
             command=self._on_show_unsaved_only_changed,
         )
-        self.show_unsaved_check.grid(row=1, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.show_unsaved_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
         text_frame = ttk.LabelFrame(outer, text="Query Text", padding=8)
         text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
@@ -620,12 +631,12 @@ class ImprovePickQAGUI:
 
         manual_override_btn = ttk.Button(
             command_frame,
-            text="Apply Manual Precomputed Override",
+            text="Apply Manual + Re-ranks to Precomputed Override",
             command=self._command_apply_manual_override,
         )
         manual_override_btn.grid(row=1, column=0, columnspan=2, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(manual_override_btn)
-        self._attach_tooltip(manual_override_btn, "Copies the current candidate-panel top picks into qa/manual_precomputed_overrides.csv so they temporarily override current precomputed picks for this step.")
+        self._attach_tooltip(manual_override_btn, "Copies candidate-panel picks into qa/manual_precomputed_overrides.csv using selected Manual Rank values, so they temporarily override current precomputed picks for this step.")
 
         clear_override_btn = ttk.Button(command_frame, text="Clear Manual Override", command=self._command_clear_manual_override)
         clear_override_btn.grid(row=1, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
@@ -714,11 +725,13 @@ class ImprovePickQAGUI:
             candidate_results_frame,
             textvariable=self.candidate_panel_state_var,
             foreground="#555555",
-        ).grid(row=0, column=0, columnspan=7, sticky="w", padx=4, pady=(0, 4))
+        ).grid(row=0, column=0, columnspan=9, sticky="w", padx=4, pady=(0, 4))
 
-        headers = ["Rank", "Title", "Channel", "Score", "Open", "Delete", "Rating"]
-        for col, header in enumerate(headers):
+        precomp_headers = ["Rank", "Title", "Channel", "Score", "Open", "Delete", "Rating"]
+        candidate_headers = ["Rank", "Title", "Channel", "Score", "Manual Rank", "Open", "Delete", "Knockout", "Rating"]
+        for col, header in enumerate(precomp_headers):
             ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 4))
+        for col, header in enumerate(candidate_headers):
             ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
 
         for i in range(TOP_K):
@@ -747,11 +760,23 @@ class ImprovePickQAGUI:
             c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.result_score_labels.append(c_score)
 
+            c_rank_var = tk.StringVar(value=str(row_num))
+            self.candidate_rank_vars.append(c_rank_var)
+            c_rank_menu = tk.OptionMenu(
+                candidate_results_frame,
+                c_rank_var,
+                *[str(rank_option) for rank_option in range(1, TOP_K + 1)],
+                command=lambda _v, idx=i: self._on_candidate_rank_change(idx),
+            )
+            c_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
+            c_rank_menu.config(width=4)
+            self.candidate_rank_dropdowns.append(c_rank_menu)
+
             p_open = ttk.Button(precomp_frame, text="Open", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
             p_open.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
             self.precomputed_open_buttons.append(p_open)
             c_open = ttk.Button(candidate_results_frame, text="Open", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
-            c_open.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
+            c_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
             self.result_open_buttons.append(c_open)
 
             p_delete = ttk.Button(
@@ -769,8 +794,17 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._append_result_to_videos_to_delete("candidate", idx),
                 state=tk.DISABLED,
             )
-            c_delete.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
+            c_delete.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=2)
             self.candidate_delete_buttons.append(c_delete)
+
+            c_knockout = ttk.Button(
+                candidate_results_frame,
+                text="Exclude",
+                command=lambda idx=i: self._toggle_candidate_knockout(idx),
+                state=tk.DISABLED,
+            )
+            c_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=4, pady=2)
+            self.candidate_knockout_buttons.append(c_knockout)
 
             p_rating_var = tk.StringVar(value="5")
             self.precomputed_rating_vars.append(p_rating_var)
@@ -784,7 +818,7 @@ class ImprovePickQAGUI:
             self.rating_vars.append(c_rating_var)
             # tk.OptionMenu allows per-widget background color updates.
             c_menu = tk.OptionMenu(candidate_results_frame, c_rating_var, *rating_options, command=lambda _v, idx=i: self._on_rating_change(idx))
-            c_menu.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=2)
+            c_menu.grid(row=row_num + 1, column=8, sticky="w", padx=4, pady=2)
             c_menu.config(width=4)
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
@@ -1381,8 +1415,22 @@ class ImprovePickQAGUI:
             messagebox.showwarning("No candidate picks", "Run Search Top 3 first; then apply manual override.")
             return
 
+        try:
+            ranked_results = self._get_manual_ranked_candidate_results()
+        except ValueError as exc:
+            messagebox.showwarning("Manual rank invalid", str(exc))
+            return
+
+        if not ranked_results:
+            messagebox.showwarning("No candidate picks", "No candidate rows available to apply.")
+            return
+
+        self.latest_results = ranked_results
+        self.latest_final_results = list(ranked_results)
+        self._render_candidate_search_results(self.latest_results)
+
         rows: list[dict[str, object]] = []
-        for idx, result in enumerate(self.latest_results[:TOP_K], start=1):
+        for idx, result in enumerate(ranked_results[:TOP_K], start=1):
             video_id = clean_text(result.get("video_id"))
             title = clean_text(result.get("title"))
             if not video_id and not title:
@@ -1414,11 +1462,11 @@ class ImprovePickQAGUI:
         overrides_df.to_csv(MANUAL_PRECOMP_OVERRIDE_PATH, index=False)
 
         self._append_command_log(f"MANUAL OVERRIDE applied for {small_step_id}")
-        self.status_var.set(f"Applied manual precomputed override for {small_step_id}")
+        self.status_var.set(f"Applied manual precomputed override with manual ranks for {small_step_id}")
         self._populate_precomputed(small_step_id)
         messagebox.showinfo(
             "Manual override applied",
-            f"Saved manual precomputed override rows to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}",
+            f"Saved re-ranked manual precomputed override rows to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}",
         )
 
     def _command_clear_manual_override(self) -> None:
@@ -1457,6 +1505,7 @@ class ImprovePickQAGUI:
         checks.append(f"qa.csv: {'ok' if QA_TRACKING_PATH.exists() else 'missing'}")
         checks.append(f"videos_to_delete.csv: {'ok' if VIDEOS_TO_DELETE_PATH.exists() else 'missing'}")
         checks.append(f"manual_precomputed_overrides.csv: {'ok' if MANUAL_PRECOMP_OVERRIDE_PATH.exists() else 'missing'}")
+        checks.append(f"step_video_knockouts.csv: {'ok' if STEP_KNOCKOUT_PATH.exists() else 'missing'}")
 
         faiss_bin = project_root / "data" / "faiss_index" / "faiss_index.bin"
         faiss_meta = project_root / "data" / "faiss_index" / "faiss_index_metadata.json"
@@ -1890,6 +1939,7 @@ class ImprovePickQAGUI:
                     result["gate_pass"] = True
                     result["gate_reason"] = "PASS (no constraints)"
             alignment_input = [r for r in self.latest_enriched_results if bool(r.get("gate_pass"))]
+            alignment_input = self._apply_step_knockout_filter(alignment_input, self._selected_small_step_id())
             self._render_stage4_results(alignment_input)
             if self.latest_final_results:
                 self.latest_results = self.latest_final_results
@@ -2209,6 +2259,24 @@ class ImprovePickQAGUI:
             self._refresh_step_combo_labels(preserve_step_id=next_step_id)
             self._set_selected_step_by_id(next_step_id)
 
+    def _jump_to_next_small_step(self) -> None:
+        values = list(self.step_combo["values"])
+        if not values:
+            return
+
+        current_label = self.step_var.get().strip()
+        if current_label not in values:
+            self.step_var.set(values[0])
+            self._on_step_selected(None)
+            return
+
+        current_idx = values.index(current_label)
+        if current_idx >= len(values) - 1:
+            return
+
+        self.step_var.set(values[current_idx + 1])
+        self._on_step_selected(None)
+
     def _jump_to_next_low_candidate_rating(self) -> None:
         if not self.sorted_step_ids:
             return
@@ -2494,6 +2562,9 @@ class ImprovePickQAGUI:
             self.result_score_labels[i].config(text="")
             self.result_open_buttons[i].config(state=tk.DISABLED)
             self.candidate_delete_buttons[i].config(state=tk.DISABLED)
+            self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text="Exclude")
+            self.candidate_rank_vars[i].set(str(i + 1))
+            self.candidate_rank_dropdowns[i].config(state=tk.DISABLED)
             if reset_ratings:
                 self.rating_vars[i].set("5")
                 self._apply_rating_color(i)
@@ -2533,6 +2604,8 @@ class ImprovePickQAGUI:
             self.candidate_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
             self.rating_vars[i].set("5")
             self._apply_rating_color(i)
+
+        self._sync_candidate_controls_for_current_step()
 
     def _run_search(self) -> None:
         small_step_id = self._selected_small_step_id()
@@ -2584,6 +2657,8 @@ class ImprovePickQAGUI:
             shortlist_k = self._get_constraints_shortlist_k()
             stage2_results = self._build_stage2_shortlist(query_text, gate_rules, shortlist_k)
             stage2_survivors = [result for result in stage2_results if bool(result.get("gate_pass"))]
+            step_id = clean_text(row.get("small_step_id"))
+            stage2_survivors = self._apply_step_knockout_filter(stage2_survivors, step_id)
             scored_survivors = asyncio.run(
                 self._score_stage2_survivors_async(
                     survivors=stage2_survivors,
@@ -2697,6 +2772,7 @@ class ImprovePickQAGUI:
 
         self.latest_results = displayed_results
         self.latest_final_results = displayed_results
+        self._sync_candidate_controls_for_current_step()
         self._set_candidate_panel_state("Candidate panel: showing persisted candidate picks from qa.csv")
         self.save_btn.config(state=tk.DISABLED)
         return True
@@ -2722,6 +2798,163 @@ class ImprovePickQAGUI:
 
     def _on_rating_change(self, index_num: int) -> None:
         self._apply_rating_color(index_num)
+
+    def _on_candidate_rank_change(self, index_num: int) -> None:
+        if index_num < 0 or index_num >= TOP_K:
+            return
+        if index_num >= len(self.latest_results):
+            return
+        selected_rank = self.candidate_rank_vars[index_num].get().strip()
+        self.status_var.set(f"Candidate row {index_num + 1} manual rank set to {selected_rank}")
+
+    def _load_step_knockout_df(self) -> pd.DataFrame:
+        columns = ["updated_at", "small_step_id", "video_id", "status", "source", "notes"]
+        if STEP_KNOCKOUT_PATH.exists():
+            knockout_df = pd.read_csv(STEP_KNOCKOUT_PATH)
+        else:
+            knockout_df = pd.DataFrame(columns=columns)
+
+        for col in columns:
+            if col not in knockout_df.columns:
+                knockout_df[col] = ""
+
+        knockout_df = knockout_df[columns].copy()
+        knockout_df["small_step_id"] = knockout_df["small_step_id"].map(clean_text)
+        knockout_df["video_id"] = knockout_df["video_id"].map(clean_text)
+        knockout_df["status"] = knockout_df["status"].map(clean_text)
+        knockout_df["source"] = knockout_df["source"].map(clean_text)
+        knockout_df["notes"] = knockout_df["notes"].map(clean_text)
+        return knockout_df
+
+    def _get_step_knocked_out_video_ids(self, small_step_id: str) -> set[str]:
+        if not small_step_id:
+            return set()
+        knockout_df = self._load_step_knockout_df()
+        step_df = knockout_df[
+            (knockout_df["small_step_id"] == small_step_id)
+            & (knockout_df["status"].str.lower() != "inactive")
+        ]
+        return {video_id for video_id in step_df["video_id"].tolist() if video_id}
+
+    def _apply_step_knockout_filter(self, results: list[dict[str, object]], small_step_id: str) -> list[dict[str, object]]:
+        knocked_out_ids = self._get_step_knocked_out_video_ids(small_step_id)
+        if not knocked_out_ids:
+            return list(results)
+        filtered: list[dict[str, object]] = []
+        for result in results:
+            video_id = clean_text(result.get("video_id"))
+            if video_id and video_id in knocked_out_ids:
+                continue
+            filtered.append(result)
+        return filtered
+
+    def _sync_candidate_controls_for_current_step(self) -> None:
+        small_step_id = self._selected_small_step_id()
+        knocked_out_ids = self._get_step_knocked_out_video_ids(small_step_id)
+
+        for i in range(TOP_K):
+            default_rank = str(i + 1)
+            if i >= len(self.latest_results):
+                self.candidate_rank_vars[i].set(default_rank)
+                self.candidate_rank_dropdowns[i].config(state=tk.DISABLED)
+                self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text="Exclude")
+                continue
+
+            video_id = clean_text(self.latest_results[i].get("video_id"))
+            if not self.candidate_rank_vars[i].get().strip():
+                self.candidate_rank_vars[i].set(default_rank)
+            self.candidate_rank_dropdowns[i].config(state=tk.NORMAL)
+            knockout_text = "Restore" if video_id and video_id in knocked_out_ids else "Exclude"
+            self.candidate_knockout_buttons[i].config(
+                state=tk.NORMAL if video_id else tk.DISABLED,
+                text=knockout_text,
+            )
+
+    def _get_manual_ranked_candidate_results(self) -> list[dict[str, object]]:
+        results = self.latest_results[:TOP_K]
+        if not results:
+            return []
+
+        available_rows = min(TOP_K, len(results))
+        seen_ranks: set[int] = set()
+        row_pairs: list[tuple[int, dict[str, object]]] = []
+
+        for idx in range(available_rows):
+            raw_rank = self.candidate_rank_vars[idx].get().strip()
+            try:
+                parsed_rank = int(raw_rank)
+            except ValueError as exc:
+                raise ValueError(f"Row {idx + 1} has invalid manual rank '{raw_rank or '?'}'.") from exc
+
+            if parsed_rank < 1 or parsed_rank > available_rows:
+                raise ValueError(f"Row {idx + 1} rank must be between 1 and {available_rows}.")
+            if parsed_rank in seen_ranks:
+                raise ValueError("Manual ranks must be unique (no duplicates).")
+
+            seen_ranks.add(parsed_rank)
+            row_pairs.append((parsed_rank, results[idx]))
+
+        expected = set(range(1, available_rows + 1))
+        if seen_ranks != expected:
+            raise ValueError(f"Manual ranks must cover exactly 1..{available_rows}.")
+
+        row_pairs.sort(key=lambda pair: pair[0])
+        return [item for _, item in row_pairs]
+
+    def _toggle_candidate_knockout(self, index_num: int) -> None:
+        small_step_id = self._selected_small_step_id()
+        if not small_step_id:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+        if index_num < 0 or index_num >= len(self.latest_results):
+            return
+
+        video_id = clean_text(self.latest_results[index_num].get("video_id"))
+        title = clean_text(self.latest_results[index_num].get("title"))
+        if not video_id:
+            messagebox.showwarning("Missing video", "Selected candidate row has no video_id.")
+            return
+
+        knockout_df = self._load_step_knockout_df()
+        mask = (knockout_df["small_step_id"] == small_step_id) & (knockout_df["video_id"] == video_id)
+        is_active = False
+        if mask.any():
+            first_idx = knockout_df.index[mask][0]
+            current_status = clean_text(knockout_df.at[first_idx, "status"]).lower()
+            is_active = current_status != "inactive"
+
+        new_status = "inactive" if is_active else "active"
+        now = datetime.now().isoformat(timespec="seconds")
+        if mask.any():
+            first_idx = knockout_df.index[mask][0]
+            knockout_df.at[first_idx, "updated_at"] = now
+            knockout_df.at[first_idx, "status"] = new_status
+            knockout_df.at[first_idx, "source"] = "gui_candidate_knockout"
+            knockout_df.at[first_idx, "notes"] = "toggled_from_candidate_panel"
+            duplicate_indices = knockout_df.index[mask][1:]
+            if len(duplicate_indices) > 0:
+                knockout_df = knockout_df.drop(index=duplicate_indices)
+        else:
+            new_row = {
+                "updated_at": now,
+                "small_step_id": small_step_id,
+                "video_id": video_id,
+                "status": new_status,
+                "source": "gui_candidate_knockout",
+                "notes": "added_from_candidate_panel",
+            }
+            knockout_df = pd.concat([knockout_df, pd.DataFrame([new_row])], ignore_index=True)
+
+        STEP_KNOCKOUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        knockout_df.to_csv(STEP_KNOCKOUT_PATH, index=False)
+        self._sync_candidate_controls_for_current_step()
+
+        if new_status == "active":
+            self.status_var.set(f"Excluded {video_id} for this step; rerun Search Top 3 to backfill.")
+            messagebox.showinfo("Candidate excluded", f"Excluded from future Search Top 3 for this step:\n{title} ({video_id})")
+        else:
+            self.status_var.set(f"Restored {video_id} for this step.")
+            messagebox.showinfo("Candidate restored", f"Restored for future Search Top 3 for this step:\n{title} ({video_id})")
 
     def _apply_rating_color(self, index_num: int) -> None:
         rating_str = self.rating_vars[index_num].get().strip() or "5"

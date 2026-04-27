@@ -621,13 +621,8 @@ class ImprovePickQAGUI:
         self.command_buttons.append(sync_btn)
         self._attach_tooltip(sync_btn, "Runs the incremental chunk/embed/index pipeline so newly downloaded material becomes searchable without a full rebuild.")
 
-        recompute_btn = ttk.Button(command_frame, text="Recompute Current Step", command=self._command_recompute_current_step)
-        recompute_btn.grid(row=0, column=3, sticky="w", padx=(0, 8), pady=(0, 4))
-        self.command_buttons.append(recompute_btn)
-        self._attach_tooltip(recompute_btn, "Re-runs Search Top 3 for the currently selected small step using the current candidate text and constraints.")
-
         finalize_btn = ttk.Button(command_frame, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
-        finalize_btn.grid(row=0, column=4, sticky="w", pady=(0, 4))
+        finalize_btn.grid(row=0, column=3, sticky="w", pady=(0, 4))
         self.command_buttons.append(finalize_btn)
         self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
 
@@ -1334,20 +1329,6 @@ class ImprovePickQAGUI:
             "--index-only",
         ]
         self._start_subprocess_job("Sync New Downloads", command, reload_assets=True)
-
-    def _command_recompute_current_step(self) -> None:
-        if self.active_job_state == JOB_STATE_RUNNING:
-            messagebox.showwarning("Job running", "Another QA command is already running.")
-            return
-        self._set_job_state(JOB_STATE_RUNNING, step_text="Recomputing selected step")
-        self._append_command_log("START Recompute Current Step")
-        self.active_job_name = "Recompute Current Step"
-        try:
-            self._run_search()
-        except Exception as exc:
-            error_text = str(exc)
-            self._set_job_state(JOB_STATE_FAILED, step_text="Recompute failed", error_text=error_text)
-            self._append_command_log(f"FAIL Recompute Current Step: {error_text}")
 
     def _command_finalize_current_step(self) -> None:
         if self.active_job_state == JOB_STATE_RUNNING:
@@ -2776,14 +2757,11 @@ class ImprovePickQAGUI:
         else:
             self.status_var.set("Search complete. No recommendations found.")
 
-        if self.active_job_state == JOB_STATE_RUNNING and self.active_job_name == "Recompute Current Step":
-            self._set_job_state(JOB_STATE_DONE, step_text="Recomputed selected step")
-            self._append_command_log("DONE Recompute Current Step")
-
     def _populate_candidate_from_qa(self, small_step_id: str) -> bool:
-        self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
+        self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=False)
         qa_row = self._get_qa_row_for_step(small_step_id)
         if qa_row is None:
+            self.notes_var.set("")
             self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
             return False
 
@@ -2835,7 +2813,8 @@ class ImprovePickQAGUI:
             )
 
         if not has_persisted_picks:
-            self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
+            # Keep notes visible even when candidate picks are empty.
+            self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=False)
             self.latest_results = []
             self._clear_stage4_results()
             self._set_candidate_panel_state("Candidate panel: no persisted candidate picks found in qa.csv")
@@ -2853,9 +2832,6 @@ class ImprovePickQAGUI:
         self.search_btn.config(state=tk.NORMAL)
         self.save_btn.config(state=tk.DISABLED)
         self.status_var.set("Search failed")
-        if self.active_job_state == JOB_STATE_RUNNING and self.active_job_name == "Recompute Current Step":
-            self._set_job_state(JOB_STATE_FAILED, step_text="Recompute failed", error_text=error_message)
-            self._append_command_log(f"FAIL Recompute Current Step: {error_message}")
         messagebox.showerror("Search Error", error_message)
 
     def _open_video(self, index_num: int) -> None:
@@ -3367,7 +3343,10 @@ class ImprovePickQAGUI:
         # constraints_text is intentionally NOT written here; it is managed
         # exclusively by _save_constraints_text so constraints stay per-step.
         qa_row["awaiting download and faiss update"] = awaiting_download_faiss_text
-        qa_row["notes"] = self.notes_var.get().strip()
+        notes_text = self.notes_entry.get().strip()
+        if not notes_text:
+            notes_text = self.notes_var.get().strip()
+        qa_row["notes"] = notes_text
 
         def fill_slots(source: str, results: list[dict[str, object]], ratings: list[int]) -> None:
             for idx in range(TOP_K):

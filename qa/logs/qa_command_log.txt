@@ -380559,3 +380559,4 @@ You can now run the search app to query the index!
 [2026-04-27T17:12:59] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Statistics_4_Draw pictograms (1–1)
 [2026-04-27T18:07:27] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Position and direction_1_Language of position
 [2026-04-27T18:51:44] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_1_Represent numbers to 100
+[2026-04-27T19:09:18] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_2_Partition numbers to 100

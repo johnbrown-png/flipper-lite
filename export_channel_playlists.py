@@ -1,6 +1,9 @@
 """
 Export all public playlists for a YouTube channel to CSV.
 
+#how to use
+python export_channel_playlists.py UC4a-Gbdw7vOaccHmFo40b9g --output khan_playlists.csv
+
 Output columns:
 - channel_id
 - channel_name

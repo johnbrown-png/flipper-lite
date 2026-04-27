@@ -380532,3 +380532,25 @@ You can now run the search app to query the index!
 [2026-04-26T20:37:55] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Place value within 10_5_Recognise numbers as words
 [2026-04-26T20:40:21] MANUAL OVERRIDE applied for Year 1_5-6_Autumn__Place value within 10_6_Count on from any number
 [2026-04-26T20:46:44] MANUAL OVERRIDE applied for Year 1_5-6_Spring__Place value within 50_7_Estimate on a number line to 50
+[2026-04-26T22:50:30] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Place value within 100_4_The number line to 100
+[2026-04-26T23:21:49] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Time_2_Days of the week
+[2026-04-27T08:08:14] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Time_1_Before and after, preposition time words
+[2026-04-27T08:14:13] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Time_3_Months of the year
+[2026-04-27T08:18:32] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Position and direction_5_Ordinal numbers
+[2026-04-27T08:25:15] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Place value_12_Compare objects
+[2026-04-27T08:33:55] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Place value_14_Order objects and numbers
+[2026-04-27T08:37:18] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Addition and subtraction_4_Bonds to 100 (tens)
+[2026-04-27T08:46:14] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Addition and subtraction_5_Add and subtract 1s
+[2026-04-27T09:50:28] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Mass capacity and temperature_1_Compare mass
+[2026-04-27T09:54:12] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Mass capacity and temperature_2_Measure in grams
+[2026-04-27T10:02:30] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Mass capacity and temperature_4_Add and subtract weights
+[2026-04-27T11:13:04] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Time_1_Before and after, preposition time words
+[2026-04-27T11:24:58] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Addition and subtraction_6_Add by making 10
+[2026-04-27T11:32:42] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Addition and subtraction_15_Add two 2-digit numbers (not across a 10)
+[2026-04-27T12:00:47] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Length and height_1_Measure in centimetres
+[2026-04-27T14:03:16] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Fractions_2_Equal and unequal parts
+[2026-04-27T14:19:25] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Fractions_4_Find a half
+[2026-04-27T14:22:14] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Fractions_5_Recognise a quarter
+[2026-04-27T14:25:10] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Fractions_6_Find a quarter
+[2026-04-27T14:41:22] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Fractions_7_Recognise a third
+[2026-04-27T14:48:31] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Fractions_9_Find the whole

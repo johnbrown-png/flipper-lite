@@ -388,6 +388,8 @@ class ImprovePickQAGUI:
         self.precomputed_delete_buttons: list[ttk.Button] = []
         self.precomputed_rating_vars: list[tk.StringVar] = []
         self.precomputed_rating_dropdowns: list[tk.OptionMenu] = []
+        self.precomputed_rank_vars: list[tk.StringVar] = []
+        self.precomputed_rank_dropdowns: list[tk.OptionMenu] = []
         self.candidate_delete_buttons: list[ttk.Button] = []
         self.semantic_preview_title_labels: list[ttk.Label] = []
         self.semantic_preview_channel_labels: list[ttk.Label] = []
@@ -629,16 +631,25 @@ class ImprovePickQAGUI:
         self.command_buttons.append(finalize_btn)
         self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
 
-        manual_override_btn = ttk.Button(
+        cand_override_btn = ttk.Button(
             command_frame,
-            text="Apply Manual + Re-ranks to Precomputed Override",
+            text="Apply Cand MR",
             command=self._command_apply_manual_override,
         )
-        manual_override_btn.grid(row=1, column=0, columnspan=2, sticky="w", padx=(0, 8), pady=(0, 4))
-        self.command_buttons.append(manual_override_btn)
-        self._attach_tooltip(manual_override_btn, "Copies candidate-panel picks into qa/manual_precomputed_overrides.csv using selected Manual Rank values, so they temporarily override current precomputed picks for this step.")
+        cand_override_btn.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(cand_override_btn)
+        self._attach_tooltip(cand_override_btn, "Uses Candidate panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
 
-        clear_override_btn = ttk.Button(command_frame, text="Clear Manual Override", command=self._command_clear_manual_override)
+        curr_override_btn = ttk.Button(
+            command_frame,
+            text="Apply Curr MR",
+            command=self._command_apply_precomputed_manual_override,
+        )
+        curr_override_btn.grid(row=1, column=1, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(curr_override_btn)
+        self._attach_tooltip(curr_override_btn, "Uses Precomputed panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
+
+        clear_override_btn = ttk.Button(command_frame, text="Clear Override", command=self._command_clear_manual_override)
         clear_override_btn.grid(row=1, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(clear_override_btn)
         self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
@@ -727,8 +738,8 @@ class ImprovePickQAGUI:
             foreground="#555555",
         ).grid(row=0, column=0, columnspan=9, sticky="w", padx=4, pady=(0, 4))
 
-        precomp_headers = ["Rank", "Title", "Channel", "Score", "Open", "Delete", "Rating"]
-        candidate_headers = ["Rank", "Title", "Channel", "Score", "Manual Rank", "Open", "Delete", "Knockout", "Rating"]
+        precomp_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "Rt"]
+        candidate_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "Rt"]
         for col, header in enumerate(precomp_headers):
             ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 4))
         for col, header in enumerate(candidate_headers):
@@ -753,12 +764,24 @@ class ImprovePickQAGUI:
             c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
             self.result_channel_labels.append(c_channel)
 
-            p_score = ttk.Label(precomp_frame, text="", width=10)
+            p_score = ttk.Label(precomp_frame, text="", width=6)
             p_score.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
             self.precomputed_score_labels.append(p_score)
-            c_score = ttk.Label(candidate_results_frame, text="", width=10)
+            c_score = ttk.Label(candidate_results_frame, text="", width=6)
             c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.result_score_labels.append(c_score)
+
+            p_rank_var = tk.StringVar(value=str(row_num))
+            self.precomputed_rank_vars.append(p_rank_var)
+            p_rank_menu = tk.OptionMenu(
+                precomp_frame,
+                p_rank_var,
+                *[str(rank_option) for rank_option in range(1, TOP_K + 1)],
+                command=lambda _v, idx=i: self._on_precomputed_rank_change(idx),
+            )
+            p_rank_menu.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
+            p_rank_menu.config(width=2)
+            self.precomputed_rank_dropdowns.append(p_rank_menu)
 
             c_rank_var = tk.StringVar(value=str(row_num))
             self.candidate_rank_vars.append(c_rank_var)
@@ -769,28 +792,28 @@ class ImprovePickQAGUI:
                 command=lambda _v, idx=i: self._on_candidate_rank_change(idx),
             )
             c_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
-            c_rank_menu.config(width=4)
+            c_rank_menu.config(width=2)
             self.candidate_rank_dropdowns.append(c_rank_menu)
 
-            p_open = ttk.Button(precomp_frame, text="Open", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
-            p_open.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
+            p_open = ttk.Button(precomp_frame, text="O", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
+            p_open.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
             self.precomputed_open_buttons.append(p_open)
-            c_open = ttk.Button(candidate_results_frame, text="Open", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
+            c_open = ttk.Button(candidate_results_frame, text="O", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
             c_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
             self.result_open_buttons.append(c_open)
 
             p_delete = ttk.Button(
                 precomp_frame,
-                text="Append",
+                text="Add",
                 command=lambda idx=i: self._append_result_to_videos_to_delete("current", idx),
                 state=tk.DISABLED,
             )
-            p_delete.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
+            p_delete.grid(row=row_num, column=6, sticky="w", padx=4, pady=2)
             self.precomputed_delete_buttons.append(p_delete)
 
             c_delete = ttk.Button(
                 candidate_results_frame,
-                text="Append",
+                text="Add",
                 command=lambda idx=i: self._append_result_to_videos_to_delete("candidate", idx),
                 state=tk.DISABLED,
             )
@@ -799,7 +822,7 @@ class ImprovePickQAGUI:
 
             c_knockout = ttk.Button(
                 candidate_results_frame,
-                text="Exclude",
+                text="Excl",
                 command=lambda idx=i: self._toggle_candidate_knockout(idx),
                 state=tk.DISABLED,
             )
@@ -809,8 +832,8 @@ class ImprovePickQAGUI:
             p_rating_var = tk.StringVar(value="5")
             self.precomputed_rating_vars.append(p_rating_var)
             p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
-            p_menu.grid(row=row_num, column=6, sticky="w", padx=4, pady=2)
-            p_menu.config(width=4)
+            p_menu.grid(row=row_num, column=7, sticky="w", padx=4, pady=2)
+            p_menu.config(width=2)
             self.precomputed_rating_dropdowns.append(p_menu)
             self._apply_precomputed_rating_color(i)
 
@@ -819,7 +842,7 @@ class ImprovePickQAGUI:
             # tk.OptionMenu allows per-widget background color updates.
             c_menu = tk.OptionMenu(candidate_results_frame, c_rating_var, *rating_options, command=lambda _v, idx=i: self._on_rating_change(idx))
             c_menu.grid(row=row_num + 1, column=8, sticky="w", padx=4, pady=2)
-            c_menu.config(width=4)
+            c_menu.config(width=2)
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
 
@@ -1405,6 +1428,47 @@ class ImprovePickQAGUI:
             )
         return rows
 
+    def _write_manual_precomputed_override_rows(
+        self,
+        small_step_id: str,
+        ranked_results: list[dict[str, object]],
+        source_note: str,
+    ) -> int:
+        rows: list[dict[str, object]] = []
+        for idx, result in enumerate(ranked_results[:TOP_K], start=1):
+            video_id = clean_text(result.get("video_id"))
+            title = clean_text(result.get("title"))
+            if not video_id and not title:
+                continue
+            rows.append(
+                {
+                    "updated_at": datetime.now().isoformat(timespec="seconds"),
+                    "small_step_id": small_step_id,
+                    "rank": idx,
+                    "video_id": video_id,
+                    "video_title": title,
+                    "channel": clean_text(result.get("channel")),
+                    "combined_score": clean_text(result.get("combined_score")),
+                    "source": "qa_manual_override",
+                    "status": "active",
+                    "notes": source_note,
+                }
+            )
+
+        if not rows:
+            return 0
+
+        overrides_df = self._load_manual_precomputed_overrides_df()
+        overrides_df = overrides_df[overrides_df["small_step_id"] != small_step_id].copy()
+        overrides_df = pd.concat([overrides_df, pd.DataFrame(rows)], ignore_index=True)
+
+        MANUAL_PRECOMP_OVERRIDE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        overrides_df.to_csv(MANUAL_PRECOMP_OVERRIDE_PATH, index=False)
+        self._append_command_log(f"MANUAL OVERRIDE applied for {small_step_id}")
+        self.status_var.set(f"Applied manual precomputed override with manual ranks for {small_step_id}")
+        self._populate_precomputed(small_step_id)
+        return len(rows)
+
     def _command_apply_manual_override(self) -> None:
         small_step_id = self._selected_small_step_id()
         if not small_step_id:
@@ -1429,44 +1493,52 @@ class ImprovePickQAGUI:
         self.latest_final_results = list(ranked_results)
         self._render_candidate_search_results(self.latest_results)
 
-        rows: list[dict[str, object]] = []
-        for idx, result in enumerate(ranked_results[:TOP_K], start=1):
-            video_id = clean_text(result.get("video_id"))
-            title = clean_text(result.get("title"))
-            if not video_id and not title:
-                continue
-            rows.append(
-                {
-                    "updated_at": datetime.now().isoformat(timespec="seconds"),
-                    "small_step_id": small_step_id,
-                    "rank": idx,
-                    "video_id": video_id,
-                    "video_title": title,
-                    "channel": clean_text(result.get("channel")),
-                    "combined_score": clean_text(result.get("combined_score")),
-                    "source": "qa_manual_override",
-                    "status": "active",
-                    "notes": "applied_from_candidate_panel",
-                }
-            )
-
-        if not rows:
+        written_count = self._write_manual_precomputed_override_rows(
+            small_step_id=small_step_id,
+            ranked_results=ranked_results,
+            source_note="applied_from_candidate_panel",
+        )
+        if written_count == 0:
             messagebox.showwarning("No override rows", "Current candidate panel has no rows to override.")
             return
 
-        overrides_df = self._load_manual_precomputed_overrides_df()
-        overrides_df = overrides_df[overrides_df["small_step_id"] != small_step_id].copy()
-        overrides_df = pd.concat([overrides_df, pd.DataFrame(rows)], ignore_index=True)
-
-        MANUAL_PRECOMP_OVERRIDE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        overrides_df.to_csv(MANUAL_PRECOMP_OVERRIDE_PATH, index=False)
-
-        self._append_command_log(f"MANUAL OVERRIDE applied for {small_step_id}")
-        self.status_var.set(f"Applied manual precomputed override with manual ranks for {small_step_id}")
-        self._populate_precomputed(small_step_id)
         messagebox.showinfo(
             "Manual override applied",
-            f"Saved re-ranked manual precomputed override rows to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}",
+            f"Saved {written_count} candidate manual-rank row(s) to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}",
+        )
+
+    def _command_apply_precomputed_manual_override(self) -> None:
+        small_step_id = self._selected_small_step_id()
+        if not small_step_id:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+
+        if not self.precomputed_results:
+            messagebox.showwarning("No current picks", "No precomputed rows are available to re-rank.")
+            return
+
+        try:
+            ranked_results = self._get_manual_ranked_precomputed_results()
+        except ValueError as exc:
+            messagebox.showwarning("Manual rank invalid", str(exc))
+            return
+
+        if not ranked_results:
+            messagebox.showwarning("No current picks", "No precomputed rows are available to apply.")
+            return
+
+        written_count = self._write_manual_precomputed_override_rows(
+            small_step_id=small_step_id,
+            ranked_results=ranked_results,
+            source_note="applied_from_precomputed_panel",
+        )
+        if written_count == 0:
+            messagebox.showwarning("No override rows", "Current precomputed panel has no rows to override.")
+            return
+
+        messagebox.showinfo(
+            "Manual override applied",
+            f"Saved {written_count} precomputed manual-rank row(s) to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}",
         )
 
     def _command_clear_manual_override(self) -> None:
@@ -2562,7 +2634,7 @@ class ImprovePickQAGUI:
             self.result_score_labels[i].config(text="")
             self.result_open_buttons[i].config(state=tk.DISABLED)
             self.candidate_delete_buttons[i].config(state=tk.DISABLED)
-            self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text="Exclude")
+            self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text="Excl")
             self.candidate_rank_vars[i].set(str(i + 1))
             self.candidate_rank_dropdowns[i].config(state=tk.DISABLED)
             if reset_ratings:
@@ -2807,6 +2879,14 @@ class ImprovePickQAGUI:
         selected_rank = self.candidate_rank_vars[index_num].get().strip()
         self.status_var.set(f"Candidate row {index_num + 1} manual rank set to {selected_rank}")
 
+    def _on_precomputed_rank_change(self, index_num: int) -> None:
+        if index_num < 0 or index_num >= TOP_K:
+            return
+        if index_num >= len(self.precomputed_results):
+            return
+        selected_rank = self.precomputed_rank_vars[index_num].get().strip()
+        self.status_var.set(f"Current row {index_num + 1} manual rank set to {selected_rank}")
+
     def _load_step_knockout_df(self) -> pd.DataFrame:
         columns = ["updated_at", "small_step_id", "video_id", "status", "source", "notes"]
         if STEP_KNOCKOUT_PATH.exists():
@@ -2857,18 +2937,29 @@ class ImprovePickQAGUI:
             if i >= len(self.latest_results):
                 self.candidate_rank_vars[i].set(default_rank)
                 self.candidate_rank_dropdowns[i].config(state=tk.DISABLED)
-                self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text="Exclude")
+                self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text="Excl")
                 continue
 
             video_id = clean_text(self.latest_results[i].get("video_id"))
             if not self.candidate_rank_vars[i].get().strip():
                 self.candidate_rank_vars[i].set(default_rank)
             self.candidate_rank_dropdowns[i].config(state=tk.NORMAL)
-            knockout_text = "Restore" if video_id and video_id in knocked_out_ids else "Exclude"
+            knockout_text = "Undo" if video_id and video_id in knocked_out_ids else "Excl"
             self.candidate_knockout_buttons[i].config(
                 state=tk.NORMAL if video_id else tk.DISABLED,
                 text=knockout_text,
             )
+
+    def _sync_precomputed_controls_for_current_step(self) -> None:
+        for i in range(TOP_K):
+            default_rank = str(i + 1)
+            if i >= len(self.precomputed_results):
+                self.precomputed_rank_vars[i].set(default_rank)
+                self.precomputed_rank_dropdowns[i].config(state=tk.DISABLED)
+                continue
+            if not self.precomputed_rank_vars[i].get().strip():
+                self.precomputed_rank_vars[i].set(default_rank)
+            self.precomputed_rank_dropdowns[i].config(state=tk.NORMAL)
 
     def _get_manual_ranked_candidate_results(self) -> list[dict[str, object]]:
         results = self.latest_results[:TOP_K]
@@ -2881,6 +2972,37 @@ class ImprovePickQAGUI:
 
         for idx in range(available_rows):
             raw_rank = self.candidate_rank_vars[idx].get().strip()
+            try:
+                parsed_rank = int(raw_rank)
+            except ValueError as exc:
+                raise ValueError(f"Row {idx + 1} has invalid manual rank '{raw_rank or '?'}'.") from exc
+
+            if parsed_rank < 1 or parsed_rank > available_rows:
+                raise ValueError(f"Row {idx + 1} rank must be between 1 and {available_rows}.")
+            if parsed_rank in seen_ranks:
+                raise ValueError("Manual ranks must be unique (no duplicates).")
+
+            seen_ranks.add(parsed_rank)
+            row_pairs.append((parsed_rank, results[idx]))
+
+        expected = set(range(1, available_rows + 1))
+        if seen_ranks != expected:
+            raise ValueError(f"Manual ranks must cover exactly 1..{available_rows}.")
+
+        row_pairs.sort(key=lambda pair: pair[0])
+        return [item for _, item in row_pairs]
+
+    def _get_manual_ranked_precomputed_results(self) -> list[dict[str, object]]:
+        results = self.precomputed_results[:TOP_K]
+        if not results:
+            return []
+
+        available_rows = min(TOP_K, len(results))
+        seen_ranks: set[int] = set()
+        row_pairs: list[tuple[int, dict[str, object]]] = []
+
+        for idx in range(available_rows):
+            raw_rank = self.precomputed_rank_vars[idx].get().strip()
             try:
                 parsed_rank = int(raw_rank)
             except ValueError as exc:
@@ -3008,6 +3130,8 @@ class ImprovePickQAGUI:
             self.precomputed_score_labels[i].config(text="")
             self.precomputed_open_buttons[i].config(state=tk.DISABLED)
             self.precomputed_delete_buttons[i].config(state=tk.DISABLED)
+            self.precomputed_rank_vars[i].set(str(i + 1))
+            self.precomputed_rank_dropdowns[i].config(state=tk.DISABLED)
             self.precomputed_rating_vars[i].set("5")
             self._apply_precomputed_rating_color(i)
 
@@ -3025,9 +3149,12 @@ class ImprovePickQAGUI:
             self.precomputed_score_labels[i].config(text=f"{combined_score:.4f}")
             self.precomputed_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
             self.precomputed_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.precomputed_rank_vars[i].set(str(i + 1))
+            self.precomputed_rank_dropdowns[i].config(state=tk.NORMAL)
             self.precomputed_rating_vars[i].set("5")
             self._apply_precomputed_rating_color(i)
 
+        self._sync_precomputed_controls_for_current_step()
         self._restore_saved_ratings(
             small_step_id=small_step_id,
             source="current",

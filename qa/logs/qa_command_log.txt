@@ -380565,3 +380565,34 @@ You can now run the search app to query the index!
 [2026-04-27T23:30:34] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Multiplication and division_10_Divide by 2
 [2026-04-27T23:32:41] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Multiplication and division_11_Doubling and halving
 [2026-04-27T23:36:16] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_5_Represent numbers to 1,000
+[2026-04-28T09:32:16] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_8_Hundreds, tens and ones
+[2026-04-28T09:49:01] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_9_Find 1, 10 or 100 more or less
+[2026-04-28T09:53:28] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_10_Number line to 1,000
+[2026-04-28T09:54:57] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_11_Estimate on a number line to 1,000
+[2026-04-28T09:57:02] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_12_Compare numbers to 1,000
+[2026-04-28T10:04:30] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_13_Order numbers to 1,000
+[2026-04-28T10:20:50] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_1_Apply number bonds within 10
+[2026-04-28T10:21:26] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_1_Apply number bonds within 10
+[2026-04-28T10:26:38] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_2_Add and subtract 1s
+[2026-04-28T10:29:04] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_3_Add and subtract 10s
+[2026-04-28T10:50:26] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_6_Add 1s across a 10
+[2026-04-28T10:55:32] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_7_Add 10s across a 100
+[2026-04-28T11:00:23] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_8_Subtract 1s across a 10
+[2026-04-28T11:00:36] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_8_Subtract 1s across a 10
+[2026-04-28T11:05:55] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_10_Make connections
+[2026-04-28T11:06:11] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_10_Make connections
+[2026-04-28T12:19:44] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_12_Subtract two numbers (no exchange)
+[2026-04-28T12:31:16] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_13_Add two numbers (across a 10)
+[2026-04-28T12:33:29] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_14_Add two numbers (across a 100)
+[2026-04-28T12:36:40] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_15_Subtract two numbers (across a 10)
+[2026-04-28T12:41:57] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_16_Subtract two numbers (across a 100)
+[2026-04-28T14:19:52] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_19_Complements to 100
+[2026-04-28T14:23:18] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_20_Estimate answers
+[2026-04-28T14:23:30] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_20_Estimate answers
+[2026-04-28T14:31:59] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Multiplication and division A_3_Multiples of 2
+[2026-04-28T14:41:37] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Multiplication and division A_6_Multiply by 3
+[2026-04-28T16:19:07] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_2_Related calculations
+[2026-04-28T16:19:55] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_2_Related calculations
+[2026-04-28T16:23:32] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_3_Reasoning about multiplication
+[2026-04-28T16:41:25] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_4_Multiply a 2-digit number by a 1-digit number – no exchange
+[2026-04-28T16:43:01] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_5_Multiply a 2-digit number by a 1-digit number – with exchange

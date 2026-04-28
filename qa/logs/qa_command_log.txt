@@ -380560,3 +380560,8 @@ You can now run the search app to query the index!
 [2026-04-27T18:07:27] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Position and direction_1_Language of position
 [2026-04-27T18:51:44] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_1_Represent numbers to 100
 [2026-04-27T19:09:18] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_2_Partition numbers to 100
+[2026-04-27T22:12:42] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_3_Number line to 100
+[2026-04-27T23:29:57] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Multiplication and division_10_Divide by 2
+[2026-04-27T23:30:34] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Multiplication and division_10_Divide by 2
+[2026-04-27T23:32:41] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Multiplication and division_11_Doubling and halving
+[2026-04-27T23:36:16] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_5_Represent numbers to 1,000

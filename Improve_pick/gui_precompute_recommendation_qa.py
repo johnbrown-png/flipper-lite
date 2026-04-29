@@ -1487,9 +1487,9 @@ class ImprovePickQAGUI:
             "video_id": wildcard_video_id,
             "title": wildcard_title,
             "channel": wildcard_channel,
-            "combined_score": 0.0,
-            "semantic_score": "",
-            "instruction_score": "",
+            "combined_score": 100,
+            "semantic_score": 100,
+            "instruction_score": 100,
             "alignment_score": "",
         }
 

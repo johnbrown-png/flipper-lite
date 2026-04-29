@@ -279,6 +279,13 @@ def _to_float(value, default=0.0):
         return float(default)
 
 
+def _score_to_percent(value):
+    """Support both 0..1 normalized scores and 0..100 percentage scores."""
+    raw = _to_float(value, default=0.0)
+    pct = raw * 100.0 if raw <= 1.0 else raw
+    return int(max(0.0, min(100.0, pct)))
+
+
 def format_duration(duration_str):
     """Convert duration to MM:SS format (e.g., 06:45)"""
     try:
@@ -460,9 +467,9 @@ def render_result_card(result):
         
         with col_gauge:
             # Circular progress indicator for combined score
-            semantic_pct = int(_to_float(result.get('semantic_score', 0), default=0.0) * 100)
-            instruction_pct = int(_to_float(result.get('instruction_score', 0), default=0.0))
-            combined_pct = int(_to_float(result.get('combined_score', 0), default=0.0) * 100)
+            semantic_pct = _score_to_percent(result.get('semantic_score', 0))
+            instruction_pct = _score_to_percent(result.get('instruction_score', 0))
+            combined_pct = _score_to_percent(result.get('combined_score', 0))
             
             # Display circular gauge with label - centered
             st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)

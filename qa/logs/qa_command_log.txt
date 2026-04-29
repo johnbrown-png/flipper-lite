@@ -380607,3 +380607,4 @@ You can now run the search app to query the index!
 [2026-04-29T14:47:45] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Length and perimeter_11_Measure perimeter
 [2026-04-29T14:49:45] START Sync New Downloads: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe data_pipeline/run_pipeline.py --index-only
 [2026-04-29T18:01:59] QA REFERENCE PUBLISHED rows=4916 steps=136 wildcards=34 manual=108 skipped=0
+[2026-04-29T18:18:13] QA REFERENCE PUBLISHED rows=4916 steps=136 wildcards=34 manual=108 skipped=0

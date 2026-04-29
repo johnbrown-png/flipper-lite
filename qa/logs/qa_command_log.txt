@@ -380596,3 +380596,9 @@ You can now run the search app to query the index!
 [2026-04-28T16:23:32] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_3_Reasoning about multiplication
 [2026-04-28T16:41:25] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_4_Multiply a 2-digit number by a 1-digit number – no exchange
 [2026-04-28T16:43:01] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_5_Multiply a 2-digit number by a 1-digit number – with exchange
+[2026-04-29T09:55:50] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_9_Divide a 2-digit number by a 1-digit number – with remainders
+[2026-04-29T10:08:58] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_10_Scaling
+[2026-04-29T12:15:42] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Mass capacity and temperature_8_Add and substract volume and capacity
+[2026-04-29T12:31:58] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_7_Flexible partitioning of numbers to 1,000
+[2026-04-29T12:52:11] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_7_Divide a 2-digit number by a 1-digit number – no exchange
+[2026-04-29T13:11:08] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Length and perimeter_5_Equivalent lengths (metres and centimetres)

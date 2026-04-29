@@ -3471,7 +3471,10 @@ class ImprovePickQAGUI:
         if index_num < 0 or index_num >= len(results):
             return
 
-        video_id = clean_text(results[index_num].get("video_id"))
+        result = results[index_num]
+        video_id = clean_text(result.get("video_id"))
+        video_title = clean_text(result.get("title") or result.get("video_title"))
+        channel = clean_text(result.get("channel"))
         if not video_id:
             messagebox.showwarning("Missing video", "No video_id found for this row.")
             return
@@ -3480,7 +3483,7 @@ class ImprovePickQAGUI:
         if VIDEOS_TO_DELETE_PATH.exists():
             delete_df = pd.read_csv(VIDEOS_TO_DELETE_PATH)
         else:
-            delete_df = pd.DataFrame(columns=["video_id"])
+            delete_df = pd.DataFrame(columns=["video_id", "video_title", "channel"])
 
         if "video_id" not in delete_df.columns:
             first_col = delete_df.columns[0] if len(delete_df.columns) > 0 else None
@@ -3489,12 +3492,30 @@ class ImprovePickQAGUI:
             else:
                 delete_df["video_id"] = ""
 
+        for required_col in ("video_title", "channel"):
+            if required_col not in delete_df.columns:
+                delete_df[required_col] = ""
+
         delete_df["video_id"] = delete_df["video_id"].map(clean_text)
         if (delete_df["video_id"] == video_id).any():
             self.status_var.set(f"{video_id} is already in videos_to_delete.csv")
             return
 
-        delete_df = pd.concat([delete_df, pd.DataFrame([{"video_id": video_id}])], ignore_index=True)
+        delete_df = pd.concat(
+            [
+                delete_df,
+                pd.DataFrame(
+                    [
+                        {
+                            "video_id": video_id,
+                            "video_title": video_title,
+                            "channel": channel,
+                        }
+                    ]
+                ),
+            ],
+            ignore_index=True,
+        )
         delete_df.to_csv(VIDEOS_TO_DELETE_PATH, index=False)
         self.status_var.set(f"Appended {video_id} to videos_to_delete.csv")
 

@@ -247,10 +247,10 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step, small_
                 'rank': row.get('rank', 1),
                 'video_id': row.get('video_id', ''),
                 'title': row.get('video_title', row.get('title', '')),
-                'semantic_score': float(row.get('semantic_score', 0.0)),
-                'instruction_score': float(row.get('instruction_score', 0.0)),
+                'semantic_score': _to_float(row.get('semantic_score', 0.0)),
+                'instruction_score': _to_float(row.get('instruction_score', 0.0)),
                 'instruction_justification': row.get('instruction_justification', ''),
-                'combined_score': float(row.get('combined_score', 0.0)),
+                'combined_score': _to_float(row.get('combined_score', 0.0)),
                 'channel': row.get('channel', ''),
                 'duration': row.get('duration_formatted', row.get('duration', '')),
                 'topic': row.get('topic', topic),
@@ -264,6 +264,19 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step, small_
         import traceback
         st.error(traceback.format_exc())
         return []
+
+
+def _to_float(value, default=0.0):
+    """Safely parse numeric values that may be blank strings in CSV-backed rows."""
+    try:
+        if value is None:
+            return float(default)
+        text = str(value).strip()
+        if text == "" or text.lower() == "nan":
+            return float(default)
+        return float(text)
+    except (TypeError, ValueError):
+        return float(default)
 
 
 def format_duration(duration_str):
@@ -447,9 +460,9 @@ def render_result_card(result):
         
         with col_gauge:
             # Circular progress indicator for combined score
-            semantic_pct = int(result.get('semantic_score', 0) * 100)
-            instruction_pct = int(result.get('instruction_score', 0))
-            combined_pct = int(result.get('combined_score', 0) * 100)
+            semantic_pct = int(_to_float(result.get('semantic_score', 0), default=0.0) * 100)
+            instruction_pct = int(_to_float(result.get('instruction_score', 0), default=0.0))
+            combined_pct = int(_to_float(result.get('combined_score', 0), default=0.0) * 100)
             
             # Display circular gauge with label - centered
             st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)

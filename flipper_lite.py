@@ -183,7 +183,9 @@ def load_precomputed_recommendations_flat():
     File modification time is automatically included in Streamlit's cache key.
     """
     try:
-        csv_path = project_root / 'precomputed_recommendations_flat.csv'
+        qa_csv_path = project_root / 'precomputed_recommendations_flat_qa.csv'
+        base_csv_path = project_root / 'precomputed_recommendations_flat.csv'
+        csv_path = qa_csv_path if qa_csv_path.exists() else base_csv_path
         df = pd.read_csv(csv_path)
         return normalize_precomputed_df(df)
     except Exception as e:

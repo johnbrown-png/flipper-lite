@@ -57,6 +57,8 @@ CANONICAL_OVERRIDE_PATH = project_root / "qa" / "ss_desc_validated_overrides.csv
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
 VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
 MANUAL_PRECOMP_OVERRIDE_PATH = project_root / "qa" / "manual_precomputed_overrides.csv"
+WILDCARD_OVERRIDE_PATH = project_root / "qa" / "wildcards" / "wildcards.csv"
+QA_REFERENCE_OUTPUT_PATH = project_root / "precomputed_recommendations_flat_qa.csv"
 STEP_KNOCKOUT_PATH = project_root / "qa" / "step_video_knockouts.csv"
 QA_COMMAND_LOG_PATH = project_root / "qa" / "logs" / "qa_command_log.txt"
 TOP_K = 3
@@ -145,6 +147,42 @@ def build_faiss_video_lookup(metadata: list[dict[str, object]]) -> dict[str, dic
             "duration_formatted": format_duration_hms(item.get("duration")),
         }
     return lookup
+
+
+def _atomic_write_csv(df: pd.DataFrame, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = output_path.with_suffix(f"{output_path.suffix}.tmp")
+    df.to_csv(temp_path, index=False)
+    os.replace(temp_path, output_path)
+
+
+def _read_wildcard_rows(path: Path) -> pd.DataFrame:
+    columns = ["video_id", "channel", "title", "small_step_num", "small_step_id", "ss_wr_desc"]
+    if not path.exists():
+        return pd.DataFrame(columns=columns)
+
+    wildcard_df = pd.read_csv(path, on_bad_lines="skip")
+    for col in columns:
+        if col not in wildcard_df.columns:
+            wildcard_df[col] = ""
+    wildcard_df = wildcard_df[columns].copy()
+    for col in ("video_id", "channel", "title", "small_step_id"):
+        wildcard_df[col] = wildcard_df[col].map(clean_text)
+    wildcard_df["ss_wr_desc"] = wildcard_df["ss_wr_desc"].map(clean_text)
+
+    # Backward-compatibility: some files place the step identifier in ss_wr_desc
+    # and the long description text in small_step_id. Normalize to small_step_id.
+    small_step_id_is_step = wildcard_df["small_step_id"].str.startswith("Year ", na=False)
+    ss_wr_desc_is_step = wildcard_df["ss_wr_desc"].str.startswith("Year ", na=False)
+    swap_mask = (~small_step_id_is_step) & ss_wr_desc_is_step
+    wildcard_df.loc[swap_mask, "small_step_id"] = wildcard_df.loc[swap_mask, "ss_wr_desc"]
+
+    wildcard_df = wildcard_df[
+        (wildcard_df["small_step_id"].str.len() > 0)
+        & ((wildcard_df["video_id"].str.len() > 0) | (wildcard_df["title"].str.len() > 0))
+    ].copy()
+    wildcard_df = wildcard_df.drop_duplicates(subset=["small_step_id"], keep="last")
+    return wildcard_df
 
 
 def load_video_lookup() -> dict[str, dict[str, str]]:
@@ -380,7 +418,9 @@ class ImprovePickQAGUI:
         self.candidate_knockout_buttons: list[ttk.Button] = []
 
         self.precomputed_df: pd.DataFrame = pd.DataFrame()
+        self.wildcard_df: pd.DataFrame = pd.DataFrame()
         self.precomputed_results: list[dict[str, object]] = []
+        self.precomputed_panel_state_var = tk.StringVar(value="Current picks source: precomputed base")
         self.precomputed_title_labels: list[ttk.Label] = []
         self.precomputed_channel_labels: list[ttk.Label] = []
         self.precomputed_score_labels: list[ttk.Label] = []
@@ -649,6 +689,18 @@ class ImprovePickQAGUI:
         self.command_buttons.append(clear_override_btn)
         self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
 
+        publish_qa_ref_btn = ttk.Button(
+            command_frame,
+            text="Publish QA Reference CSV",
+            command=self._command_publish_qa_reference_csv,
+        )
+        publish_qa_ref_btn.grid(row=2, column=2, sticky="w", padx=(0, 8))
+        self.command_buttons.append(publish_qa_ref_btn)
+        self._attach_tooltip(
+            publish_qa_ref_btn,
+            "Publishes precomputed_recommendations_flat_qa.csv from precomputed + manual overrides + wildcards. Atomic write; flipper_lite reads this file.",
+        )
+
         health_btn = ttk.Button(command_frame, text="Health Check", command=self._command_health_check)
         health_btn.grid(row=1, column=3, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(health_btn)
@@ -733,34 +785,40 @@ class ImprovePickQAGUI:
             foreground="#555555",
         ).grid(row=0, column=0, columnspan=9, sticky="w", padx=4, pady=(0, 4))
 
+        ttk.Label(
+            precomp_frame,
+            textvariable=self.precomputed_panel_state_var,
+            foreground="#555555",
+        ).grid(row=0, column=0, columnspan=8, sticky="w", padx=4, pady=(0, 4))
+
         precomp_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "Rt"]
         candidate_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "Rt"]
         for col, header in enumerate(precomp_headers):
-            ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=0, column=col, sticky="w", padx=4, pady=(0, 4))
+            ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
         for col, header in enumerate(candidate_headers):
             ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
 
         for i in range(TOP_K):
             row_num = i + 1
-            ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=2)
+            ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
             ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
 
             p_title = ttk.Label(precomp_frame, text="", width=44)
-            p_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=2)
+            p_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
             self.precomputed_title_labels.append(p_title)
             c_title = ttk.Label(candidate_results_frame, text="", width=44)
             c_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
             self.result_title_labels.append(c_title)
 
             p_channel = ttk.Label(precomp_frame, text="", width=20)
-            p_channel.grid(row=row_num, column=2, sticky="w", padx=4, pady=2)
+            p_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
             self.precomputed_channel_labels.append(p_channel)
             c_channel = ttk.Label(candidate_results_frame, text="", width=20)
             c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
             self.result_channel_labels.append(c_channel)
 
             p_score = ttk.Label(precomp_frame, text="", width=6)
-            p_score.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
+            p_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.precomputed_score_labels.append(p_score)
             c_score = ttk.Label(candidate_results_frame, text="", width=6)
             c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
@@ -774,7 +832,7 @@ class ImprovePickQAGUI:
                 *[str(rank_option) for rank_option in range(1, TOP_K + 1)],
                 command=lambda _v, idx=i: self._on_precomputed_rank_change(idx),
             )
-            p_rank_menu.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
+            p_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
             p_rank_menu.config(width=2)
             self.precomputed_rank_dropdowns.append(p_rank_menu)
 
@@ -791,7 +849,7 @@ class ImprovePickQAGUI:
             self.candidate_rank_dropdowns.append(c_rank_menu)
 
             p_open = ttk.Button(precomp_frame, text="O", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
-            p_open.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
+            p_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
             self.precomputed_open_buttons.append(p_open)
             c_open = ttk.Button(candidate_results_frame, text="O", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
             c_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
@@ -803,7 +861,7 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._append_result_to_videos_to_delete("current", idx),
                 state=tk.DISABLED,
             )
-            p_delete.grid(row=row_num, column=6, sticky="w", padx=4, pady=2)
+            p_delete.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=2)
             self.precomputed_delete_buttons.append(p_delete)
 
             c_delete = ttk.Button(
@@ -827,7 +885,7 @@ class ImprovePickQAGUI:
             p_rating_var = tk.StringVar(value="5")
             self.precomputed_rating_vars.append(p_rating_var)
             p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
-            p_menu.grid(row=row_num, column=7, sticky="w", padx=4, pady=2)
+            p_menu.grid(row=row_num + 1, column=7, sticky="w", padx=4, pady=2)
             p_menu.config(width=2)
             self.precomputed_rating_dropdowns.append(p_menu)
             self._apply_precomputed_rating_color(i)
@@ -1345,6 +1403,286 @@ class ImprovePickQAGUI:
             self._set_job_state(JOB_STATE_FAILED, step_text="Approve/finalize failed", error_text=error_text)
             self._append_command_log(f"FAIL Approve + Update QA CSV: {error_text}")
 
+    def _reload_wildcards_df(self) -> None:
+        self.wildcard_df = _read_wildcard_rows(WILDCARD_OVERRIDE_PATH)
+
+    def _get_wildcard_for_step(self, small_step_id: str) -> dict[str, str]:
+        if self.wildcard_df.empty or not small_step_id:
+            return {}
+        matches = self.wildcard_df[self.wildcard_df["small_step_id"] == small_step_id]
+        if matches.empty:
+            return {}
+        row = matches.iloc[-1]
+        video_id = clean_text(row.get("video_id"))
+        title = clean_text(row.get("title"))
+        channel = clean_text(row.get("channel"))
+
+        # Fallback: infer video_id from precomputed rows when wildcard CSV omits video_id.
+        if not video_id and not self.precomputed_df.empty:
+            step_rows = self.precomputed_df[self.precomputed_df["small_step_id"] == small_step_id].copy()
+            if "rank" in step_rows.columns:
+                step_rows = step_rows.sort_values("rank")
+
+            if title:
+                title_mask = (
+                    step_rows.get("title", pd.Series(dtype=str)).map(clean_text) == title
+                ) | (
+                    step_rows.get("video_title", pd.Series(dtype=str)).map(clean_text) == title
+                )
+                title_matches = step_rows[title_mask]
+                if not title_matches.empty:
+                    video_id = clean_text(title_matches.iloc[0].get("video_id"))
+
+            if not video_id and channel:
+                channel_mask = step_rows.get("channel", pd.Series(dtype=str)).map(clean_text) == channel
+                channel_matches = step_rows[channel_mask]
+                if len(channel_matches) == 1:
+                    video_id = clean_text(channel_matches.iloc[0].get("video_id"))
+
+        return {
+            "video_id": video_id,
+            "title": title,
+            "channel": channel,
+        }
+
+    def _get_precomputed_base_results_for_step(self, small_step_id: str) -> list[dict[str, object]]:
+        if self.precomputed_df.empty or not small_step_id:
+            return []
+
+        step_rows = self.precomputed_df[self.precomputed_df["small_step_id"] == small_step_id]
+        if "rank" in step_rows.columns:
+            step_rows = step_rows.sort_values("rank")
+        picks = step_rows.head(TOP_K).reset_index(drop=True)
+
+        rows: list[dict[str, object]] = []
+        for i in range(len(picks)):
+            r = picks.iloc[i]
+            rows.append(
+                {
+                    "video_id": clean_text(r.get("video_id")),
+                    "title": clean_text(r.get("title") or r.get("video_title")),
+                    "channel": clean_text(r.get("channel")),
+                    "combined_score": float(r.get("combined_score") or 0.0),
+                    "semantic_score": clean_text(r.get("semantic_score")),
+                    "instruction_score": clean_text(r.get("instruction_score")),
+                    "alignment_score": clean_text(r.get("alignment_score")),
+                }
+            )
+        return rows
+
+    def _apply_wildcard_to_results(
+        self,
+        small_step_id: str,
+        base_results: list[dict[str, object]],
+    ) -> tuple[list[dict[str, object]], bool]:
+        wildcard = self._get_wildcard_for_step(small_step_id)
+        if not wildcard:
+            return base_results[:TOP_K], False
+
+        wildcard_video_id = clean_text(wildcard.get("video_id"))
+        wildcard_title = clean_text(wildcard.get("title"))
+        wildcard_channel = clean_text(wildcard.get("channel"))
+
+        wildcard_row = {
+            "video_id": wildcard_video_id,
+            "title": wildcard_title,
+            "channel": wildcard_channel,
+            "combined_score": 0.0,
+            "semantic_score": "",
+            "instruction_score": "",
+            "alignment_score": "",
+        }
+
+        demoted = [
+            item for item in base_results
+            if clean_text(item.get("video_id")) != wildcard_video_id
+        ]
+        return [wildcard_row, *demoted[: TOP_K - 1]], True
+
+    def _build_effective_precomputed_results_for_step(self, small_step_id: str) -> tuple[list[dict[str, object]], str]:
+        manual_override_rows = self._read_manual_override_for_step(small_step_id)
+        if manual_override_rows:
+            base_rows = manual_override_rows
+            source = "manual override"
+        else:
+            base_rows = self._get_precomputed_base_results_for_step(small_step_id)
+            source = "precomputed base"
+
+        effective_rows, wildcard_applied = self._apply_wildcard_to_results(small_step_id, base_rows)
+        if wildcard_applied and source == "manual override":
+            source = "manual override + wildcard rank-1"
+        elif wildcard_applied:
+            source = "precomputed base + wildcard rank-1"
+
+        return effective_rows, source
+
+    def _build_publish_rows_for_step(self, step_df: pd.DataFrame, effective_results: list[dict[str, object]]) -> pd.DataFrame:
+        if step_df.empty or not effective_results:
+            return pd.DataFrame(columns=step_df.columns)
+
+        template = step_df.iloc[0].to_dict()
+        new_rows: list[dict[str, object]] = []
+        for rank_idx, result in enumerate(effective_results[:TOP_K], start=1):
+            row = dict(template)
+            if "rank" in row:
+                row["rank"] = rank_idx
+            if "recommendation_num" in row:
+                row["recommendation_num"] = rank_idx
+            if "video_id" in row:
+                row["video_id"] = clean_text(result.get("video_id"))
+            if "title" in row:
+                row["title"] = clean_text(result.get("title"))
+            if "video_title" in row:
+                row["video_title"] = clean_text(result.get("title"))
+            if "channel" in row:
+                row["channel"] = clean_text(result.get("channel"))
+            if "combined_score" in row:
+                row["combined_score"] = clean_text(result.get("combined_score"))
+            if "semantic_score" in row:
+                row["semantic_score"] = clean_text(result.get("semantic_score"))
+            if "instruction_score" in row:
+                row["instruction_score"] = clean_text(result.get("instruction_score"))
+            if "alignment_score" in row:
+                row["alignment_score"] = clean_text(result.get("alignment_score"))
+            new_rows.append(row)
+
+        return pd.DataFrame(new_rows, columns=step_df.columns)
+
+    def _build_published_precomputed_df(self) -> tuple[pd.DataFrame, dict[str, int]]:
+        base_df = self.precomputed_df.copy()
+        if base_df.empty:
+            raise ValueError("Cannot publish QA reference CSV because precomputed_recommendations_flat.csv is empty.")
+
+        if "small_step_id" not in base_df.columns:
+            raise ValueError("precomputed dataframe is missing required column: small_step_id")
+
+        if "rank" not in base_df.columns:
+            raise ValueError("precomputed dataframe is missing required column: rank")
+
+        base_df["small_step_id"] = base_df["small_step_id"].map(clean_text)
+        rank_numeric = pd.to_numeric(base_df["rank"], errors="coerce")
+
+        overrides_df = self._load_manual_precomputed_overrides_df()
+        manual_steps = set(
+            overrides_df[
+                (overrides_df["status"].str.lower() != "inactive")
+                & (overrides_df["small_step_id"].str.len() > 0)
+            ]["small_step_id"].tolist()
+        )
+        wildcard_steps = set(self.wildcard_df["small_step_id"].tolist()) if not self.wildcard_df.empty else set()
+        target_steps = sorted(manual_steps | wildcard_steps)
+
+        if not target_steps:
+            return base_df, {
+                "steps_touched": 0,
+                "wildcard_steps": 0,
+                "manual_steps": 0,
+                "skipped_steps": 0,
+            }
+
+        keep_mask = ~(
+            base_df["small_step_id"].isin(target_steps)
+            & rank_numeric.notna()
+            & (rank_numeric <= TOP_K)
+        )
+        output_df = base_df[keep_mask].copy()
+
+        replacement_frames: list[pd.DataFrame] = []
+        wildcard_count = 0
+        manual_count = 0
+        skipped_count = 0
+
+        for small_step_id in target_steps:
+            step_df = base_df[base_df["small_step_id"] == small_step_id].copy()
+            if step_df.empty:
+                skipped_count += 1
+                continue
+
+            effective_rows, source_label = self._build_effective_precomputed_results_for_step(small_step_id)
+            if not effective_rows:
+                skipped_count += 1
+                continue
+
+            if "wildcard" in source_label:
+                wildcard_count += 1
+            if "manual override" in source_label:
+                manual_count += 1
+
+            replacement_frames.append(self._build_publish_rows_for_step(step_df, effective_rows))
+
+        if replacement_frames:
+            output_df = pd.concat([output_df, *replacement_frames], ignore_index=True)
+
+        output_df = output_df.sort_values(["small_step_id", "rank"], kind="stable")
+        return output_df, {
+            "steps_touched": len(replacement_frames),
+            "wildcard_steps": wildcard_count,
+            "manual_steps": manual_count,
+            "skipped_steps": skipped_count,
+        }
+
+    def _command_publish_qa_reference_csv(self) -> None:
+        if self.active_job_state == JOB_STATE_RUNNING:
+            messagebox.showwarning("Job running", "Another QA command is already running.")
+            return
+
+        try:
+            precomputed_path = project_root / "precomputed_recommendations_flat.csv"
+            if precomputed_path.exists():
+                precomp_df = pd.read_csv(precomputed_path)
+                for col in ["small_step_id", "video_id", "title", "video_title", "channel"]:
+                    if col in precomp_df.columns:
+                        precomp_df[col] = precomp_df[col].map(clean_text)
+                self.precomputed_df = precomp_df
+
+            self._reload_wildcards_df()
+            published_df, stats = self._build_published_precomputed_df()
+
+            # Validation guard: enforce contiguous top ranks for each touched step.
+            if "rank" in published_df.columns and "small_step_id" in published_df.columns:
+                touched_steps = set(self.wildcard_df["small_step_id"].tolist())
+                overrides_df = self._load_manual_precomputed_overrides_df()
+                active_override_steps = set(
+                    overrides_df[
+                        (overrides_df["status"].str.lower() != "inactive")
+                        & (overrides_df["small_step_id"].str.len() > 0)
+                    ]["small_step_id"].tolist()
+                )
+                touched_steps |= active_override_steps
+                for step_id in touched_steps:
+                    step_rows = published_df[published_df["small_step_id"] == step_id].copy()
+                    if step_rows.empty:
+                        continue
+                    step_rows["rank"] = pd.to_numeric(step_rows["rank"], errors="coerce")
+                    top_rows = step_rows[step_rows["rank"].notna() & (step_rows["rank"] <= TOP_K)].sort_values("rank")
+                    if top_rows.empty:
+                        continue
+                    expected = list(range(1, len(top_rows) + 1))
+                    actual = [int(value) for value in top_rows["rank"].tolist()]
+                    if actual != expected:
+                        raise ValueError(f"Publish validation failed for {step_id}: expected top ranks {expected}, found {actual}")
+
+            _atomic_write_csv(published_df, QA_REFERENCE_OUTPUT_PATH)
+            self._append_command_log(
+                "QA REFERENCE PUBLISHED "
+                f"rows={len(published_df)} steps={stats['steps_touched']} "
+                f"wildcards={stats['wildcard_steps']} manual={stats['manual_steps']} skipped={stats['skipped_steps']}"
+            )
+            self.status_var.set(
+                f"Published QA reference CSV: steps={stats['steps_touched']}, wildcards={stats['wildcard_steps']}, manual={stats['manual_steps']}"
+            )
+            messagebox.showinfo(
+                "QA reference published",
+                f"Published:\n{QA_REFERENCE_OUTPUT_PATH}\n\n"
+                f"Rows: {len(published_df)}\n"
+                f"Steps touched: {stats['steps_touched']}\n"
+                f"Wildcard steps: {stats['wildcard_steps']}\n"
+                f"Manual-override steps: {stats['manual_steps']}\n"
+                f"Skipped steps: {stats['skipped_steps']}",
+            )
+        except Exception as exc:
+            messagebox.showerror("Publish QA reference failed", str(exc))
+
     def _load_manual_precomputed_overrides_df(self) -> pd.DataFrame:
         columns = [
             "updated_at",
@@ -1483,9 +1821,12 @@ class ImprovePickQAGUI:
             messagebox.showwarning("No override rows", "Current candidate panel has no rows to override.")
             return
 
+        wildcard_active = bool(self._get_wildcard_for_step(small_step_id))
+        wildcard_note = "\n\nWildcard is active for this step and remains pinned at rank 1 in current display/published QA reference."
         messagebox.showinfo(
             "Manual override applied",
-            f"Saved {written_count} candidate manual-rank row(s) to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}",
+            f"Saved {written_count} candidate manual-rank row(s) to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}"
+            f"{wildcard_note if wildcard_active else ''}",
         )
 
     def _command_apply_precomputed_manual_override(self) -> None:
@@ -1517,9 +1858,12 @@ class ImprovePickQAGUI:
             messagebox.showwarning("No override rows", "Current precomputed panel has no rows to override.")
             return
 
+        wildcard_active = bool(self._get_wildcard_for_step(small_step_id))
+        wildcard_note = "\n\nWildcard is active for this step and remains pinned at rank 1 in current display/published QA reference."
         messagebox.showinfo(
             "Manual override applied",
-            f"Saved {written_count} precomputed manual-rank row(s) to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}",
+            f"Saved {written_count} precomputed manual-rank row(s) to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}"
+            f"{wildcard_note if wildcard_active else ''}",
         )
 
     def _command_clear_manual_override(self) -> None:
@@ -1558,6 +1902,8 @@ class ImprovePickQAGUI:
         checks.append(f"qa.csv: {'ok' if QA_TRACKING_PATH.exists() else 'missing'}")
         checks.append(f"videos_to_delete.csv: {'ok' if VIDEOS_TO_DELETE_PATH.exists() else 'missing'}")
         checks.append(f"manual_precomputed_overrides.csv: {'ok' if MANUAL_PRECOMP_OVERRIDE_PATH.exists() else 'missing'}")
+        checks.append(f"wildcards.csv: {'ok' if WILDCARD_OVERRIDE_PATH.exists() else 'missing'}")
+        checks.append(f"precomputed_recommendations_flat_qa.csv: {'ok' if QA_REFERENCE_OUTPUT_PATH.exists() else 'missing'}")
         checks.append(f"step_video_knockouts.csv: {'ok' if STEP_KNOCKOUT_PATH.exists() else 'missing'}")
 
         faiss_bin = project_root / "data" / "faiss_index" / "faiss_index.bin"
@@ -2010,6 +2356,7 @@ class ImprovePickQAGUI:
         try:
             self.deleted_videos = DeletionTracker().get_deleted_video_ids()
             self.video_lookup = load_video_lookup()
+            self._reload_wildcards_df()
 
             precomputed_path = project_root / "precomputed_recommendations_flat.csv"
             if precomputed_path.exists():
@@ -2069,6 +2416,8 @@ class ImprovePickQAGUI:
                     if col in precomp_df.columns:
                         precomp_df[col] = precomp_df[col].map(clean_text)
                 self.precomputed_df = precomp_df
+
+            self._reload_wildcards_df()
 
             self.curriculum_by_id = {
                 row["small_step_id"]: row
@@ -3070,35 +3419,10 @@ class ImprovePickQAGUI:
         menu_btn["menu"].config(bg="white", fg="black")
 
     def _populate_precomputed(self, small_step_id: str) -> None:
-        self.precomputed_results = []
-        manual_override_rows = self._read_manual_override_for_step(small_step_id)
-
-        if manual_override_rows:
-            self.precomputed_results = manual_override_rows
+        self.precomputed_results, source_label = self._build_effective_precomputed_results_for_step(small_step_id)
+        self.precomputed_panel_state_var.set(f"Current picks source: {source_label}")
+        if "manual override" in source_label:
             self.status_var.set("Manual precomputed override is active for this step")
-        elif not self.precomputed_df.empty:
-            step_rows = self.precomputed_df[self.precomputed_df["small_step_id"] == small_step_id]
-            if "rank" in step_rows.columns:
-                step_rows = step_rows.sort_values("rank")
-            picks = step_rows.head(TOP_K).reset_index(drop=True)
-
-            for i in range(len(picks)):
-                r = picks.iloc[i]
-                video_id = clean_text(r.get("video_id"))
-                title = clean_text(r.get("title") or r.get("video_title"))
-                channel = clean_text(r.get("channel"))
-                combined_score = float(r.get("combined_score") or 0.0)
-                self.precomputed_results.append(
-                    {
-                        "video_id": video_id,
-                        "title": title,
-                        "channel": channel,
-                        "combined_score": combined_score,
-                        "semantic_score": clean_text(r.get("semantic_score")),
-                        "instruction_score": clean_text(r.get("instruction_score")),
-                        "alignment_score": clean_text(r.get("alignment_score")),
-                    }
-                )
 
         for i in range(len(self.precomputed_results), TOP_K):
             self.precomputed_title_labels[i].config(text="")

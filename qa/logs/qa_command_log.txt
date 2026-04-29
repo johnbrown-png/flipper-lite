@@ -380602,3 +380602,8 @@ You can now run the search app to query the index!
 [2026-04-29T12:31:58] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_7_Flexible partitioning of numbers to 1,000
 [2026-04-29T12:52:11] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Multiplication and division B_7_Divide a 2-digit number by a 1-digit number – no exchange
 [2026-04-29T13:11:08] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Length and perimeter_5_Equivalent lengths (metres and centimetres)
+[2026-04-29T14:27:37] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Length and perimeter_7_Compare lengths
+[2026-04-29T14:34:52] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Length and perimeter_10_What is perimeter?
+[2026-04-29T14:47:45] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Length and perimeter_11_Measure perimeter
+[2026-04-29T14:49:45] START Sync New Downloads: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe data_pipeline/run_pipeline.py --index-only
+[2026-04-29T18:01:59] QA REFERENCE PUBLISHED rows=4916 steps=136 wildcards=34 manual=108 skipped=0

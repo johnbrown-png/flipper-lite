@@ -441393,3 +441393,11 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-04-30T16:01:23] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Place value_9_Number line to 10,000
 [2026-04-30T16:06:52] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Place value_10_Estimate on a number line to 10,000
 [2026-04-30T16:09:42] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Place value_11_Compare numbers to 10,000
+[2026-04-30T17:48:36] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Place value_13_Roman numerals
+[2026-04-30T17:50:24] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Place value_14_Round to the nearest 10
+[2026-04-30T17:53:59] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Place value_17_Round to the nearest 10, 100 or 1,000
+[2026-04-30T18:04:30] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_1_Add and subtract 1s, 10s, 100s and 1,000s
+[2026-04-30T18:04:44] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_1_Add and subtract 1s, 10s, 100s and 1,000s
+[2026-04-30T18:14:19] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_2_Add up to two 4-digit numbers – no exchange
+[2026-04-30T18:19:07] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_6_Subtract two 4-digit numbers – one exchange
+[2026-04-30T18:23:28] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_7_Subtract two 4-digit numbers – more than one exchange

@@ -435,6 +435,7 @@ class ImprovePickQAGUI:
         self.precomputed_score_labels: list[ttk.Label] = []
         self.precomputed_open_buttons: list[ttk.Button] = []
         self.precomputed_delete_buttons: list[ttk.Button] = []
+        self.precomputed_knockout_buttons: list[ttk.Button] = []
         self.precomputed_rating_vars: list[tk.StringVar] = []
         self.precomputed_rating_dropdowns: list[tk.OptionMenu] = []
         self.precomputed_rank_vars: list[tk.StringVar] = []
@@ -806,9 +807,9 @@ class ImprovePickQAGUI:
             precomp_frame,
             textvariable=self.precomputed_panel_state_var,
             foreground="#555555",
-        ).grid(row=0, column=0, columnspan=8, sticky="w", padx=4, pady=(0, 4))
+        ).grid(row=0, column=0, columnspan=9, sticky="w", padx=4, pady=(0, 4))
 
-        precomp_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "Rt"]
+        precomp_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "Rt"]
         candidate_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "Rt"]
         for col, header in enumerate(precomp_headers):
             ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
@@ -881,6 +882,15 @@ class ImprovePickQAGUI:
             p_delete.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=2)
             self.precomputed_delete_buttons.append(p_delete)
 
+            p_knockout = ttk.Button(
+                precomp_frame,
+                text="Excl",
+                command=lambda idx=i: self._toggle_precomputed_knockout(idx),
+                state=tk.DISABLED,
+            )
+            p_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=4, pady=2)
+            self.precomputed_knockout_buttons.append(p_knockout)
+
             c_delete = ttk.Button(
                 candidate_results_frame,
                 text="Add",
@@ -902,7 +912,7 @@ class ImprovePickQAGUI:
             p_rating_var = tk.StringVar(value="5")
             self.precomputed_rating_vars.append(p_rating_var)
             p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
-            p_menu.grid(row=row_num + 1, column=7, sticky="w", padx=4, pady=2)
+            p_menu.grid(row=row_num + 1, column=8, sticky="w", padx=4, pady=2)
             p_menu.config(width=2)
             self.precomputed_rating_dropdowns.append(p_menu)
             self._apply_precomputed_rating_color(i)
@@ -3301,15 +3311,25 @@ class ImprovePickQAGUI:
             )
 
     def _sync_precomputed_controls_for_current_step(self) -> None:
+        small_step_id = self._selected_small_step_id()
+        knocked_out_ids = self._get_step_knocked_out_video_ids(small_step_id)
+
         for i in range(TOP_K):
             default_rank = str(i + 1)
             if i >= len(self.precomputed_results):
                 self.precomputed_rank_vars[i].set(default_rank)
                 self.precomputed_rank_dropdowns[i].config(state=tk.DISABLED)
+                self.precomputed_knockout_buttons[i].config(state=tk.DISABLED, text="Excl")
                 continue
             if not self.precomputed_rank_vars[i].get().strip():
                 self.precomputed_rank_vars[i].set(default_rank)
             self.precomputed_rank_dropdowns[i].config(state=tk.NORMAL)
+            video_id = clean_text(self.precomputed_results[i].get("video_id"))
+            knockout_text = "Undo" if video_id and video_id in knocked_out_ids else "Excl"
+            self.precomputed_knockout_buttons[i].config(
+                state=tk.NORMAL if video_id else tk.DISABLED,
+                text=knockout_text,
+            )
 
     def _get_manual_ranked_candidate_results(self) -> list[dict[str, object]]:
         results = self.latest_results[:TOP_K]
@@ -3427,6 +3447,62 @@ class ImprovePickQAGUI:
         else:
             self.status_var.set(f"Restored {video_id} for this step.")
             messagebox.showinfo("Candidate restored", f"Restored for future Search Top 3 for this step:\n{title} ({video_id})")
+
+    def _toggle_precomputed_knockout(self, index_num: int) -> None:
+        small_step_id = self._selected_small_step_id()
+        if not small_step_id:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+        if index_num < 0 or index_num >= len(self.precomputed_results):
+            return
+
+        video_id = clean_text(self.precomputed_results[index_num].get("video_id"))
+        title = clean_text(self.precomputed_results[index_num].get("title"))
+        if not video_id:
+            messagebox.showwarning("Missing video", "Selected current row has no video_id.")
+            return
+
+        knockout_df = self._load_step_knockout_df()
+        mask = (knockout_df["small_step_id"] == small_step_id) & (knockout_df["video_id"] == video_id)
+        is_active = False
+        if mask.any():
+            first_idx = knockout_df.index[mask][0]
+            current_status = clean_text(knockout_df.at[first_idx, "status"]).lower()
+            is_active = current_status != "inactive"
+
+        new_status = "inactive" if is_active else "active"
+        now = datetime.now().isoformat(timespec="seconds")
+        if mask.any():
+            first_idx = knockout_df.index[mask][0]
+            knockout_df.at[first_idx, "updated_at"] = now
+            knockout_df.at[first_idx, "status"] = new_status
+            knockout_df.at[first_idx, "source"] = "gui_current_knockout"
+            knockout_df.at[first_idx, "notes"] = "toggled_from_current_panel"
+            duplicate_indices = knockout_df.index[mask][1:]
+            if len(duplicate_indices) > 0:
+                knockout_df = knockout_df.drop(index=duplicate_indices)
+        else:
+            new_row = {
+                "updated_at": now,
+                "small_step_id": small_step_id,
+                "video_id": video_id,
+                "status": new_status,
+                "source": "gui_current_knockout",
+                "notes": "added_from_current_panel",
+            }
+            knockout_df = pd.concat([knockout_df, pd.DataFrame([new_row])], ignore_index=True)
+
+        STEP_KNOCKOUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        knockout_df.to_csv(STEP_KNOCKOUT_PATH, index=False)
+        self._sync_precomputed_controls_for_current_step()
+        self._sync_candidate_controls_for_current_step()
+
+        if new_status == "active":
+            self.status_var.set(f"Excluded {video_id} for this step; rerun Search Top 3 to backfill.")
+            messagebox.showinfo("Current pick excluded", f"Excluded from future Search Top 3 for this step:\n{title} ({video_id})")
+        else:
+            self.status_var.set(f"Restored {video_id} for this step.")
+            messagebox.showinfo("Current pick restored", f"Restored for future Search Top 3 for this step:\n{title} ({video_id})")
 
     def _apply_rating_color(self, index_num: int) -> None:
         rating_str = self.rating_vars[index_num].get().strip() or "5"

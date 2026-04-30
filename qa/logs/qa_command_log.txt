@@ -441369,3 +441369,11 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-04-30T09:37:10] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_5_Use am and pm
 [2026-04-30T09:40:04] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_6_Years, months and days
 [2026-04-30T09:40:31] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_6_Years, months and days
+[2026-04-30T11:49:40] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_8_Hours and minutes – use start and end times
+[2026-04-30T11:49:53] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_8_Hours and minutes – use start and end times
+[2026-04-30T11:51:18] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_9_Hours and minutes - use durations
+[2026-04-30T11:51:26] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_9_Hours and minutes - use durations
+[2026-04-30T11:57:10] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_10_Minutes and seconds
+[2026-04-30T12:00:10] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_11_Units of time
+[2026-04-30T12:09:02] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_12_Solve problems with time
+[2026-04-30T12:09:15] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_12_Solve problems with time

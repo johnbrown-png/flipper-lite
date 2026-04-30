@@ -441377,3 +441377,6 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-04-30T12:00:10] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_11_Units of time
 [2026-04-30T12:09:02] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_12_Solve problems with time
 [2026-04-30T12:09:15] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_12_Solve problems with time
+[2026-04-30T12:24:30] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Shape_1_Turns and angles
+[2026-04-30T12:46:02] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Shape_6_Parallel and perpendicular
+[2026-04-30T12:56:31] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Shape_7_Recognise and describe 2-D shapes

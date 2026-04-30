@@ -72,6 +72,15 @@ SEMANTIC_WEIGHT = 0.55
 ALIGNMENT_WEIGHT = 0.20
 INSTRUCTION_WEIGHT = 0.25
 
+SHOW_SHOW_UNSAVED_ONLY_CONTROL = False
+SHOW_AWAITING_DOWNLOAD_CONTROL = False
+SHOW_FULL_REBUILD_CONTROL = False
+SHOW_APPROVE_UPDATE_CONTROL = False
+SHOW_CLEAR_OVERRIDE_CONTROL = False
+SHOW_LIVE_SEMANTIC_PREVIEW = False
+SHOW_ALIGNMENT_TAB = False
+SHOW_STAGE4_TAB = False
+
 JOB_STATE_IDLE = "idle"
 JOB_STATE_RUNNING = "running"
 JOB_STATE_FAILED = "failed"
@@ -547,13 +556,14 @@ class ImprovePickQAGUI:
         )
         self.jump_low_candidate_btn.grid(row=1, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
 
-        self.show_unsaved_check = ttk.Checkbutton(
-            selector_frame,
-            text="Show unsaved only",
-            variable=self.show_unsaved_only_var,
-            command=self._on_show_unsaved_only_changed,
-        )
-        self.show_unsaved_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
+        if SHOW_SHOW_UNSAVED_ONLY_CONTROL:
+            self.show_unsaved_check = ttk.Checkbutton(
+                selector_frame,
+                text="Show unsaved only",
+                variable=self.show_unsaved_only_var,
+                command=self._on_show_unsaved_only_changed,
+            )
+            self.show_unsaved_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
         text_frame = ttk.LabelFrame(outer, text="Query Text", padding=8)
         text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
@@ -565,7 +575,7 @@ class ImprovePickQAGUI:
         baseline_frame.columnconfigure(0, weight=1)
         baseline_frame.rowconfigure(1, weight=1)
         ttk.Label(baseline_frame, text="Current ss_wr_desc", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
-        self.baseline_text = scrolledtext.ScrolledText(baseline_frame, wrap=tk.WORD, height=3)
+        self.baseline_text = scrolledtext.ScrolledText(baseline_frame, wrap=tk.WORD, height=5)
         self.baseline_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
         self.baseline_text.config(state=tk.DISABLED)
 
@@ -583,32 +593,33 @@ class ImprovePickQAGUI:
         self.promoted_status_label = ttk.Label(promoted_status_frame, textvariable=self.promoted_status_var, foreground="green", font=("Segoe UI", 9, "bold"))
         self.promoted_status_label.grid(row=0, column=0, sticky="w")
 
-        semantic_preview_frame = ttk.LabelFrame(candidate_frame, text="Live Semantic Preview (No Instruction Scoring)", padding=6)
-        semantic_preview_frame.grid(row=2, column=0, sticky="nsew", pady=(4, 0))
-        semantic_preview_frame.columnconfigure(1, weight=1)
-        candidate_frame.rowconfigure(2, weight=1)
+        if SHOW_LIVE_SEMANTIC_PREVIEW:
+            semantic_preview_frame = ttk.LabelFrame(candidate_frame, text="Live Semantic Preview (No Instruction Scoring)", padding=6)
+            semantic_preview_frame.grid(row=2, column=0, sticky="nsew", pady=(4, 0))
+            semantic_preview_frame.columnconfigure(1, weight=1)
+            candidate_frame.rowconfigure(2, weight=1)
 
-        preview_headers = ["Rank", "Title", "Channel", "Semantic"]
-        for col, header in enumerate(preview_headers):
-            ttk.Label(semantic_preview_frame, text=header, font=("Segoe UI", 9, "bold")).grid(row=0, column=col, sticky="w", padx=3, pady=(0, 4))
+            preview_headers = ["Rank", "Title", "Channel", "Semantic"]
+            for col, header in enumerate(preview_headers):
+                ttk.Label(semantic_preview_frame, text=header, font=("Segoe UI", 9, "bold")).grid(row=0, column=col, sticky="w", padx=3, pady=(0, 4))
 
-        for i in range(SEMANTIC_PREVIEW_K):
-            row_num = i + 1
-            ttk.Label(semantic_preview_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=3, pady=1)
+            for i in range(SEMANTIC_PREVIEW_K):
+                row_num = i + 1
+                ttk.Label(semantic_preview_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=3, pady=1)
 
-            title_label = ttk.Label(semantic_preview_frame, text="", width=44)
-            title_label.grid(row=row_num, column=1, sticky="w", padx=3, pady=1)
-            self.semantic_preview_title_labels.append(title_label)
+                title_label = ttk.Label(semantic_preview_frame, text="", width=44)
+                title_label.grid(row=row_num, column=1, sticky="w", padx=3, pady=1)
+                self.semantic_preview_title_labels.append(title_label)
 
-            channel_label = ttk.Label(semantic_preview_frame, text="", width=20)
-            channel_label.grid(row=row_num, column=2, sticky="w", padx=3, pady=1)
-            self.semantic_preview_channel_labels.append(channel_label)
+                channel_label = ttk.Label(semantic_preview_frame, text="", width=20)
+                channel_label.grid(row=row_num, column=2, sticky="w", padx=3, pady=1)
+                self.semantic_preview_channel_labels.append(channel_label)
 
-            score_label = ttk.Label(semantic_preview_frame, text="", width=10)
-            score_label.grid(row=row_num, column=3, sticky="w", padx=3, pady=1)
-            self.semantic_preview_score_labels.append(score_label)
+                score_label = ttk.Label(semantic_preview_frame, text="", width=10)
+                score_label.grid(row=row_num, column=3, sticky="w", padx=3, pady=1)
+                self.semantic_preview_score_labels.append(score_label)
 
-        ttk.Label(candidate_frame, textvariable=self.semantic_preview_status_var, foreground="#555555").grid(row=3, column=0, sticky="w", pady=(2, 0))
+            ttk.Label(candidate_frame, textvariable=self.semantic_preview_status_var, foreground="#555555").grid(row=3, column=0, sticky="w", pady=(2, 0))
 
         control_frame = ttk.Frame(outer)
         control_frame.grid(row=3, column=0, sticky="ew", pady=(0, 4))
@@ -619,12 +630,13 @@ class ImprovePickQAGUI:
         self.update_qa_btn = ttk.Button(control_frame, text="Update QA CSV", command=self._update_qa_csv)
         self.update_qa_btn.grid(row=0, column=1, padx=(0, 8))
 
-        self.awaiting_download_check = ttk.Checkbutton(
-            control_frame,
-            text="Set 'Awaiting download/faiss rebuild' on Update QA CSV",
-            variable=self.awaiting_download_faiss_var,
-        )
-        self.awaiting_download_check.grid(row=0, column=2, padx=(0, 8), sticky="w")
+        if SHOW_AWAITING_DOWNLOAD_CONTROL:
+            self.awaiting_download_check = ttk.Checkbutton(
+                control_frame,
+                text="Set 'Awaiting download/faiss rebuild' on Update QA CSV",
+                variable=self.awaiting_download_faiss_var,
+            )
+            self.awaiting_download_check.grid(row=0, column=2, padx=(0, 8), sticky="w")
 
         self.status_label = ttk.Label(control_frame, textvariable=self.status_var, foreground="blue")
         self.status_label.grid(row=0, column=3, sticky="w")
@@ -651,20 +663,22 @@ class ImprovePickQAGUI:
         self.command_buttons.append(apply_delete_btn)
         self._attach_tooltip(apply_delete_btn, "Runs delete_content.py on videos_to_delete.csv in soft-delete mode only. Local files and metadata are removed immediately, but this button does not perform the full FAISS rebuild.")
 
-        full_rebuild_btn = ttk.Button(command_frame, text="Full Rebuild FAISS", command=self._command_full_rebuild_faiss)
-        full_rebuild_btn.grid(row=0, column=1, sticky="w", padx=(0, 8), pady=(0, 4))
-        self.command_buttons.append(full_rebuild_btn)
-        self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. Use this when you want to physically purge deleted vectors and fully realign FAISS with current local assets.")
+        if SHOW_FULL_REBUILD_CONTROL:
+            full_rebuild_btn = ttk.Button(command_frame, text="Full Rebuild FAISS", command=self._command_full_rebuild_faiss)
+            full_rebuild_btn.grid(row=0, column=1, sticky="w", padx=(0, 8), pady=(0, 4))
+            self.command_buttons.append(full_rebuild_btn)
+            self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. Use this when you want to physically purge deleted vectors and fully realign FAISS with current local assets.")
 
         sync_btn = ttk.Button(command_frame, text="Sync New Downloads", command=self._command_sync_new_downloads)
         sync_btn.grid(row=0, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(sync_btn)
         self._attach_tooltip(sync_btn, "Runs the incremental chunk/embed/index pipeline so newly downloaded material becomes searchable without a full rebuild.")
 
-        finalize_btn = ttk.Button(command_frame, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
-        finalize_btn.grid(row=0, column=3, sticky="w", pady=(0, 4))
-        self.command_buttons.append(finalize_btn)
-        self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
+        if SHOW_APPROVE_UPDATE_CONTROL:
+            finalize_btn = ttk.Button(command_frame, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
+            finalize_btn.grid(row=0, column=3, sticky="w", pady=(0, 4))
+            self.command_buttons.append(finalize_btn)
+            self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
 
         cand_override_btn = ttk.Button(
             command_frame,
@@ -684,10 +698,11 @@ class ImprovePickQAGUI:
         self.command_buttons.append(curr_override_btn)
         self._attach_tooltip(curr_override_btn, "Uses Precomputed panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
 
-        clear_override_btn = ttk.Button(command_frame, text="Clear Override", command=self._command_clear_manual_override)
-        clear_override_btn.grid(row=1, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
-        self.command_buttons.append(clear_override_btn)
-        self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
+        if SHOW_CLEAR_OVERRIDE_CONTROL:
+            clear_override_btn = ttk.Button(command_frame, text="Clear Override", command=self._command_clear_manual_override)
+            clear_override_btn.grid(row=1, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
+            self.command_buttons.append(clear_override_btn)
+            self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
 
         publish_qa_ref_btn = ttk.Button(
             command_frame,
@@ -761,16 +776,20 @@ class ImprovePickQAGUI:
         constraints_tab.rowconfigure(2, weight=1)
         results_notebook.add(constraints_tab, text="Stage 2 Constraints Gate")
 
-        alignment_tab = ttk.Frame(results_notebook, padding=6)
-        alignment_tab.columnconfigure(0, weight=1)
-        alignment_tab.rowconfigure(1, weight=1)
-        results_notebook.add(alignment_tab, text="Stage 3 Alignment")
+        alignment_tab = None
+        if SHOW_ALIGNMENT_TAB:
+            alignment_tab = ttk.Frame(results_notebook, padding=6)
+            alignment_tab.columnconfigure(0, weight=1)
+            alignment_tab.rowconfigure(1, weight=1)
+            results_notebook.add(alignment_tab, text="Stage 3 Alignment")
 
-        stage4_tab = ttk.Frame(results_notebook, padding=6)
-        stage4_tab.columnconfigure(0, weight=1)
-        stage4_tab.rowconfigure(1, weight=1)
-        stage4_tab.rowconfigure(3, weight=1)
-        results_notebook.add(stage4_tab, text="Stage 4 Pedagogy + Final Ranking")
+        stage4_tab = None
+        if SHOW_STAGE4_TAB:
+            stage4_tab = ttk.Frame(results_notebook, padding=6)
+            stage4_tab.columnconfigure(0, weight=1)
+            stage4_tab.rowconfigure(1, weight=1)
+            stage4_tab.rowconfigure(3, weight=1)
+            results_notebook.add(stage4_tab, text="Stage 4 Pedagogy + Final Ranking")
 
         precomp_frame = ttk.LabelFrame(qa_results_tab, text="Precomputed Picks (Current)", padding=6)
         precomp_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
@@ -1056,130 +1075,132 @@ class ImprovePickQAGUI:
             open_btn.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
             self.constraints_open_buttons.append(open_btn)
 
-        ttk.Label(
-            alignment_tab,
-            text="Stage 1 candidate picks filtered by Stage 2 constraints gate (PASS only).",
-            foreground="#555555",
-        ).grid(row=0, column=0, sticky="w", pady=(0, 6))
+        if SHOW_ALIGNMENT_TAB and alignment_tab is not None:
+            ttk.Label(
+                alignment_tab,
+                text="Stage 1 candidate picks filtered by Stage 2 constraints gate (PASS only).",
+                foreground="#555555",
+            ).grid(row=0, column=0, sticky="w", pady=(0, 6))
 
-        alignment_results_frame = ttk.LabelFrame(alignment_tab, text="Stage 3 Alignment Scoring Input Set", padding=6)
-        alignment_results_frame.grid(row=1, column=0, sticky="nsew")
-        alignment_results_frame.columnconfigure(0, weight=1)
-        alignment_results_frame.rowconfigure(0, weight=1)
+            alignment_results_frame = ttk.LabelFrame(alignment_tab, text="Stage 3 Alignment Scoring Input Set", padding=6)
+            alignment_results_frame.grid(row=1, column=0, sticky="nsew")
+            alignment_results_frame.columnconfigure(0, weight=1)
+            alignment_results_frame.rowconfigure(0, weight=1)
 
-        self.alignment_tree = ttk.Treeview(
-            alignment_results_frame,
-            columns=("rank", "title", "channel", "gate", "alignment", "combined"),
-            show="headings",
-            height=8,
-        )
-        self.alignment_tree.grid(row=0, column=0, sticky="nsew")
-        self.alignment_tree.heading("rank", text="Rank")
-        self.alignment_tree.heading("title", text="Title (video_id)")
-        self.alignment_tree.heading("channel", text="Channel")
-        self.alignment_tree.heading("gate", text="Stage 2 Gate")
-        self.alignment_tree.heading("alignment", text="Stage 3 Alignment")
-        self.alignment_tree.heading("combined", text="Combined")
-        self.alignment_tree.column("rank", width=60, anchor="w")
-        self.alignment_tree.column("title", width=520, anchor="w")
-        self.alignment_tree.column("channel", width=180, anchor="w")
-        self.alignment_tree.column("gate", width=100, anchor="w")
-        self.alignment_tree.column("alignment", width=110, anchor="w")
-        self.alignment_tree.column("combined", width=110, anchor="w")
-        self.alignment_tree.bind("<Double-1>", self._open_selected_alignment_video)
-
-        alignment_scroll = ttk.Scrollbar(alignment_results_frame, orient="vertical", command=self.alignment_tree.yview)
-        alignment_scroll.grid(row=0, column=1, sticky="ns")
-        self.alignment_tree.configure(yscrollcommand=alignment_scroll.set)
-
-        ttk.Label(
-            alignment_results_frame,
-            text="All Stage 2 PASS survivors are scored here. Double-click a row to open the video.",
-            foreground="#555555",
-        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
-
-        ttk.Label(
-            stage4_tab,
-            text="Stage 4 uses instruction (pedagogy) to rerank survivors from Stages 1-3.",
-            foreground="#555555",
-        ).grid(row=0, column=0, sticky="w", pady=(0, 6))
-
-        stage4_survivors_frame = ttk.LabelFrame(stage4_tab, text="Input Survivors (Stages 1-3)", padding=6)
-        stage4_survivors_frame.grid(row=1, column=0, sticky="nsew")
-        stage4_survivors_frame.columnconfigure(0, weight=1)
-        stage4_survivors_frame.rowconfigure(0, weight=1)
-
-        self.stage4_survivors_tree = ttk.Treeview(
-            stage4_survivors_frame,
-            columns=("rank", "title", "stage3", "instruction"),
-            show="headings",
-            height=8,
-        )
-        self.stage4_survivors_tree.grid(row=0, column=0, sticky="nsew")
-
-        self.stage4_survivors_tree.heading("rank", text="Rank")
-        self.stage4_survivors_tree.heading("title", text="Title (video_id)")
-        self.stage4_survivors_tree.heading("stage3", text="Stage 3 Alignment")
-        self.stage4_survivors_tree.heading("instruction", text="Stage 4 Instruction")
-
-        self.stage4_survivors_tree.column("rank", width=60, anchor="w")
-        self.stage4_survivors_tree.column("title", width=640, anchor="w")
-        self.stage4_survivors_tree.column("stage3", width=100, anchor="w")
-        self.stage4_survivors_tree.column("instruction", width=100, anchor="w")
-
-        survivors_scroll = ttk.Scrollbar(stage4_survivors_frame, orient="vertical", command=self.stage4_survivors_tree.yview)
-        survivors_scroll.grid(row=0, column=1, sticky="ns")
-        self.stage4_survivors_tree.configure(yscrollcommand=survivors_scroll.set)
-
-        stage4_final_frame = ttk.LabelFrame(stage4_tab, text="Final Ranking Top 3 (After Stage 4)", padding=6)
-        stage4_final_frame.grid(row=3, column=0, sticky="nsew", pady=(8, 0))
-        stage4_final_frame.columnconfigure(1, weight=1)
-
-        final_headers = ["Rank", "Title (video_id)", "Stage 3 Alignment", "Stage 4 Instruction", "Stage 5 Final", "Open"]
-        for col, header in enumerate(final_headers):
-            ttk.Label(stage4_final_frame, text=header, font=("Segoe UI", 10, "bold")).grid(
-                row=0,
-                column=col,
-                sticky="w",
-                padx=4,
-                pady=(0, 4),
+            self.alignment_tree = ttk.Treeview(
+                alignment_results_frame,
+                columns=("rank", "title", "channel", "gate", "alignment", "combined"),
+                show="headings",
+                height=8,
             )
+            self.alignment_tree.grid(row=0, column=0, sticky="nsew")
+            self.alignment_tree.heading("rank", text="Rank")
+            self.alignment_tree.heading("title", text="Title (video_id)")
+            self.alignment_tree.heading("channel", text="Channel")
+            self.alignment_tree.heading("gate", text="Stage 2 Gate")
+            self.alignment_tree.heading("alignment", text="Stage 3 Alignment")
+            self.alignment_tree.heading("combined", text="Combined")
+            self.alignment_tree.column("rank", width=60, anchor="w")
+            self.alignment_tree.column("title", width=520, anchor="w")
+            self.alignment_tree.column("channel", width=180, anchor="w")
+            self.alignment_tree.column("gate", width=100, anchor="w")
+            self.alignment_tree.column("alignment", width=110, anchor="w")
+            self.alignment_tree.column("combined", width=110, anchor="w")
+            self.alignment_tree.bind("<Double-1>", self._open_selected_alignment_video)
 
-        for i in range(TOP_K):
-            row_num = i + 1
-            ttk.Label(stage4_final_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=2)
+            alignment_scroll = ttk.Scrollbar(alignment_results_frame, orient="vertical", command=self.alignment_tree.yview)
+            alignment_scroll.grid(row=0, column=1, sticky="ns")
+            self.alignment_tree.configure(yscrollcommand=alignment_scroll.set)
 
-            final_title = ttk.Label(stage4_final_frame, text="", width=56)
-            final_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=2)
-            self.stage4_final_title_labels.append(final_title)
+            ttk.Label(
+                alignment_results_frame,
+                text="All Stage 2 PASS survivors are scored here. Double-click a row to open the video.",
+                foreground="#555555",
+            ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
 
-            final_stage3 = ttk.Label(stage4_final_frame, text="", width=10)
-            final_stage3.grid(row=row_num, column=2, sticky="w", padx=4, pady=2)
-            self.stage4_final_stage3_labels.append(final_stage3)
+        if SHOW_STAGE4_TAB and stage4_tab is not None:
+            ttk.Label(
+                stage4_tab,
+                text="Stage 4 uses instruction (pedagogy) to rerank survivors from Stages 1-3.",
+                foreground="#555555",
+            ).grid(row=0, column=0, sticky="w", pady=(0, 6))
 
-            final_instruction = ttk.Label(stage4_final_frame, text="", width=10)
-            final_instruction.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
-            self.stage4_final_instruction_labels.append(final_instruction)
+            stage4_survivors_frame = ttk.LabelFrame(stage4_tab, text="Input Survivors (Stages 1-3)", padding=6)
+            stage4_survivors_frame.grid(row=1, column=0, sticky="nsew")
+            stage4_survivors_frame.columnconfigure(0, weight=1)
+            stage4_survivors_frame.rowconfigure(0, weight=1)
 
-            final_score = ttk.Label(stage4_final_frame, text="", width=10)
-            final_score.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
-            self.stage4_final_score_labels.append(final_score)
-
-            final_open = ttk.Button(
-                stage4_final_frame,
-                text="Open",
-                command=lambda idx=i: self._open_stage4_final_video(idx),
-                state=tk.DISABLED,
+            self.stage4_survivors_tree = ttk.Treeview(
+                stage4_survivors_frame,
+                columns=("rank", "title", "stage3", "instruction"),
+                show="headings",
+                height=8,
             )
-            final_open.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
-            self.stage4_final_open_buttons.append(final_open)
+            self.stage4_survivors_tree.grid(row=0, column=0, sticky="nsew")
 
-        self.stage4_save_btn = ttk.Button(
-            stage4_tab,
-            text="Save Final Ranking to QA CSV",
-            command=self._update_qa_csv,
-        )
-        self.stage4_save_btn.grid(row=2, column=0, sticky="w", pady=(8, 0))
+            self.stage4_survivors_tree.heading("rank", text="Rank")
+            self.stage4_survivors_tree.heading("title", text="Title (video_id)")
+            self.stage4_survivors_tree.heading("stage3", text="Stage 3 Alignment")
+            self.stage4_survivors_tree.heading("instruction", text="Stage 4 Instruction")
+
+            self.stage4_survivors_tree.column("rank", width=60, anchor="w")
+            self.stage4_survivors_tree.column("title", width=640, anchor="w")
+            self.stage4_survivors_tree.column("stage3", width=100, anchor="w")
+            self.stage4_survivors_tree.column("instruction", width=100, anchor="w")
+
+            survivors_scroll = ttk.Scrollbar(stage4_survivors_frame, orient="vertical", command=self.stage4_survivors_tree.yview)
+            survivors_scroll.grid(row=0, column=1, sticky="ns")
+            self.stage4_survivors_tree.configure(yscrollcommand=survivors_scroll.set)
+
+            stage4_final_frame = ttk.LabelFrame(stage4_tab, text="Final Ranking Top 3 (After Stage 4)", padding=6)
+            stage4_final_frame.grid(row=3, column=0, sticky="nsew", pady=(8, 0))
+            stage4_final_frame.columnconfigure(1, weight=1)
+
+            final_headers = ["Rank", "Title (video_id)", "Stage 3 Alignment", "Stage 4 Instruction", "Stage 5 Final", "Open"]
+            for col, header in enumerate(final_headers):
+                ttk.Label(stage4_final_frame, text=header, font=("Segoe UI", 10, "bold")).grid(
+                    row=0,
+                    column=col,
+                    sticky="w",
+                    padx=4,
+                    pady=(0, 4),
+                )
+
+            for i in range(TOP_K):
+                row_num = i + 1
+                ttk.Label(stage4_final_frame, text=f"{row_num}").grid(row=row_num, column=0, sticky="w", padx=4, pady=2)
+
+                final_title = ttk.Label(stage4_final_frame, text="", width=56)
+                final_title.grid(row=row_num, column=1, sticky="w", padx=4, pady=2)
+                self.stage4_final_title_labels.append(final_title)
+
+                final_stage3 = ttk.Label(stage4_final_frame, text="", width=10)
+                final_stage3.grid(row=row_num, column=2, sticky="w", padx=4, pady=2)
+                self.stage4_final_stage3_labels.append(final_stage3)
+
+                final_instruction = ttk.Label(stage4_final_frame, text="", width=10)
+                final_instruction.grid(row=row_num, column=3, sticky="w", padx=4, pady=2)
+                self.stage4_final_instruction_labels.append(final_instruction)
+
+                final_score = ttk.Label(stage4_final_frame, text="", width=10)
+                final_score.grid(row=row_num, column=4, sticky="w", padx=4, pady=2)
+                self.stage4_final_score_labels.append(final_score)
+
+                final_open = ttk.Button(
+                    stage4_final_frame,
+                    text="Open",
+                    command=lambda idx=i: self._open_stage4_final_video(idx),
+                    state=tk.DISABLED,
+                )
+                final_open.grid(row=row_num, column=5, sticky="w", padx=4, pady=2)
+                self.stage4_final_open_buttons.append(final_open)
+
+            self.stage4_save_btn = ttk.Button(
+                stage4_tab,
+                text="Save Final Ranking to QA CSV",
+                command=self._update_qa_csv,
+            )
+            self.stage4_save_btn.grid(row=2, column=0, sticky="w", pady=(8, 0))
 
         self._refresh_command_controls()
 
@@ -2112,8 +2133,7 @@ class ImprovePickQAGUI:
             for item in self.stage4_survivors_tree.get_children():
                 self.stage4_survivors_tree.delete(item)
 
-        for i in range(TOP_K):
-
+        for i in range(min(TOP_K, len(self.stage4_final_title_labels))):
             self.stage4_final_title_labels[i].config(text="")
             self.stage4_final_stage3_labels[i].config(text="")
             self.stage4_final_instruction_labels[i].config(text="")
@@ -2154,7 +2174,10 @@ class ImprovePickQAGUI:
                     ),
                 )
 
-        for i in range(TOP_K):
+        if not self.stage4_final_title_labels:
+            return
+
+        for i in range(min(TOP_K, len(self.stage4_final_title_labels))):
             if i < len(final_top3):
                 final_row = final_top3[i]
                 title = clean_text(final_row.get("title"))
@@ -2808,7 +2831,7 @@ class ImprovePickQAGUI:
 
     def _clear_semantic_preview(self) -> None:
         self.semantic_preview_results = []
-        for i in range(SEMANTIC_PREVIEW_K):
+        for i in range(len(self.semantic_preview_title_labels)):
             self.semantic_preview_title_labels[i].config(text="")
             self.semantic_preview_channel_labels[i].config(text="")
             self.semantic_preview_score_labels[i].config(text="")
@@ -2828,6 +2851,8 @@ class ImprovePickQAGUI:
         self._schedule_semantic_preview()
 
     def _schedule_semantic_preview(self) -> None:
+        if not SHOW_LIVE_SEMANTIC_PREVIEW:
+            return
         if self.semantic_preview_after_id is not None:
             self.root.after_cancel(self.semantic_preview_after_id)
             self.semantic_preview_after_id = None
@@ -2838,6 +2863,8 @@ class ImprovePickQAGUI:
         )
 
     def _run_semantic_preview(self) -> None:
+        if not SHOW_LIVE_SEMANTIC_PREVIEW:
+            return
         self.semantic_preview_after_id = None
         small_step_id = self._selected_small_step_id()
         row = self.curriculum_by_id.get(small_step_id)

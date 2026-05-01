@@ -441401,3 +441401,46 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-04-30T18:14:19] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_2_Add up to two 4-digit numbers – no exchange
 [2026-04-30T18:19:07] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_6_Subtract two 4-digit numbers – one exchange
 [2026-04-30T18:23:28] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_7_Subtract two 4-digit numbers – more than one exchange
+[2026-04-30T21:47:53] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_2_Multiply and divide by 6
+[2026-04-30T21:53:22] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_3_6 times-table and division facts
+[2026-04-30T21:56:52] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_4_Multiply and divide by 9
+[2026-04-30T21:59:58] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_6_The 3, 6 and 9 times-tables
+[2026-04-30T22:01:36] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_7_Multiply and divide by 7
+[2026-04-30T22:01:57] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_7_Multiply and divide by 7
+[2026-04-30T22:05:04] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_8_7 times-table and division facts
+[2026-04-30T22:12:26] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_11_Multiply by 1 and 0
+[2026-04-30T22:12:35] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_11_Multiply by 1 and 0
+[2026-05-01T12:20:29] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Area_1_What is area?
+[2026-05-01T12:25:32] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_12_Divide a number by 1 and itself
+[2026-05-01T12:25:41] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Multiplication and division A_12_Divide a number by 1 and itself
+[2026-05-01T12:32:37] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Area_3_Make shapes
+[2026-05-01T12:56:53] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Area_4_Compare areas
+[2026-05-01T12:57:02] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Area_4_Compare areas
+[2026-05-01T13:03:12] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_2_Use factor pairs
+[2026-05-01T13:14:23] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_3_Multiply by 10
+[2026-05-01T13:21:43] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_4_Multiply by 100
+[2026-05-01T13:21:55] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_4_Multiply by 100
+[2026-05-01T13:22:53] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_5_Divide by 10
+[2026-05-01T13:24:53] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_6_Divide by 100
+[2026-05-01T13:25:27] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_6_Divide by 100
+[2026-05-01T13:45:53] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_7_Related facts – multiplication and division
+[2026-05-01T13:46:14] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_7_Related facts – multiplication and division
+[2026-05-01T13:51:49] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_8_Informal written methods for multiplication
+[2026-05-01T14:01:06] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_9_Multiply a 2-digit number by a 1-digit number
+[2026-05-01T14:01:19] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_9_Multiply a 2-digit number by a 1-digit number
+[2026-05-01T14:03:52] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_10_Multiply a 3-digit number by a 1-digit number
+[2026-05-01T14:22:37] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_11_Divide a 2-digit number by a 1-digit number (1)
+[2026-05-01T14:22:47] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_11_Divide a 2-digit number by a 1-digit number (1)
+[2026-05-01T14:28:05] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_13_Divide a 3-digit number by a 1-digit number
+[2026-05-01T15:09:14] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_15_Efficient multiplication
+[2026-05-01T15:09:29] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Multiplication and division B_15_Efficient multiplication
+[2026-05-01T15:13:26] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Length and perimeter_1_Measure in kilometres and metres
+[2026-05-01T15:13:36] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Length and perimeter_1_Measure in kilometres and metres
+[2026-05-01T15:16:17] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Length and perimeter_3_Perimeter on a grid
+[2026-05-01T15:17:22] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Length and perimeter_3_Perimeter on a grid
+[2026-05-01T15:20:49] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Length and perimeter_6_Find missing lengths in rectilinear shapes
+[2026-05-01T18:19:52] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Mass capacity and temperature_9_Temperature
+[2026-05-01T18:20:10] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Mass capacity and temperature_9_Temperature
+[2026-05-01T18:25:01] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_18_Subtract a 2-digit number from a 3-digit number
+[2026-05-01T18:25:19] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_18_Subtract a 2-digit number from a 3-digit number
+[2026-05-01T18:55:47] MANUAL OVERRIDE applied for Year 3_7-8_Spring__Length and perimeter_1_Measure in metres and centimetres

@@ -149,3 +149,57 @@ updated_at,small_step_id,video_id,status,source,notes
 2026-04-30T18:25:34,Year 4_8-9_Autumn__Addition and subtraction_8_Efficient subtraction,Ro_ufrK0Ok8,active,gui_candidate_knockout,added_from_candidate_panel
 2026-04-30T18:26:09,Year 4_8-9_Autumn__Addition and subtraction_8_Efficient subtraction,tt59gxn-3dQ,active,gui_candidate_knockout,added_from_candidate_panel
 2026-04-30T18:28:01,Year 4_8-9_Autumn__Addition and subtraction_8_Efficient subtraction,d6dqT6g-rV8,active,gui_candidate_knockout,added_from_candidate_panel
+2026-04-30T21:44:48,Year 4_8-9_Autumn__Multiplication and division A_2_Multiply and divide by 6,t5VzXmM7wLY,active,gui_current_knockout,added_from_current_panel
+2026-04-30T21:47:04,Year 4_8-9_Autumn__Multiplication and division A_2_Multiply and divide by 6,WqX6OIRSiEA,active,gui_candidate_knockout,added_from_candidate_panel
+2026-04-30T21:51:32,Year 4_8-9_Autumn__Multiplication and division A_3_6 times-table and division facts,NTcOjNQvsos,active,gui_current_knockout,added_from_current_panel
+2026-04-30T21:55:41,Year 4_8-9_Autumn__Multiplication and division A_4_Multiply and divide by 9,t5VzXmM7wLY,active,gui_current_knockout,added_from_current_panel
+2026-04-30T21:58:58,"Year 4_8-9_Autumn__Multiplication and division A_6_The 3, 6 and 9 times-tables",o6DQBlm2LaA,active,gui_current_knockout,added_from_current_panel
+2026-04-30T21:59:07,"Year 4_8-9_Autumn__Multiplication and division A_6_The 3, 6 and 9 times-tables",t5VzXmM7wLY,active,gui_current_knockout,added_from_current_panel
+2026-04-30T22:01:01,Year 4_8-9_Autumn__Multiplication and division A_7_Multiply and divide by 7,G6clvu-lZ-o,active,gui_current_knockout,added_from_current_panel
+2026-04-30T22:02:39,Year 4_8-9_Autumn__Multiplication and division A_8_7 times-table and division facts,NTcOjNQvsos,active,gui_current_knockout,added_from_current_panel
+2026-04-30T22:03:03,Year 4_8-9_Autumn__Multiplication and division A_8_7 times-table and division facts,3y4N_5_R8ME,active,gui_current_knockout,added_from_current_panel
+2026-04-30T22:04:31,Year 4_8-9_Autumn__Multiplication and division A_8_7 times-table and division facts,t5VzXmM7wLY,active,gui_candidate_knockout,added_from_candidate_panel
+2026-04-30T22:07:06,Year 4_8-9_Autumn__Multiplication and division A_10_12 times-table and division facts,K6tPEmCZ-Oc,active,gui_current_knockout,added_from_current_panel
+2026-04-30T22:11:41,Year 4_8-9_Autumn__Multiplication and division A_11_Multiply by 1 and 0,s-PPjXREXm8,active,gui_current_knockout,added_from_current_panel
+2026-05-01T11:19:24,Year 4_8-9_Autumn__Multiplication and division A_12_Divide a number by 1 and itself,i6RiJBlY_ho,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T11:27:25,Year 4_8-9_Autumn__Area_1_What is area?,HYcqztMsNSQ,active,gui_current_knockout,added_from_current_panel
+2026-05-01T11:28:16,Year 4_8-9_Autumn__Area_1_What is area?,aLj7LdUBCYg,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T11:30:03,Year 4_8-9_Autumn__Area_1_What is area?,2UEUWC313QY,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T12:24:00,Year 4_8-9_Autumn__Multiplication and division A_12_Divide a number by 1 and itself,xcWM8XSro5k,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T12:24:59,Year 4_8-9_Autumn__Multiplication and division A_12_Divide a number by 1 and itself,N-SRbieuj4Q,inactive,gui_candidate_knockout,toggled_from_candidate_panel
+2026-05-01T12:29:03,Year 4_8-9_Autumn__Area_3_Make shapes,8cz_IB65pZM,active,gui_current_knockout,added_from_current_panel
+2026-05-01T12:29:05,Year 4_8-9_Autumn__Area_3_Make shapes,aQmPydROyus,active,gui_current_knockout,added_from_current_panel
+2026-05-01T12:32:09,Year 4_8-9_Autumn__Area_3_Make shapes,aLIVB--BIs0,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T12:34:02,Year 4_8-9_Autumn__Area_4_Compare areas,yYCTckL1mOg,active,gui_current_knockout,added_from_current_panel
+2026-05-01T12:34:51,Year 4_8-9_Autumn__Area_4_Compare areas,rqz4tDVpJg0,active,gui_current_knockout,added_from_current_panel
+2026-05-01T12:56:09,Year 4_8-9_Autumn__Area_4_Compare areas,8cz_IB65pZM,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T13:00:38,Year 4_8-9_Spring__Multiplication and division B_1_Factor pairs,UG0wZ5C6D-0,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T13:01:21,Year 4_8-9_Spring__Multiplication and division B_2_Use factor pairs,KcKOM7Degu0,active,gui_current_knockout,added_from_current_panel
+2026-05-01T13:01:27,Year 4_8-9_Spring__Multiplication and division B_2_Use factor pairs,UG0wZ5C6D-0,active,gui_current_knockout,added_from_current_panel
+2026-05-01T13:17:07,Year 4_8-9_Spring__Multiplication and division B_4_Multiply by 100,wmyqPrkngjg,active,gui_current_knockout,added_from_current_panel
+2026-05-01T13:18:59,Year 4_8-9_Spring__Multiplication and division B_4_Multiply by 100,dmL1c3Dl_kU,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T13:20:47,Year 4_8-9_Spring__Multiplication and division B_4_Multiply by 100,s4K1IvSufM8,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T13:20:52,Year 4_8-9_Spring__Multiplication and division B_4_Multiply by 100,JihhgwV3FD4,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T13:24:06,Year 4_8-9_Spring__Multiplication and division B_6_Divide by 100,9BL6TFzfrDs,active,gui_current_knockout,added_from_current_panel
+2026-05-01T13:27:18,Year 4_8-9_Spring__Multiplication and division B_7_Related facts – multiplication and division,K6tPEmCZ-Oc,active,gui_current_knockout,added_from_current_panel
+2026-05-01T13:27:35,Year 4_8-9_Spring__Multiplication and division B_7_Related facts – multiplication and division,OG2F_Cihc7U,active,gui_current_knockout,added_from_current_panel
+2026-05-01T14:00:27,Year 4_8-9_Spring__Multiplication and division B_9_Multiply a 2-digit number by a 1-digit number,CVF_Vrd3M-c,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T14:01:33,Year 4_8-9_Spring__Multiplication and division B_9_Multiply a 2-digit number by a 1-digit number,tm-TQKA85do,inactive,gui_candidate_knockout,toggled_from_candidate_panel
+2026-05-01T14:05:07,Year 4_8-9_Spring__Multiplication and division B_11_Divide a 2-digit number by a 1-digit number (1),x_Q8j2y1UAQ,active,gui_current_knockout,added_from_current_panel
+2026-05-01T14:09:26,Year 4_8-9_Spring__Multiplication and division B_11_Divide a 2-digit number by a 1-digit number (1),p-tV83G9UmI,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T14:18:10,Year 4_8-9_Spring__Multiplication and division B_11_Divide a 2-digit number by a 1-digit number (1),McHo9PYYCTc,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T14:19:02,Year 4_8-9_Spring__Multiplication and division B_11_Divide a 2-digit number by a 1-digit number (1),yaWVymYlt5o,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T14:19:55,Year 4_8-9_Spring__Multiplication and division B_11_Divide a 2-digit number by a 1-digit number (1),6bv0N3vxwKU,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T14:24:38,Year 4_8-9_Spring__Multiplication and division B_12_Divide a 2-digit number by a 1-digit number (2),S_tLDYnI04c,active,gui_current_knockout,added_from_current_panel
+2026-05-01T14:27:25,Year 4_8-9_Spring__Multiplication and division B_13_Divide a 3-digit number by a 1-digit number,zJ250Pg1mpQ,active,gui_current_knockout,added_from_current_panel
+2026-05-01T14:52:45,Year 4_8-9_Spring__Multiplication and division B_14_Practise multipling and dividing more than one set,CrZ5jSfB144,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T15:11:19,Year 4_8-9_Spring__Length and perimeter_1_Measure in kilometres and metres,cKbmvLv-FRo,active,gui_current_knockout,added_from_current_panel
+2026-05-01T15:11:22,Year 4_8-9_Spring__Length and perimeter_1_Measure in kilometres and metres,GGliZ8tGLMg,active,gui_current_knockout,added_from_current_panel
+2026-05-01T15:12:05,Year 4_8-9_Spring__Length and perimeter_1_Measure in kilometres and metres,SpFMLzjxhag,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T15:16:48,Year 4_8-9_Spring__Length and perimeter_3_Perimeter on a grid,DwQZNQEtesY,active,gui_current_knockout,added_from_current_panel
+2026-05-01T18:44:57,Year 3_7-8_Spring__Length and perimeter_1_Measure in metres and centimetres,RicKigB_gp0,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T18:45:51,Year 3_7-8_Spring__Length and perimeter_1_Measure in metres and centimetres,UmwQIZmjB1A,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T18:47:17,Year 3_7-8_Spring__Length and perimeter_1_Measure in metres and centimetres,LODheqvkueE,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T18:48:25,Year 3_7-8_Spring__Length and perimeter_1_Measure in metres and centimetres,cKbmvLv-FRo,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T18:49:00,Year 3_7-8_Spring__Length and perimeter_1_Measure in metres and centimetres,DwQZNQEtesY,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-01T18:52:33,Year 3_7-8_Spring__Length and perimeter_1_Measure in metres and centimetres,Apcc5WDR4J4,active,gui_candidate_knockout,added_from_candidate_panel

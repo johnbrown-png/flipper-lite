@@ -441465,3 +441465,40 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-01T20:42:37] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_6_Understand improper fractions
 [2026-05-01T20:43:37] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_7_Convert mixed numbers to improper fractions
 [2026-05-01T20:43:52] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_7_Convert mixed numbers to improper fractions
+[2026-05-02T14:04:46] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_8_Convert improper fractions to mixed numbers
+[2026-05-02T14:08:36] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_9_Equivalent fractions on a number line
+[2026-05-02T14:08:46] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_9_Equivalent fractions on a number line
+[2026-05-02T14:11:47] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_10_Equivalent fraction families
+[2026-05-02T14:23:56] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_11_Add two or more fractions
+[2026-05-02T14:24:05] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_11_Add two or more fractions
+[2026-05-02T14:28:12] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_13_Subtract two fractions
+[2026-05-02T14:32:36] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_15_Subtract from mixed numbers
+[2026-05-02T14:36:21] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Decimals A_1_Tenths as fractions
+[2026-05-02T14:38:18] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Decimals A_1_Tenths as fractions
+[2026-05-02T14:39:30] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Decimals A_2_Tenths as decimals
+[2026-05-02T16:04:33] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Decimals A_4_Tenths on a number line
+[2026-05-02T16:04:50] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Decimals A_4_Tenths on a number line
+[2026-05-02T16:07:02] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Decimals A_5_Divide a 1-digit number by 10
+[2026-05-02T16:07:17] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Decimals A_5_Divide a 1-digit number by 10
+[2026-05-02T16:14:53] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Decimals A_10_Divide a 1- or 2-digit number by 100
+[2026-05-02T16:19:09] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Decimals B_1_Make a whole with tenths
+[2026-05-02T16:19:20] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Decimals B_1_Make a whole with tenths
+[2026-05-02T16:22:48] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Decimals B_1_Make a whole with tenths
+[2026-05-02T16:24:13] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Decimals B_3_Partition decimals
+[2026-05-02T16:25:28] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Decimals B_4_Flexibly partition decimals
+[2026-05-02T16:27:44] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Decimals B_5_Compare decimals
+[2026-05-02T16:29:07] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Decimals B_6_Order decimals
+[2026-05-02T16:35:43] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Decimals B_8_Halves and quarters as decimals
+[2026-05-02T16:42:01] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Money_1_Write money using decimals
+[2026-05-02T16:46:33] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Money_1_Write money using decimals
+[2026-05-02T16:48:09] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Money_2_Convert between pounds and pence
+[2026-05-02T16:51:40] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Money_4_Estimate with money
+[2026-05-02T16:54:20] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Money_5_Calculate with money
+[2026-05-02T16:54:27] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Money_5_Calculate with money
+[2026-05-02T16:59:01] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Shape_1_Understand angles as turns
+[2026-05-02T17:00:42] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Shape_2_Identify angles
+[2026-05-02T17:02:41] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Shape_4_Triangles
+[2026-05-02T17:14:55] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Time_2_Hours, minutes and seconds
+[2026-05-02T17:17:35] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Time_3_Convert between analogue and digital times
+[2026-05-02T17:20:33] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Time_4_Convert to the 24-hour clock
+[2026-05-02T17:24:33] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Time_5_Convert from the 24-hour clock

@@ -196,7 +196,7 @@ def _read_wildcard_rows(path: Path) -> pd.DataFrame:
 
 def load_video_lookup() -> dict[str, dict[str, str]]:
     lookup: dict[str, dict[str, str]] = {}
-    video_inventory_path = project_root / "video_inventory.csv"
+    video_inventory_path = project_root / "video_inventory" / "video_inventory.csv"
     if not video_inventory_path.exists():
         return lookup
 

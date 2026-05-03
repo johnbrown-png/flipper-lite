@@ -80,6 +80,8 @@ SHOW_CLEAR_OVERRIDE_CONTROL = False
 SHOW_LIVE_SEMANTIC_PREVIEW = False
 SHOW_ALIGNMENT_TAB = False
 SHOW_STAGE4_TAB = False
+ENABLE_DUPLICATE_ENGINE_DEFAULT = False
+ENABLE_DUPLICATE_COLOR_DEFAULT = False
 
 JOB_STATE_IDLE = "idle"
 JOB_STATE_RUNNING = "running"
@@ -390,6 +392,7 @@ class ImprovePickQAGUI:
         self.job_state_var = tk.StringVar(value="Job state: idle")
         self.job_step_var = tk.StringVar(value="Current step status: ready")
         self.job_error_var = tk.StringVar(value="")
+        self.conflict_inbox_var = tk.StringVar(value="Conflict inbox: duplicate layer disabled")
 
         self.curriculum_df = pd.DataFrame()
         self.curriculum_by_id: dict[str, dict[str, object]] = {}
@@ -468,6 +471,20 @@ class ImprovePickQAGUI:
         self.job_status_label: ttk.Label | None = None
         self.job_step_label: ttk.Label | None = None
         self.job_error_label: ttk.Label | None = None
+        self.jump_duplicate_btn: ttk.Button | None = None
+        self.jump_same_video_btn: ttk.Button | None = None
+        self.toggle_duplicate_engine_btn: ttk.Button | None = None
+        self.toggle_duplicate_color_btn: ttk.Button | None = None
+
+        self.step_video_ranks: dict[str, dict[str, int]] = {}
+        self.duplicate_video_to_steps: dict[str, set[str]] = {}
+        self.duplicate_video_ids: set[str] = set()
+        self.step_duplicate_conflicts: dict[str, list[dict[str, object]]] = {}
+        self.same_video_jump_cycle: dict[tuple[str, str], int] = {}
+        self.duplicate_label_color = "#aa2c2c"
+        self.default_title_label_foreground = ""
+        self.duplicate_engine_enabled = ENABLE_DUPLICATE_ENGINE_DEFAULT
+        self.duplicate_color_enabled = ENABLE_DUPLICATE_COLOR_DEFAULT
 
         self.active_job_state = JOB_STATE_IDLE
         self.active_job_name = ""
@@ -556,6 +573,44 @@ class ImprovePickQAGUI:
             command=self._jump_to_next_low_candidate_rating,
         )
         self.jump_low_candidate_btn.grid(row=1, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
+
+        self.jump_duplicate_btn = ttk.Button(
+            selector_frame,
+            text="Jump To Duplicate Conflict",
+            command=self._jump_to_next_duplicate_conflict,
+            state=tk.DISABLED,
+        )
+        self.jump_duplicate_btn.grid(row=2, column=1, sticky="w", pady=(4, 0))
+
+        self.jump_same_video_btn = ttk.Button(
+            selector_frame,
+            text="Jump Next Conflict Same Video",
+            command=self._jump_to_next_conflict_same_video,
+            state=tk.DISABLED,
+        )
+        self.jump_same_video_btn.grid(row=2, column=2, sticky="w", padx=(12, 0), pady=(4, 0))
+
+        self.toggle_duplicate_engine_btn = ttk.Button(
+            selector_frame,
+            text="Dup Engine: OFF",
+            command=self._toggle_duplicate_engine,
+        )
+        self.toggle_duplicate_engine_btn.grid(row=2, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
+
+        self.toggle_duplicate_color_btn = ttk.Button(
+            selector_frame,
+            text="Dup Color: OFF",
+            command=self._toggle_duplicate_color,
+        )
+        self.toggle_duplicate_color_btn.grid(row=3, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
+
+        ttk.Label(selector_frame, textvariable=self.conflict_inbox_var, foreground="#aa2c2c").grid(
+            row=3,
+            column=0,
+            columnspan=3,
+            sticky="w",
+            pady=(4, 0),
+        )
 
         if SHOW_SHOW_UNSAVED_ONLY_CONTROL:
             self.show_unsaved_check = ttk.Checkbutton(
@@ -926,6 +981,9 @@ class ImprovePickQAGUI:
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
 
+        if self.precomputed_title_labels:
+            self.default_title_label_foreground = self.precomputed_title_labels[0].cget("foreground")
+
         constraints_controls = ttk.LabelFrame(constraints_tab, text="Stage 2 Constraints Gate", padding=6)
         constraints_controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         constraints_controls.columnconfigure(1, weight=1)
@@ -1211,6 +1269,7 @@ class ImprovePickQAGUI:
             self.stage4_save_btn.grid(row=2, column=0, sticky="w", pady=(8, 0))
 
         self._refresh_command_controls()
+        self._sync_duplicate_toggle_labels()
 
     def _attach_tooltip(self, widget: tk.Widget, text: str) -> None:
         tooltip = ToolTip(widget, text)
@@ -1700,6 +1759,7 @@ class ImprovePickQAGUI:
             self.status_var.set(
                 f"Published QA reference CSV: steps={stats['steps_touched']}, wildcards={stats['wildcard_steps']}, manual={stats['manual_steps']}"
             )
+            self._recompute_duplicate_index()
             messagebox.showinfo(
                 "QA reference published",
                 f"Published:\n{QA_REFERENCE_OUTPUT_PATH}\n\n"
@@ -1852,6 +1912,7 @@ class ImprovePickQAGUI:
 
         wildcard_active = bool(self._get_wildcard_for_step(small_step_id))
         wildcard_note = "\n\nWildcard is active for this step and remains pinned at rank 1 in current display/published QA reference."
+        self._recompute_duplicate_index()
         messagebox.showinfo(
             "Manual override applied",
             f"Saved {written_count} candidate manual-rank row(s) to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}"
@@ -1889,6 +1950,7 @@ class ImprovePickQAGUI:
 
         wildcard_active = bool(self._get_wildcard_for_step(small_step_id))
         wildcard_note = "\n\nWildcard is active for this step and remains pinned at rank 1 in current display/published QA reference."
+        self._recompute_duplicate_index()
         messagebox.showinfo(
             "Manual override applied",
             f"Saved {written_count} precomputed manual-rank row(s) to:\n{MANUAL_PRECOMP_OVERRIDE_PATH}"
@@ -1909,6 +1971,7 @@ class ImprovePickQAGUI:
         self._append_command_log(f"MANUAL OVERRIDE cleared for {small_step_id}; rows_removed={removed}")
         self.status_var.set(f"Cleared manual override for {small_step_id}")
         self._populate_precomputed(small_step_id)
+        self._recompute_duplicate_index()
 
     def _command_cancel_active_job(self) -> None:
         if self.active_job_state != JOB_STATE_RUNNING:
@@ -2401,6 +2464,8 @@ class ImprovePickQAGUI:
             if selected_step_id:
                 self._populate_precomputed(selected_step_id)
 
+            self._recompute_duplicate_index()
+
             if self.active_job_state == JOB_STATE_RUNNING:
                 self._set_job_state(JOB_STATE_DONE, step_text="Deleted-video state refreshed")
             self.status_var.set("Ready (soft delete applied; run Full Rebuild FAISS to physically purge deleted vectors)")
@@ -2470,6 +2535,8 @@ class ImprovePickQAGUI:
                 selected_step_id = self._selected_small_step_id()
                 if selected_step_id:
                     self._populate_precomputed(selected_step_id)
+
+                self._recompute_duplicate_index()
 
             self.status_var.set("Loading retrieval assets (FAISS / embedder)...")
             self.search_btn.config(state=tk.DISABLED)
@@ -2542,6 +2609,320 @@ class ImprovePickQAGUI:
             label = label[2:].strip()
         return label.split(" | ", 1)[0].strip()
 
+    def _step_sort_key(self, small_step_id: str) -> tuple[int, str]:
+        row = self.curriculum_by_id.get(small_step_id, {})
+        raw_num = clean_text(row.get("small_step_num"))
+        try:
+            step_num = int(raw_num)
+        except ValueError:
+            step_num = 10**9
+        return (step_num, small_step_id)
+
+    def _sync_duplicate_toggle_labels(self) -> None:
+        if self.toggle_duplicate_engine_btn is not None:
+            self.toggle_duplicate_engine_btn.config(
+                text=f"Dup Engine: {'ON' if self.duplicate_engine_enabled else 'OFF'}"
+            )
+        if self.toggle_duplicate_color_btn is not None:
+            self.toggle_duplicate_color_btn.config(
+                text=f"Dup Color: {'ON' if self.duplicate_color_enabled else 'OFF'}"
+            )
+
+    def _toggle_duplicate_engine(self) -> None:
+        self.duplicate_engine_enabled = not self.duplicate_engine_enabled
+        self._sync_duplicate_toggle_labels()
+        if self.duplicate_engine_enabled:
+            self.status_var.set("Duplicate layer enabled")
+            self._recompute_duplicate_index()
+            return
+
+        # Hard-disable all duplicate state and visuals when mothballed.
+        self.step_video_ranks = {}
+        self.duplicate_video_to_steps = {}
+        self.duplicate_video_ids = set()
+        self.step_duplicate_conflicts = {}
+        self.same_video_jump_cycle = {}
+        self.conflict_inbox_var.set("Conflict inbox: duplicate layer disabled")
+        if self.jump_duplicate_btn is not None:
+            self.jump_duplicate_btn.config(state=tk.DISABLED)
+        if self.jump_same_video_btn is not None:
+            self.jump_same_video_btn.config(state=tk.DISABLED)
+        self._apply_duplicate_highlighting_current_step()
+        self.status_var.set("Duplicate layer disabled")
+
+    def _toggle_duplicate_color(self) -> None:
+        self.duplicate_color_enabled = not self.duplicate_color_enabled
+        self._sync_duplicate_toggle_labels()
+        self._apply_duplicate_highlighting_current_step()
+        self.status_var.set(
+            f"Duplicate color {'enabled' if self.duplicate_color_enabled else 'disabled'}"
+        )
+
+    def _recompute_duplicate_index(self) -> None:
+        if not self.duplicate_engine_enabled:
+            self.step_video_ranks = {}
+            self.duplicate_video_to_steps = {}
+            self.duplicate_video_ids = set()
+            self.step_duplicate_conflicts = {}
+            self.same_video_jump_cycle = {}
+            self._refresh_conflict_inbox_for_selected_step()
+            self._apply_duplicate_highlighting_current_step()
+            return
+
+        if not self.sorted_step_ids:
+            self.step_video_ranks = {}
+            self.duplicate_video_to_steps = {}
+            self.duplicate_video_ids = set()
+            self.step_duplicate_conflicts = {}
+            self._refresh_conflict_inbox_for_selected_step()
+            self._apply_duplicate_highlighting_current_step()
+            return
+
+        video_to_steps: dict[str, set[str]] = {}
+        step_video_ranks: dict[str, dict[str, int]] = {}
+
+        for small_step_id in self.sorted_step_ids:
+            effective_rows, _ = self._build_effective_precomputed_results_for_step(small_step_id)
+            if not effective_rows:
+                continue
+            for rank, result in enumerate(effective_rows[:TOP_K], start=1):
+                video_id = clean_text(result.get("video_id"))
+                if not video_id:
+                    continue
+                step_video_ranks.setdefault(small_step_id, {})[video_id] = rank
+                video_to_steps.setdefault(video_id, set()).add(small_step_id)
+
+        duplicate_video_ids = {
+            video_id
+            for video_id, step_ids in video_to_steps.items()
+            if len(step_ids) > 1
+        }
+
+        step_conflicts: dict[str, list[dict[str, object]]] = {}
+        for small_step_id, video_rank_map in step_video_ranks.items():
+            conflicts: list[dict[str, object]] = []
+            for video_id, rank in video_rank_map.items():
+                if video_id not in duplicate_video_ids:
+                    continue
+                other_step_ids = sorted(
+                    [sid for sid in video_to_steps.get(video_id, set()) if sid != small_step_id],
+                    key=self._step_sort_key,
+                )
+                if not other_step_ids:
+                    continue
+                conflicts.append(
+                    {
+                        "video_id": video_id,
+                        "rank": rank,
+                        "fanout": len(other_step_ids),
+                        "other_step_ids": other_step_ids,
+                    }
+                )
+
+            if conflicts:
+                conflicts.sort(
+                    key=lambda item: (
+                        int(item.get("rank", TOP_K + 1)),
+                        -int(item.get("fanout", 0)),
+                        clean_text(item.get("video_id")),
+                    )
+                )
+                step_conflicts[small_step_id] = conflicts
+
+        self.step_video_ranks = step_video_ranks
+        self.duplicate_video_to_steps = video_to_steps
+        self.duplicate_video_ids = duplicate_video_ids
+        self.step_duplicate_conflicts = step_conflicts
+        self.same_video_jump_cycle = {
+            key: value
+            for key, value in self.same_video_jump_cycle.items()
+            if key[1] in self.duplicate_video_ids and key[0] in self.step_duplicate_conflicts
+        }
+        self._refresh_conflict_inbox_for_selected_step()
+        self._apply_duplicate_highlighting_current_step()
+
+    def _refresh_conflict_inbox_for_selected_step(self) -> None:
+        if not self.duplicate_engine_enabled:
+            self.conflict_inbox_var.set("Conflict inbox: duplicate layer disabled")
+            if self.jump_duplicate_btn is not None:
+                self.jump_duplicate_btn.config(state=tk.DISABLED)
+            if self.jump_same_video_btn is not None:
+                self.jump_same_video_btn.config(state=tk.DISABLED)
+            return
+
+        small_step_id = self._selected_small_step_id()
+        if not small_step_id:
+            self.conflict_inbox_var.set("Conflict inbox: no step selected")
+            if self.jump_duplicate_btn is not None:
+                self.jump_duplicate_btn.config(state=tk.DISABLED)
+            if self.jump_same_video_btn is not None:
+                self.jump_same_video_btn.config(state=tk.DISABLED)
+            return
+
+        conflicts = self.step_duplicate_conflicts.get(small_step_id, [])
+        if not conflicts:
+            self.conflict_inbox_var.set("Conflict inbox: no duplicate videos in this step")
+            if self.jump_duplicate_btn is not None:
+                self.jump_duplicate_btn.config(state=tk.DISABLED)
+            if self.jump_same_video_btn is not None:
+                self.jump_same_video_btn.config(state=tk.DISABLED)
+            return
+
+        preview_parts: list[str] = []
+        for conflict in conflicts[:3]:
+            video_id = clean_text(conflict.get("video_id"))
+            rank = int(conflict.get("rank", 0) or 0)
+            fanout = int(conflict.get("fanout", 0) or 0)
+            preview_parts.append(f"R{rank}:{video_id}({fanout})")
+
+        more_count = max(0, len(conflicts) - len(preview_parts))
+        more_suffix = f" +{more_count} more" if more_count else ""
+        self.conflict_inbox_var.set(
+            f"Conflict inbox ({len(conflicts)}): {' | '.join(preview_parts)}{more_suffix}"
+        )
+        if self.jump_duplicate_btn is not None:
+            self.jump_duplicate_btn.config(state=tk.NORMAL)
+        if self.jump_same_video_btn is not None:
+            self.jump_same_video_btn.config(state=tk.NORMAL)
+
+    def _select_jump_target_for_step(self, small_step_id: str) -> tuple[dict[str, object], str] | None:
+        conflicts = self.step_duplicate_conflicts.get(small_step_id, [])
+        if not conflicts:
+            return None
+
+        for conflict in conflicts:
+            video_id = clean_text(conflict.get("video_id"))
+            if not video_id:
+                continue
+            other_steps = [
+                sid
+                for sid in self.duplicate_video_to_steps.get(video_id, set())
+                if sid != small_step_id
+            ]
+            if not other_steps:
+                continue
+
+            def _other_step_priority(step_id: str) -> tuple[int, tuple[int, str]]:
+                rank = self.step_video_ranks.get(step_id, {}).get(video_id, TOP_K + 1)
+                return (rank, self._step_sort_key(step_id))
+
+            target_step_id = sorted(other_steps, key=_other_step_priority)[0]
+            return conflict, target_step_id
+
+        return None
+
+    def _jump_to_next_duplicate_conflict(self) -> None:
+        if not self.duplicate_engine_enabled:
+            messagebox.showinfo("Duplicate layer disabled", "Enable duplicate engine to use conflict jumping.")
+            return
+
+        current_step_id = self._selected_small_step_id()
+        if not current_step_id:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+
+        self._recompute_duplicate_index()
+        jump_target = self._select_jump_target_for_step(current_step_id)
+        if jump_target is None:
+            messagebox.showinfo("No duplicate conflicts", "No duplicate conflicts remain for this step.")
+            return
+
+        conflict, target_step_id = jump_target
+        if not self._set_selected_step_by_id(target_step_id):
+            self.show_unsaved_only_var.set(False)
+            self._refresh_step_combo_labels(preserve_step_id=target_step_id)
+            if not self._set_selected_step_by_id(target_step_id):
+                messagebox.showwarning("Jump failed", f"Unable to select duplicate step {target_step_id}.")
+                return
+
+        video_id = clean_text(conflict.get("video_id"))
+        rank = int(conflict.get("rank", 0) or 0)
+        self.status_var.set(
+            f"Jumped to duplicate conflict step {target_step_id} for video {video_id} (source rank {rank})"
+        )
+
+    def _jump_to_next_conflict_same_video(self) -> None:
+        if not self.duplicate_engine_enabled:
+            messagebox.showinfo("Duplicate layer disabled", "Enable duplicate engine to use conflict jumping.")
+            return
+
+        current_step_id = self._selected_small_step_id()
+        if not current_step_id:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+
+        self._recompute_duplicate_index()
+        conflicts = self.step_duplicate_conflicts.get(current_step_id, [])
+        if not conflicts:
+            messagebox.showinfo("No duplicate conflicts", "No duplicate conflicts remain for this step.")
+            return
+
+        top_conflict = conflicts[0]
+        video_id = clean_text(top_conflict.get("video_id"))
+        if not video_id:
+            messagebox.showinfo("No duplicate conflicts", "No duplicate conflicts remain for this step.")
+            return
+
+        other_steps = [
+            sid
+            for sid in self.duplicate_video_to_steps.get(video_id, set())
+            if sid != current_step_id
+        ]
+        if not other_steps:
+            messagebox.showinfo("No duplicate conflicts", "No duplicate conflicts remain for this video.")
+            return
+
+        def _other_step_priority(step_id: str) -> tuple[int, tuple[int, str]]:
+            rank = self.step_video_ranks.get(step_id, {}).get(video_id, TOP_K + 1)
+            return (rank, self._step_sort_key(step_id))
+
+        ordered_targets = sorted(other_steps, key=_other_step_priority)
+        cycle_key = (current_step_id, video_id)
+        cycle_idx = self.same_video_jump_cycle.get(cycle_key, 0)
+        target_step_id = ordered_targets[cycle_idx % len(ordered_targets)]
+        self.same_video_jump_cycle[cycle_key] = cycle_idx + 1
+
+        if not self._set_selected_step_by_id(target_step_id):
+            self.show_unsaved_only_var.set(False)
+            self._refresh_step_combo_labels(preserve_step_id=target_step_id)
+            if not self._set_selected_step_by_id(target_step_id):
+                messagebox.showwarning("Jump failed", f"Unable to select duplicate step {target_step_id}.")
+                return
+
+        source_rank = int(top_conflict.get("rank", 0) or 0)
+        target_rank = self.step_video_ranks.get(target_step_id, {}).get(video_id, TOP_K + 1)
+        self.status_var.set(
+            f"Jumped same-video conflict: {video_id} source rank {source_rank} -> {target_step_id} rank {target_rank}"
+        )
+
+    def _set_title_label_duplicate_style(self, label: ttk.Label, is_duplicate: bool) -> None:
+        if is_duplicate and self.duplicate_color_enabled:
+            label.config(foreground=self.duplicate_label_color)
+            return
+        label.config(foreground=self.default_title_label_foreground)
+
+    def _apply_duplicate_highlighting_current_step(self) -> None:
+        current_step_id = self._selected_small_step_id()
+        for i in range(TOP_K):
+            pre_video_id = ""
+            if i < len(self.precomputed_results):
+                pre_video_id = clean_text(self.precomputed_results[i].get("video_id"))
+            pre_is_duplicate = bool(pre_video_id and pre_video_id in self.duplicate_video_ids)
+            self._set_title_label_duplicate_style(self.precomputed_title_labels[i], pre_is_duplicate)
+
+            candidate_video_id = ""
+            if i < len(self.latest_results):
+                candidate_video_id = clean_text(self.latest_results[i].get("video_id"))
+            candidate_other_steps = self.duplicate_video_to_steps.get(candidate_video_id, set())
+            candidate_is_duplicate = bool(
+                candidate_video_id
+                and (
+                    candidate_video_id in self.duplicate_video_ids
+                    or any(step_id != current_step_id for step_id in candidate_other_steps)
+                )
+            )
+            self._set_title_label_duplicate_style(self.result_title_labels[i], candidate_is_duplicate)
+
     def _load_saved_step_ids_from_qa(self) -> set[str]:
         if not QA_TRACKING_PATH.exists():
             return set()
@@ -2607,6 +2988,7 @@ class ImprovePickQAGUI:
 
         low_candidate_step_ids = self._load_low_candidate_rating_step_ids()
         self.jump_low_candidate_btn.config(state=tk.NORMAL if low_candidate_step_ids else tk.DISABLED)
+        self._refresh_conflict_inbox_for_selected_step()
 
     def _load_low_candidate_rating_step_ids(self) -> set[str]:
         """Return step ids where any persisted candidate rating is <= threshold.
@@ -2796,6 +3178,8 @@ class ImprovePickQAGUI:
         row = self.curriculum_by_id.get(small_step_id)
         if row is None:
             return
+
+        self._recompute_duplicate_index()
 
         # Default to unchecked when navigating between small steps.
         self.awaiting_download_faiss_var.set(False)
@@ -3007,6 +3391,7 @@ class ImprovePickQAGUI:
                 self._apply_rating_color(i)
         if reset_notes:
             self.notes_var.set("")
+        self._apply_duplicate_highlighting_current_step()
 
     def _render_candidate_search_results(self, results: list[dict[str, object]]) -> None:
         self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
@@ -3043,6 +3428,7 @@ class ImprovePickQAGUI:
             self._apply_rating_color(i)
 
         self._sync_candidate_controls_for_current_step()
+        self._apply_duplicate_highlighting_current_step()
 
     def _run_search(self) -> None:
         small_step_id = self._selected_small_step_id()
@@ -3208,6 +3594,7 @@ class ImprovePickQAGUI:
         self.latest_results = displayed_results
         self.latest_final_results = displayed_results
         self._sync_candidate_controls_for_current_step()
+        self._apply_duplicate_highlighting_current_step()
         self._set_candidate_panel_state("Candidate panel: showing persisted candidate picks from qa.csv")
         self.save_btn.config(state=tk.DISABLED)
         return True
@@ -3563,6 +3950,7 @@ class ImprovePickQAGUI:
             rating_vars=self.precomputed_rating_vars,
             apply_color_fn=self._apply_precomputed_rating_color,
         )
+        self._apply_duplicate_highlighting_current_step()
 
     def _open_precomputed_video(self, index_num: int) -> None:
         if index_num < 0 or index_num >= len(self.precomputed_results):

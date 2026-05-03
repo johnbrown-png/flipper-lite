@@ -441502,3 +441502,22 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-02T17:17:35] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Time_3_Convert between analogue and digital times
 [2026-05-02T17:20:33] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Time_4_Convert to the 24-hour clock
 [2026-05-02T17:24:33] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Time_5_Convert from the 24-hour clock
+[2026-05-02T18:22:34] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Statistics_1_Interpret charts
+[2026-05-03T08:57:36] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Statistics_2_Comparison, sum and difference
+[2026-05-03T08:59:02] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Statistics_1_Interpret charts
+[2026-05-03T09:01:32] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Statistics_3_Interpret line graphs
+[2026-05-03T09:01:56] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Statistics_3_Interpret line graphs
+[2026-05-03T09:13:05] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Position and direction_1_Describe position using coordinates
+[2026-05-03T09:14:03] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Position and direction_1_Describe position using coordinates
+[2026-05-03T09:17:23] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Position and direction_2_Plot coordinates
+[2026-05-03T09:26:32] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Position and direction_4_Translate on a grid
+[2026-05-03T09:47:56] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Position and direction_4_Translate on a grid
+[2026-05-03T09:49:36] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Position and direction_5_Describe translation on a grid
+[2026-05-03T09:51:07] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Position and direction_5_Describe translation on a grid
+[2026-05-03T10:02:36] MANUAL OVERRIDE applied for Year 5_9-10_Autumn__Place value_3_Numbers to 100,000
+[2026-05-03T10:04:01] MANUAL OVERRIDE applied for Year 5_9-10_Autumn__Place value_4_Numbers to 1,000,000
+[2026-05-03T10:28:29] MANUAL OVERRIDE applied for Year 5_9-10_Autumn__Place value_9_Number line to 1,000,000
+[2026-05-03T10:34:39] MANUAL OVERRIDE applied for Year 5_9-10_Autumn__Place value_11_Compare and order numbers to 1,000,000
+[2026-05-03T10:34:47] MANUAL OVERRIDE applied for Year 5_9-10_Autumn__Place value_11_Compare and order numbers to 1,000,000
+[2026-05-03T11:25:51] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Multiplication and division_11_Doubling and halving
+[2026-05-03T11:34:55] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Multiplication and division_11_Doubling and halving

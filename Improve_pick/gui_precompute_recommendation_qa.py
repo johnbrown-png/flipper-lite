@@ -62,6 +62,7 @@ QA_REFERENCE_OUTPUT_PATH = project_root / "precomputed_recommendations_flat_qa.c
 STEP_KNOCKOUT_PATH = project_root / "qa" / "step_video_knockouts.csv"
 QA_COMMAND_LOG_PATH = project_root / "qa" / "logs" / "qa_command_log.txt"
 TOP_K = 3
+CANDIDATE_DISPLAY_K = 10
 LOW_CANDIDATE_RATING_THRESHOLD = 7
 SEMANTIC_PREVIEW_K = 5
 SEMANTIC_PREVIEW_CHUNKS = 40
@@ -105,7 +106,8 @@ def build_qa_columns() -> list[str]:
     ]
 
     for source in ("current", "candidate"):
-        for rank in range(1, TOP_K + 1):
+        limit = TOP_K if source == "current" else CANDIDATE_DISPLAY_K
+        for rank in range(1, limit + 1):
             prefix = f"{source}_{rank}"
             columns.extend(
                 [
@@ -377,6 +379,7 @@ class ImprovePickQAGUI:
         self.progress_var = tk.StringVar(value="Done 0/0 (0%)")
         self.scenario_var = tk.StringVar(value="gui_mvp_approved")
         self.show_unsaved_only_var = tk.BooleanVar(value=False)
+        self.low_rating_jump_ignore_default_five_var = tk.BooleanVar(value=True)
         self.awaiting_download_faiss_var = tk.BooleanVar(value=False)
         self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until Update QA CSV")
         self.constraints_status_var = tk.StringVar(value="Constraints gate: idle")
@@ -428,6 +431,7 @@ class ImprovePickQAGUI:
         self.candidate_rank_vars: list[tk.StringVar] = []
         self.candidate_rank_dropdowns: list[tk.OptionMenu] = []
         self.candidate_knockout_buttons: list[ttk.Button] = []
+        self._prev_candidate_ranks: list[int] = []
 
         self.precomputed_df: pd.DataFrame = pd.DataFrame()
         self.wildcard_df: pd.DataFrame = pd.DataFrame()
@@ -443,6 +447,7 @@ class ImprovePickQAGUI:
         self.precomputed_rating_dropdowns: list[tk.OptionMenu] = []
         self.precomputed_rank_vars: list[tk.StringVar] = []
         self.precomputed_rank_dropdowns: list[tk.OptionMenu] = []
+        self._prev_precomputed_ranks: list[int] = []
         self.candidate_delete_buttons: list[ttk.Button] = []
         self.semantic_preview_title_labels: list[ttk.Label] = []
         self.semantic_preview_channel_labels: list[ttk.Label] = []
@@ -574,6 +579,14 @@ class ImprovePickQAGUI:
         )
         self.jump_low_candidate_btn.grid(row=1, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
 
+        self.jump_ignore_default_five_check = ttk.Checkbutton(
+            selector_frame,
+            text="Jump <=7 ignores default 5",
+            variable=self.low_rating_jump_ignore_default_five_var,
+            command=self._on_jump_filter_changed,
+        )
+        self.jump_ignore_default_five_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
+
         self.jump_duplicate_btn = ttk.Button(
             selector_frame,
             text="Jump To Duplicate Conflict",
@@ -684,6 +697,13 @@ class ImprovePickQAGUI:
         self.update_qa_btn = ttk.Button(control_frame, text="Update QA CSV", command=self._update_qa_csv)
         self.update_qa_btn.grid(row=0, column=1, padx=(0, 8))
 
+        self.mark_candidate_done_btn = ttk.Button(
+            control_frame,
+            text="Mark Candidate Reviewed (set shown ratings=10)",
+            command=self._mark_candidate_reviewed,
+        )
+        self.mark_candidate_done_btn.grid(row=0, column=2, padx=(0, 8))
+
         if SHOW_AWAITING_DOWNLOAD_CONTROL:
             self.awaiting_download_check = ttk.Checkbutton(
                 control_frame,
@@ -693,7 +713,7 @@ class ImprovePickQAGUI:
             self.awaiting_download_check.grid(row=0, column=2, padx=(0, 8), sticky="w")
 
         self.status_label = ttk.Label(control_frame, textvariable=self.status_var, foreground="blue")
-        self.status_label.grid(row=0, column=3, sticky="w")
+        self.status_label.grid(row=0, column=4, sticky="w")
 
         self.promote_canonical_btn = ttk.Button(
             control_frame,
@@ -705,7 +725,7 @@ class ImprovePickQAGUI:
             control_frame,
             text="Writes candidate text → qa/ss_desc_validated_overrides.csv (read by precompute)",
             foreground="#555555",
-        ).grid(row=1, column=2, columnspan=2, sticky="w", pady=(4, 0))
+        ).grid(row=1, column=2, columnspan=3, sticky="w", pady=(4, 0))
 
         command_frame = ttk.LabelFrame(outer, text="QA Command Center", padding=8)
         command_frame.grid(row=4, column=0, sticky="ew", pady=(0, 4))
@@ -871,31 +891,22 @@ class ImprovePickQAGUI:
         for col, header in enumerate(candidate_headers):
             ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
 
+        # Precomputed (current) panel rows — always TOP_K = 3
         for i in range(TOP_K):
             row_num = i + 1
             ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
-            ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
 
-            p_title = ttk.Label(precomp_frame, text="", width=44)
+            p_title = ttk.Label(precomp_frame, text="", width=58)
             p_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
             self.precomputed_title_labels.append(p_title)
-            c_title = ttk.Label(candidate_results_frame, text="", width=44)
-            c_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
-            self.result_title_labels.append(c_title)
 
-            p_channel = ttk.Label(precomp_frame, text="", width=20)
+            p_channel = ttk.Label(precomp_frame, text="", width=12)
             p_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
             self.precomputed_channel_labels.append(p_channel)
-            c_channel = ttk.Label(candidate_results_frame, text="", width=20)
-            c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
-            self.result_channel_labels.append(c_channel)
 
             p_score = ttk.Label(precomp_frame, text="", width=6)
             p_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.precomputed_score_labels.append(p_score)
-            c_score = ttk.Label(candidate_results_frame, text="", width=6)
-            c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
-            self.result_score_labels.append(c_score)
 
             p_rank_var = tk.StringVar(value=str(row_num))
             self.precomputed_rank_vars.append(p_rank_var)
@@ -909,24 +920,9 @@ class ImprovePickQAGUI:
             p_rank_menu.config(width=2)
             self.precomputed_rank_dropdowns.append(p_rank_menu)
 
-            c_rank_var = tk.StringVar(value=str(row_num))
-            self.candidate_rank_vars.append(c_rank_var)
-            c_rank_menu = tk.OptionMenu(
-                candidate_results_frame,
-                c_rank_var,
-                *[str(rank_option) for rank_option in range(1, TOP_K + 1)],
-                command=lambda _v, idx=i: self._on_candidate_rank_change(idx),
-            )
-            c_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
-            c_rank_menu.config(width=2)
-            self.candidate_rank_dropdowns.append(c_rank_menu)
-
             p_open = ttk.Button(precomp_frame, text="O", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
             p_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
             self.precomputed_open_buttons.append(p_open)
-            c_open = ttk.Button(candidate_results_frame, text="O", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
-            c_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
-            self.result_open_buttons.append(c_open)
 
             p_delete = ttk.Button(
                 precomp_frame,
@@ -946,6 +942,47 @@ class ImprovePickQAGUI:
             p_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=4, pady=2)
             self.precomputed_knockout_buttons.append(p_knockout)
 
+            p_rating_var = tk.StringVar(value="5")
+            self.precomputed_rating_vars.append(p_rating_var)
+            p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
+            p_menu.grid(row=row_num + 1, column=8, sticky="w", padx=4, pady=2)
+            p_menu.config(width=2)
+            self.precomputed_rating_dropdowns.append(p_menu)
+            self._apply_precomputed_rating_color(i)
+
+        # Candidate panel rows — CANDIDATE_DISPLAY_K = 10 (up to 10 search results shown)
+        for i in range(CANDIDATE_DISPLAY_K):
+            row_num = i + 1
+            ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
+
+            c_title = ttk.Label(candidate_results_frame, text="", width=58)
+            c_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
+            self.result_title_labels.append(c_title)
+
+            c_channel = ttk.Label(candidate_results_frame, text="", width=12)
+            c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
+            self.result_channel_labels.append(c_channel)
+
+            c_score = ttk.Label(candidate_results_frame, text="", width=6)
+            c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
+            self.result_score_labels.append(c_score)
+
+            c_rank_var = tk.StringVar(value=str(row_num))
+            self.candidate_rank_vars.append(c_rank_var)
+            c_rank_menu = tk.OptionMenu(
+                candidate_results_frame,
+                c_rank_var,
+                *[str(rank_option) for rank_option in range(1, CANDIDATE_DISPLAY_K + 1)],
+                command=lambda _v, idx=i: self._on_candidate_rank_change(idx),
+            )
+            c_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
+            c_rank_menu.config(width=2)
+            self.candidate_rank_dropdowns.append(c_rank_menu)
+
+            c_open = ttk.Button(candidate_results_frame, text="O", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
+            c_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
+            self.result_open_buttons.append(c_open)
+
             c_delete = ttk.Button(
                 candidate_results_frame,
                 text="Add",
@@ -963,14 +1000,6 @@ class ImprovePickQAGUI:
             )
             c_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=4, pady=2)
             self.candidate_knockout_buttons.append(c_knockout)
-
-            p_rating_var = tk.StringVar(value="5")
-            self.precomputed_rating_vars.append(p_rating_var)
-            p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
-            p_menu.grid(row=row_num + 1, column=8, sticky="w", padx=4, pady=2)
-            p_menu.config(width=2)
-            self.precomputed_rating_dropdowns.append(p_menu)
-            self._apply_precomputed_rating_color(i)
 
             c_rating_var = tk.StringVar(value="5")
             self.rating_vars.append(c_rating_var)
@@ -2227,7 +2256,7 @@ class ImprovePickQAGUI:
                 }
             )
 
-        final_top3 = sorted(enriched_survivors, key=lambda item: float(item.get("final_score", 0.0)), reverse=True)[:TOP_K]
+        final_top3 = sorted(enriched_survivors, key=lambda item: float(item.get("final_score", 0.0)), reverse=True)[:CANDIDATE_DISPLAY_K]
         self.latest_final_results = final_top3
 
         if self.stage4_survivors_tree is not None:
@@ -2910,6 +2939,7 @@ class ImprovePickQAGUI:
             pre_is_duplicate = bool(pre_video_id and pre_video_id in self.duplicate_video_ids)
             self._set_title_label_duplicate_style(self.precomputed_title_labels[i], pre_is_duplicate)
 
+        for i in range(CANDIDATE_DISPLAY_K):
             candidate_video_id = ""
             if i < len(self.latest_results):
                 candidate_video_id = clean_text(self.latest_results[i].get("video_id"))
@@ -2936,7 +2966,7 @@ class ImprovePickQAGUI:
             return set()
 
         persisted_mask = qa_df["candidate_ss_wr_desc"].map(clean_text).str.len() > 0
-        for rank in range(1, TOP_K + 1):
+        for rank in range(1, CANDIDATE_DISPLAY_K + 1):
             persisted_mask = (
                 persisted_mask
                 | (qa_df[f"candidate_{rank}_video_id"].map(clean_text).str.len() > 0)
@@ -2986,9 +3016,15 @@ class ImprovePickQAGUI:
         has_unsaved = done_steps < total_steps
         self.jump_unsaved_btn.config(state=tk.NORMAL if has_unsaved else tk.DISABLED)
 
+        self._refresh_low_candidate_jump_button_state()
+        self._refresh_conflict_inbox_for_selected_step()
+
+    def _on_jump_filter_changed(self) -> None:
+        self._refresh_low_candidate_jump_button_state()
+
+    def _refresh_low_candidate_jump_button_state(self) -> None:
         low_candidate_step_ids = self._load_low_candidate_rating_step_ids()
         self.jump_low_candidate_btn.config(state=tk.NORMAL if low_candidate_step_ids else tk.DISABLED)
-        self._refresh_conflict_inbox_for_selected_step()
 
     def _load_low_candidate_rating_step_ids(self) -> set[str]:
         """Return step ids where any persisted candidate rating is <= threshold.
@@ -3006,13 +3042,14 @@ class ImprovePickQAGUI:
         if qa_df.empty:
             return set()
 
+        ignore_default_five = bool(self.low_rating_jump_ignore_default_five_var.get())
         low_step_ids: set[str] = set()
         for _, qa_row in qa_df.iterrows():
             small_step_id = clean_text(qa_row.get("small_step_id"))
             if not small_step_id:
                 continue
 
-            for rank in range(1, TOP_K + 1):
+            for rank in range(1, CANDIDATE_DISPLAY_K + 1):
                 video_id = clean_text(qa_row.get(f"candidate_{rank}_video_id"))
                 video_title = clean_text(qa_row.get(f"candidate_{rank}_video_title"))
                 if not video_id and not video_title:
@@ -3026,6 +3063,10 @@ class ImprovePickQAGUI:
                 try:
                     rating_value = int(rating_text)
                 except ValueError:
+                    continue
+
+                if ignore_default_five and rating_value == 5:
+                    # Optional workflow: treat untouched/default ratings as neutral.
                     continue
 
                 if rating_value <= LOW_CANDIDATE_RATING_THRESHOLD:
@@ -3136,6 +3177,33 @@ class ImprovePickQAGUI:
             self.show_unsaved_only_var.set(False)
             self._refresh_step_combo_labels(preserve_step_id=next_step_id)
             self._set_selected_step_by_id(next_step_id)
+
+    def _mark_candidate_reviewed(self) -> None:
+        small_step_id = self._selected_small_step_id()
+        if not small_step_id:
+            messagebox.showwarning("Missing small step", "Select a small step first.")
+            return
+
+        updated_count = 0
+        for i in range(CANDIDATE_DISPLAY_K):
+            result = self.latest_results[i] if i < len(self.latest_results) else {}
+            has_result = bool(clean_text(result.get("video_id")) or clean_text(result.get("title")))
+            if not has_result:
+                continue
+            self.rating_vars[i].set("10")
+            self._apply_rating_color(i)
+            updated_count += 1
+
+        if updated_count == 0:
+            messagebox.showinfo(
+                "No candidate results",
+                "No candidate rows are currently shown. Load persisted picks or run Search Top 3 first.",
+            )
+            return
+
+        self.status_var.set(
+            f"Marked {updated_count} shown candidate rating(s) as 10. Click Update QA CSV to persist for jump filtering."
+        )
 
     def _on_show_unsaved_only_changed(self) -> None:
         current_step_id = self._selected_small_step_id()
@@ -3377,7 +3445,7 @@ class ImprovePickQAGUI:
         self.save_btn.config(state=tk.DISABLED)
 
     def _clear_candidate_result_widgets(self, reset_ratings: bool, reset_notes: bool = True) -> None:
-        for i in range(TOP_K):
+        for i in range(CANDIDATE_DISPLAY_K):
             self.result_title_labels[i].config(text="")
             self.result_channel_labels[i].config(text="")
             self.result_score_labels[i].config(text="")
@@ -3389,6 +3457,7 @@ class ImprovePickQAGUI:
             if reset_ratings:
                 self.rating_vars[i].set("5")
                 self._apply_rating_color(i)
+        self._prev_candidate_ranks = list(range(1, CANDIDATE_DISPLAY_K + 1))
         if reset_notes:
             self.notes_var.set("")
         self._apply_duplicate_highlighting_current_step()
@@ -3396,7 +3465,7 @@ class ImprovePickQAGUI:
     def _render_candidate_search_results(self, results: list[dict[str, object]]) -> None:
         self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
 
-        for i in range(TOP_K):
+        for i in range(CANDIDATE_DISPLAY_K):
             if i >= len(results):
                 continue
 
@@ -3541,7 +3610,7 @@ class ImprovePickQAGUI:
 
         displayed_results: list[dict[str, object]] = []
         has_persisted_picks = False
-        for i in range(TOP_K):
+        for i in range(CANDIDATE_DISPLAY_K):
             rank = i + 1
             video_id = clean_text(qa_row.get(f"candidate_{rank}_video_id"))
             title = clean_text(qa_row.get(f"candidate_{rank}_video_title"))
@@ -3619,20 +3688,57 @@ class ImprovePickQAGUI:
         self._apply_rating_color(index_num)
 
     def _on_candidate_rank_change(self, index_num: int) -> None:
-        if index_num < 0 or index_num >= TOP_K:
+        if index_num < 0 or index_num >= CANDIDATE_DISPLAY_K:
             return
         if index_num >= len(self.latest_results):
             return
-        selected_rank = self.candidate_rank_vars[index_num].get().strip()
-        self.status_var.set(f"Candidate row {index_num + 1} manual rank set to {selected_rank}")
+        new_rank = int(self.candidate_rank_vars[index_num].get().strip())
+        n_active = len(self.latest_results)
+        # Ensure tracking list is long enough
+        while len(self._prev_candidate_ranks) < CANDIDATE_DISPLAY_K:
+            self._prev_candidate_ranks.append(len(self._prev_candidate_ranks) + 1)
+        old_rank = self._prev_candidate_ranks[index_num]
+        if new_rank != old_rank:
+            # Shift other active rows: insert-style cascade
+            for j in range(n_active):
+                if j == index_num:
+                    continue
+                r = self._prev_candidate_ranks[j]
+                if old_rank < new_rank and old_rank < r <= new_rank:
+                    # moved down: rows in (old, new] shift up by -1
+                    self._prev_candidate_ranks[j] = r - 1
+                    self.candidate_rank_vars[j].set(str(r - 1))
+                elif new_rank < old_rank and new_rank <= r < old_rank:
+                    # moved up: rows in [new, old) shift down by +1
+                    self._prev_candidate_ranks[j] = r + 1
+                    self.candidate_rank_vars[j].set(str(r + 1))
+            self._prev_candidate_ranks[index_num] = new_rank
+        self.status_var.set(f"Candidate row {index_num + 1} manual rank set to {new_rank}")
 
     def _on_precomputed_rank_change(self, index_num: int) -> None:
         if index_num < 0 or index_num >= TOP_K:
             return
         if index_num >= len(self.precomputed_results):
             return
-        selected_rank = self.precomputed_rank_vars[index_num].get().strip()
-        self.status_var.set(f"Current row {index_num + 1} manual rank set to {selected_rank}")
+        new_rank = int(self.precomputed_rank_vars[index_num].get().strip())
+        n_active = len(self.precomputed_results)
+        # Ensure tracking list is long enough
+        while len(self._prev_precomputed_ranks) < TOP_K:
+            self._prev_precomputed_ranks.append(len(self._prev_precomputed_ranks) + 1)
+        old_rank = self._prev_precomputed_ranks[index_num]
+        if new_rank != old_rank:
+            for j in range(n_active):
+                if j == index_num:
+                    continue
+                r = self._prev_precomputed_ranks[j]
+                if old_rank < new_rank and old_rank < r <= new_rank:
+                    self._prev_precomputed_ranks[j] = r - 1
+                    self.precomputed_rank_vars[j].set(str(r - 1))
+                elif new_rank < old_rank and new_rank <= r < old_rank:
+                    self._prev_precomputed_ranks[j] = r + 1
+                    self.precomputed_rank_vars[j].set(str(r + 1))
+            self._prev_precomputed_ranks[index_num] = new_rank
+        self.status_var.set(f"Current row {index_num + 1} manual rank set to {new_rank}")
 
     def _load_step_knockout_df(self) -> pd.DataFrame:
         columns = ["updated_at", "small_step_id", "video_id", "status", "source", "notes"]
@@ -3679,7 +3785,7 @@ class ImprovePickQAGUI:
         small_step_id = self._selected_small_step_id()
         knocked_out_ids = self._get_step_knocked_out_video_ids(small_step_id)
 
-        for i in range(TOP_K):
+        for i in range(CANDIDATE_DISPLAY_K):
             default_rank = str(i + 1)
             if i >= len(self.latest_results):
                 self.candidate_rank_vars[i].set(default_rank)
@@ -3719,11 +3825,11 @@ class ImprovePickQAGUI:
             )
 
     def _get_manual_ranked_candidate_results(self) -> list[dict[str, object]]:
-        results = self.latest_results[:TOP_K]
+        results = self.latest_results[:CANDIDATE_DISPLAY_K]
         if not results:
             return []
 
-        available_rows = min(TOP_K, len(results))
+        available_rows = min(CANDIDATE_DISPLAY_K, len(results))
         seen_ranks: set[int] = set()
         row_pairs: list[tuple[int, dict[str, object]]] = []
 
@@ -3942,6 +4048,7 @@ class ImprovePickQAGUI:
             self.precomputed_rating_vars[i].set("5")
             self._apply_precomputed_rating_color(i)
 
+        self._prev_precomputed_ranks = list(range(1, TOP_K + 1))
         self._sync_precomputed_controls_for_current_step()
         self._restore_saved_ratings(
             small_step_id=small_step_id,
@@ -4128,7 +4235,7 @@ class ImprovePickQAGUI:
         if qa_row is None:
             return
 
-        for i in range(TOP_K):
+        for i in range(len(rating_vars)):
             rank = i + 1
             qa_video_id = clean_text(qa_row.get(f"{source}_{rank}_video_id"))
             result_video_id = ""
@@ -4162,7 +4269,8 @@ class ImprovePickQAGUI:
         qa_row["notes"] = notes_text
 
         def fill_slots(source: str, results: list[dict[str, object]], ratings: list[int]) -> None:
-            for idx in range(TOP_K):
+            limit = TOP_K if source == "current" else CANDIDATE_DISPLAY_K
+            for idx in range(limit):
                 rank = idx + 1
                 prefix = f"{source}_{rank}"
                 result = results[idx] if idx < len(results) else {}
@@ -4356,7 +4464,7 @@ class ImprovePickQAGUI:
         scenario_label = clean_text(self.scenario_var.get()) or "gui_mvp_approved"
 
         ratings: list[int] = []
-        for i in range(TOP_K):
+        for i in range(CANDIDATE_DISPLAY_K):
             try:
                 ratings.append(int(self.rating_vars[i].get().strip()))
             except ValueError:

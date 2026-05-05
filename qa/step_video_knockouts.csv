@@ -254,3 +254,60 @@ updated_at,small_step_id,video_id,status,source,notes
 2026-05-03T10:33:36,"Year 5_9-10_Autumn__Place value_11_Compare and order numbers to 1,000,000",TOrcUx0wDDQ,active,gui_current_knockout,added_from_current_panel
 2026-05-03T11:25:32,Year 2_6-7_Spring__Multiplication and division_11_Doubling and halving,1gNAQPs-6bg,active,gui_current_knockout,added_from_current_panel
 2026-05-03T11:27:50,Year 2_6-7_Spring__Multiplication and division_11_Doubling and halving,WcpO2l0x-qI,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-04T10:45:53,Year 5_9-10_Autumn__Addition and subtraction_2_Add whole numbers with more than four digits,5RjSAs6pbVQ,active,gui_current_knockout,added_from_current_panel
+2026-05-04T10:53:28,Year 5_9-10_Autumn__Addition and subtraction_2_Add whole numbers with more than four digits,lkXjaNxMtoU,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-04T10:56:25,Year 5_9-10_Autumn__Addition and subtraction_3_Subtract whole numbers with more than four digits,5xBWU7qdBfc,active,gui_current_knockout,added_from_current_panel
+2026-05-04T10:59:39,Year 5_9-10_Autumn__Addition and subtraction_4_Round to check answers,9GXXm_0V2q8,active,gui_current_knockout,added_from_current_panel
+2026-05-04T11:04:52,Year 5_9-10_Autumn__Addition and subtraction_5_Inverse operations (addition and subtraction),IwW0GJWKH98,active,gui_current_knockout,added_from_current_panel
+2026-05-04T11:06:50,Year 5_9-10_Autumn__Addition and subtraction_5_Inverse operations (addition and subtraction),w4ipg8MeA7Y,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-04T11:08:15,Year 5_9-10_Autumn__Addition and subtraction_5_Inverse operations (addition and subtraction),2dsX8exAJJk,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-04T11:13:05,Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems,es_8L7ArBEo,active,gui_current_knockout,added_from_current_panel
+2026-05-04T11:13:57,Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems,K51KerIXS7w,active,gui_current_knockout,added_from_current_panel
+2026-05-04T11:14:50,Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems,eqkK4kLfNzw,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-04T11:16:12,Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems,fsDmyyXggG8,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-04T11:17:32,Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems,Q2STisH7j9c,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-04T11:18:34,Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems,izdgnavVqZM,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-04T11:20:51,Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems,xRlkIUOrp5g,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-05T09:15:50,Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems,Ea8uU_CvMbg,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-05T09:44:56,Year 5_9-10_Autumn__Addition and subtraction_8_Find missing numbers,8-amzpjCaT8,active,gui_candidate_knockout,added_from_candidate_panel
+2026-05-05T10:11:43,Year 5_9-10_Autumn__Multiplication and division A_2_Common multiples,6bv0N3vxwKU,active,gui_current_knockout,added_from_current_panel
+2026-05-05T10:12:31,Year 5_9-10_Autumn__Multiplication and division A_2_Common multiples,Nu6AC6X3_E4,active,gui_current_knockout,added_from_current_panel
+2026-05-05T14:59:43,Year 5_9-10_Autumn__Multiplication and division A_5_Prime numbers,JwPkH6k_Qpo,active,gui_current_knockout,added_from_current_panel
+2026-05-05T15:21:20,Year 5_9-10_Autumn__Multiplication and division A_7_Cube numbers,onBB1h5DyfY,active,gui_current_knockout,added_from_current_panel
+2026-05-05T15:23:04,"Year 5_9-10_Autumn__Multiplication and division A_8_Multiply by 10, 100 and 1,000",6bv0N3vxwKU,active,gui_current_knockout,added_from_current_panel
+2026-05-05T15:26:08,"Year 5_9-10_Autumn__Multiplication and division A_9_Divide by 10, 100 and 1,000",6bv0N3vxwKU,active,gui_current_knockout,added_from_current_panel
+2026-05-05T15:29:09,Year 5_9-10_Autumn__Fractions A_1_Find fractions equivalent to a unit fraction,lHaLzkhDBsc,active,gui_current_knockout,added_from_current_panel
+2026-05-05T16:22:07,Year 5_9-10_Autumn__Fractions A_2_Find fractions equivalent to a non-unit fraction,ucHLI12xIb4,active,gui_current_knockout,added_from_current_panel
+2026-05-05T16:23:38,Year 5_9-10_Autumn__Fractions A_3_Recognise equivalent fractions,pSjhY3JlAjo,inactive,gui_current_knockout,toggled_from_current_panel
+2026-05-05T16:25:00,Year 5_9-10_Autumn__Fractions A_3_Recognise equivalent fractions,R6wT2nxajxA,active,gui_current_knockout,added_from_current_panel
+2026-05-05T16:26:39,Year 5_9-10_Autumn__Fractions A_4_Convert improper fractions to mixed numbers,TPS3FKO7tI0,active,gui_current_knockout,added_from_current_panel
+2026-05-05T16:31:22,Year 5_9-10_Autumn__Fractions A_6_Compare fractions less than 1,qDc_-GTipBk,active,gui_current_knockout,added_from_current_panel
+2026-05-05T16:33:41,Year 5_9-10_Autumn__Fractions A_6_Compare fractions less than 1,tR3MAO8Nkj8,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:01:25,Year 5_9-10_Autumn__Fractions A_8_Compare and order fractions greater than 1,Rfr9AcYcRx4,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:02:05,Year 5_9-10_Autumn__Fractions A_8_Compare and order fractions greater than 1,tR3MAO8Nkj8,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:11:50,Year 5_9-10_Autumn__Fractions A_9_Add and subtract fractions with the same denominator,qDc_-GTipBk,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:17:13,Year 5_9-10_Autumn__Fractions A_11_Add fractions with total greater than 1,3n7ldeSpmsM,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:18:42,Year 5_9-10_Autumn__Fractions A_11_Add fractions with total greater than 1,4thRKrH4-JE,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:22:34,Year 5_9-10_Autumn__Fractions A_12_Add to a mixed number,pynfj2bYRms,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:23:10,Year 5_9-10_Autumn__Fractions A_12_Add to a mixed number,qk2oP6FZ6HA,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:49:14,Year 5_9-10_Spring__Multiplication and division B_1_Multiply up to a 4-digit number by a 1-digit number,Y_OJzCT3PGk,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:49:17,Year 5_9-10_Spring__Multiplication and division B_1_Multiply up to a 4-digit number by a 1-digit number,fYf36zYZV_w,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:53:06,Year 5_9-10_Spring__Multiplication and division B_2_Multiply a 2-digit number by a 2-digit number (area model),VU1JcEy0G-E,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:56:01,Year 5_9-10_Spring__Multiplication and division B_3_Multiply a 2-digit number by a 2-digit number,VU1JcEy0G-E,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:57:36,Year 5_9-10_Spring__Multiplication and division B_4_Multiply a 3-digit number by a 2-digit number,-sd_C-ZtSSA,active,gui_current_knockout,added_from_current_panel
+2026-05-05T17:58:10,Year 5_9-10_Spring__Multiplication and division B_4_Multiply a 3-digit number by a 2-digit number,jryxKOt5rQI,active,gui_current_knockout,added_from_current_panel
+2026-05-05T18:01:49,Year 5_9-10_Spring__Multiplication and division B_5_Multiply a 4-digit number by a 2-digit number,jryxKOt5rQI,active,gui_current_knockout,added_from_current_panel
+2026-05-05T18:02:22,Year 5_9-10_Spring__Multiplication and division B_5_Multiply a 4-digit number by a 2-digit number,RVYwunbpMHA,active,gui_current_knockout,added_from_current_panel
+2026-05-05T18:02:44,Year 5_9-10_Spring__Multiplication and division B_5_Multiply a 4-digit number by a 2-digit number,FJ5qLWP3Fqo,active,gui_current_knockout,added_from_current_panel
+2026-05-05T18:18:36,Year 5_9-10_Spring__Multiplication and division B_7_Short division,bv3IiSXqBLQ,active,gui_current_knockout,added_from_current_panel
+2026-05-05T18:26:07,Year 5_9-10_Spring__Multiplication and division B_8_Divide a 4-digit number by a 1-digit number,zJ250Pg1mpQ,active,gui_current_knockout,added_from_current_panel
+2026-05-05T18:30:07,Year 5_9-10_Spring__Multiplication and division B_9_Divide with remainders,dRIziHsq3_4,inactive,gui_current_knockout,toggled_from_current_panel
+2026-05-05T18:30:05,Year 5_9-10_Spring__Multiplication and division B_9_Divide with remainders,S_tLDYnI04c,active,gui_current_knockout,added_from_current_panel
+2026-05-05T19:54:18,Year 5_9-10_Spring__Fractions B_1_Multiply a unit fraction by an integer,UZJ70OyCknY,active,gui_current_knockout,added_from_current_panel
+2026-05-05T20:01:33,Year 5_9-10_Spring__Fractions B_3_Multiply a mixed number by an integer,Cr5_gQpAXYM,active,gui_current_knockout,added_from_current_panel
+2026-05-05T20:02:13,Year 5_9-10_Spring__Fractions B_3_Multiply a mixed number by an integer,kwgeHT6pB7k,active,gui_current_knockout,added_from_current_panel
+2026-05-05T20:03:00,Year 5_9-10_Spring__Fractions B_3_Multiply a mixed number by an integer,3n7ldeSpmsM,active,gui_current_knockout,added_from_current_panel
+2026-05-05T20:12:48,Year 5_9-10_Spring__Fractions B_4_Calculate a fraction of a quantity,nMCvhK42VfY,active,gui_current_knockout,added_from_current_panel
+2026-05-05T20:13:42,Year 5_9-10_Spring__Fractions B_4_Calculate a fraction of a quantity,jqghrJCMhYA,active,gui_current_knockout,added_from_current_panel
+2026-05-05T20:37:30,Year 5_9-10_Spring__Decimals and percentages_1_Decimals up to 2 decimal places,BsZJGMRWEK0,active,gui_current_knockout,added_from_current_panel
+2026-05-05T21:20:28,Year 5_9-10_Spring__Decimals and percentages_2_Equivalent fractions and decimals (tenths),Pb7Ws695tnI,active,gui_current_knockout,added_from_current_panel

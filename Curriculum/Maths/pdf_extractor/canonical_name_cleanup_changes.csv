@@ -1,0 +1,160 @@
+row_index,small_step_num,year,term,difficulty,block,small_step_num_in_topic,old_small_step_name,new_small_step_name
+851,852,Year 7,Summer,,1,1,1 Multiples,Multiples
+852,853,Year 7,Summer,,1,2,2 Factors,Factors
+853,854,Year 7,Summer,,1,3,3 Prime numbers,Prime numbers
+854,855,Year 7,Summer,,1,4,4 Write a number as a product of prime factors,Write a number as a product of prime factors
+855,856,Year 7,Summer,,1,5,"5 Square, cube and triangular numbers","Square, cube and triangular numbers"
+856,857,Year 7,Summer,,1,6,6 Square roots and cube roots,Square roots and cube roots
+857,858,Year 7,Summer,,1,7,7 Explore higher powers and roots (E),Explore higher powers and roots (E)
+858,859,Year 7,Summer,,1,8,8 Highest common factor (HCF),Highest common factor (HCF)
+859,860,Year 7,Summer,,1,9,9 Lowest common multiple (LCM),Lowest common multiple (LCM)
+860,861,Year 7,Summer,,1,10,10 HCF and LCM from a Venn diagram (E),HCF and LCM from a Venn diagram (E)
+861,862,Year 7,Summer,,1,11,11 Use factors to simplify calculations (E),Use factors to simplify calculations (E)
+872,873,Year 7,Summer,,2,1,""""" Simplify a fraction",Simplify a fraction
+873,874,Year 7,Summer,,2,2,""""" Convert between mixed numbers and improper fractions",Convert between mixed numbers and improper fractions
+874,875,Year 7,Summer,,2,3,""""" Add and subtract fractions with the same denominator",Add and subtract fractions with the same denominator
+875,876,Year 7,Summer,,2,4,""""" Add and subtract with fractions and integers",Add and subtract with fractions and integers
+876,877,Year 7,Summer,,2,5,""""" Add and subtract fractions where denominators share a simple common multiple",Add and subtract fractions where denominators share a simple common multiple
+877,878,Year 7,Summer,,2,6,""""" Add and subtract fractions with any denominator",Add and subtract fractions with any denominator
+878,879,Year 7,Summer,,2,7,""""" Add and subtract improper fractions and mixed numbers",Add and subtract improper fractions and mixed numbers
+879,880,Year 7,Summer,,2,8,""""" Use equivalence to add and subtract decimals and fractions (E)",Use equivalence to add and subtract decimals and fractions (E)
+880,881,Year 7,Summer,,2,9,""""" Add and subtract simple algebraic fractions (E)",Add and subtract simple algebraic fractions (E)
+881,882,Year 7,Summer,,2,10,"""""0 Substitution and solving equations with fractions (E)",Substitution and solving equations with fractions (E)
+882,883,Year 7,Summer,,3,1,""""" Draw and measure lines and angles",Draw and measure lines and angles
+883,884,Year 7,Summer,,3,2,""""" Understand and use geometric notation",Understand and use geometric notation
+884,885,Year 7,Summer,,3,3,""""" Angles around a point",Angles around a point
+885,886,Year 7,Summer,,3,4,""""" Angles on a straight line",Angles on a straight line
+886,887,Year 7,Summer,,3,5,""""" Vertically opposite angles",Vertically opposite angles
+887,888,Year 7,Summer,,3,6,""""" Recognise and name polygons",Recognise and name polygons
+888,889,Year 7,Summer,,3,7,""""" Angles in a triangle",Angles in a triangle
+889,890,Year 7,Summer,,3,8,""""" Angles in a quadrilateral",Angles in a quadrilateral
+890,891,Year 7,Summer,,3,9,""""" Solve problems with angles",Solve problems with angles
+891,892,Year 7,Summer,,3,10,"""""0 Parallel and perpendicular lines",Parallel and perpendicular lines
+892,893,Year 7,Summer,,3,11,"""""1 Angles in parallel lines (E)",Angles in parallel lines (E)
+893,894,Year 7,Summer,,3,12,"""""2 Angles in a polygon (E)",Angles in a polygon (E)
+1007,1008,Year 8,Summer,,1,1,""""" Probability vocabulary",Probability vocabulary
+1008,1009,Year 8,Summer,,1,2,""""" The probability scale",The probability scale
+1009,1010,Year 8,Summer,,1,3,""""" Probability of a single event ​",Probability of a single event ​
+1010,1011,Year 8,Summer,,1,4,""""" Use the sum of probabilities being equal to 1",Use the sum of probabilities being equal to 1
+1011,1012,Year 8,Summer,,1,5,""""" Probability experiments",Probability experiments
+1012,1013,Year 8,Summer,,1,6,""""" Sample spaces for 1 or more events",Sample spaces for 1 or more events
+1013,1014,Year 8,Summer,,1,7,""""" Probabilities from sample space diagrams",Probabilities from sample space diagrams
+1014,1015,Year 8,Summer,,1,8,""""" Two-way tables",Two-way tables
+1015,1016,Year 8,Summer,,1,9,""""" Probabilities from two-way tables",Probabilities from two-way tables
+1016,1017,Year 8,Summer,,1,10,"""""0 Frequency trees",Frequency trees
+1017,1018,Year 8,Summer,,1,11,"""""1 Probabilities from frequency trees",Probabilities from frequency trees
+1018,1019,Year 8,Summer,,2,1,""""" Circle vocabulary",Circle vocabulary
+1019,1020,Year 8,Summer,,2,2,""""" Pi as a ratio",Pi as a ratio
+1020,1021,Year 8,Summer,,2,3,""""" Circumference of a circle",Circumference of a circle
+1021,1022,Year 8,Summer,,2,4,""""" Perimeter of parts of a circle",Perimeter of parts of a circle
+1022,1023,Year 8,Summer,,2,5,""""" Area of a circle",Area of a circle
+1023,1024,Year 8,Summer,,2,6,""""" Area of parts of a circle",Area of parts of a circle
+1024,1025,Year 8,Summer,,2,7,""""" Area and circumference of a circle",Area and circumference of a circle
+1025,1026,Year 8,Summer,,2,8,""""" Perimeter of compound shapes with circles",Perimeter of compound shapes with circles
+1026,1027,Year 8,Summer,,2,9,""""" Perimeter and area of compound shapes with circles",Perimeter and area of compound shapes with circles
+1027,1028,Year 8,Summer,,3,1,""""" Pictograms and bar charts",Pictograms and bar charts
+1028,1029,Year 8,Summer,,3,2,""""" Vertical line charts",Vertical line charts
+1029,1030,Year 8,Summer,,3,3,""""" Draw pie charts",Draw pie charts
+1030,1031,Year 8,Summer,,3,4,""""" Interpret pie charts",Interpret pie charts
+1031,1032,Year 8,Summer,,3,5,""""" Line graphs",Line graphs
+1032,1033,Year 8,Summer,,3,6,""""" Choose the most appropriate graph or chart",Choose the most appropriate graph or chart
+1033,1034,Year 8,Summer,,3,7,""""" Compare distributions using graphs",Compare distributions using graphs
+1034,1035,Year 8,Summer,,3,8,""""" Misleading graphs and charts",Misleading graphs and charts
+1035,1036,Year 8,Summer,,4,1,""""" Generate and describe a sequence given a rule in words",Generate and describe a sequence given a rule in words
+1036,1037,Year 8,Summer,,4,2,""""" Generate a sequence given a simple algebraic rule",Generate a sequence given a simple algebraic rule
+1037,1038,Year 8,Summer,,4,3,""""" nth term of a linear sequence",nth term of a linear sequence
+1038,1039,Year 8,Summer,,4,4,""""" Generate a sequence given a complex algebraic rule (E)",Generate a sequence given a complex algebraic rule (E)
+1133,1134,Year 9,Summer,,1,1,""""" Substitute into quadratic expressions",Substitute into quadratic expressions
+1134,1135,Year 9,Summer,,1,2,""""" Draw simple quadratic graphs",Draw simple quadratic graphs
+1135,1136,Year 9,Summer,,1,3,""""" Draw more complex quadratic graphs",Draw more complex quadratic graphs
+1136,1137,Year 9,Summer,,1,4,""""" Interpret quadratic graphs",Interpret quadratic graphs
+1137,1138,Year 9,Summer,,1,5,""""" Interpret reciprocal​ and exponential graphs​",Interpret reciprocal​ and exponential graphs​
+1138,1139,Year 9,Summer,,1,6,""""" Draw cubic graphs (E)",Draw cubic graphs (E)
+1139,1140,Year 9,Summer,,1,7,""""" Interpret cubic graphs (E)",Interpret cubic graphs (E)
+1140,1141,Year 9,Summer,,1,8,""""" Interpret roots, intercepts and turning points (E)","Interpret roots, intercepts and turning points (E)"
+1148,1149,Year 9,Summer,,2,1,""""" Identify and represent sets",Identify and represent sets
+1149,1150,Year 9,Summer,,2,2,""""" Intersection of a set",Intersection of a set
+1150,1151,Year 9,Summer,,2,3,""""" Union of a set",Union of a set
+1151,1152,Year 9,Summer,,2,4,""""" Complement of a set (E)",Complement of a set (E)
+1152,1153,Year 9,Summer,,2,5,""""" Probability of a single event ​",Probability of a single event ​
+1153,1154,Year 9,Summer,,2,6,""""" Use diagrams to work out probabilities",Use diagrams to work out probabilities
+1154,1155,Year 9,Summer,,2,7,""""" Relative frequency",Relative frequency
+1155,1156,Year 9,Summer,,2,8,""""" Expected outcomes",Expected outcomes
+1156,1157,Year 9,Summer,,2,9,""""" Independent events",Independent events
+1157,1158,Year 9,Summer,,2,10,"""""0 Probabilities from Venn diagrams",Probabilities from Venn diagrams
+1158,1159,Year 9,Summer,,3,1,""""" Enlargement (positive scale factor)",Enlargement (positive scale factor)
+1159,1160,Year 9,Summer,,3,2,""""" Enlargement from a point (positive scale factor)",Enlargement from a point (positive scale factor)
+1160,1161,Year 9,Summer,,3,3,""""" Enlargement (fractional scale factor)",Enlargement (fractional scale factor)
+1161,1162,Year 9,Summer,,3,4,""""" Enlargement (negative scale factor) (E)",Enlargement (negative scale factor) (E)
+1162,1163,Year 9,Summer,,3,5,""""" Describe an enlargement",Describe an enlargement
+1163,1164,Year 9,Summer,,3,6,""""" Rotation about a point",Rotation about a point
+1164,1165,Year 9,Summer,,3,7,""""" Describe a rotation",Describe a rotation
+1165,1166,Year 9,Summer,,3,8,""""" Translation",Translation
+1166,1167,Year 9,Summer,,3,9,""""" Describe a translation",Describe a translation
+1167,1168,Year 9,Summer,,3,10,"""""0 Reflection",Reflection
+1168,1169,Year 9,Summer,,3,11,"""""1 Find the result of a series of transformations (E)",Find the result of a series of transformations (E)
+1169,1170,Year 9,Summer,,4,1,""""" Use one value to find another",Use one value to find another
+1170,1171,Year 9,Summer,,4,2,""""" Introduction to simultaneous equations",Introduction to simultaneous equations
+1171,1172,Year 9,Summer,,4,3,""""" Solve simultaneous equations​ using graphs",Solve simultaneous equations​ using graphs
+1172,1173,Year 9,Summer,,4,4,""""" Solve simultaneous equations (no adjustments)",Solve simultaneous equations (no adjustments)
+1173,1174,Year 9,Summer,,4,5,""""" Manipulating equations",Manipulating equations
+1174,1175,Year 9,Summer,,4,6,""""" Solve simultaneous equations (adjust one)",Solve simultaneous equations (adjust one)
+1175,1176,Year 9,Summer,,4,7,""""" Solve simultaneous equations (adjust both) (E)",Solve simultaneous equations (adjust both) (E)
+1176,1177,Year 9,Summer,,4,8,""""" Solve simultaneous equations by substitution (E)",Solve simultaneous equations by substitution (E)
+1386,1387,Year 10,Summer,Foundation,1,1,""""" Identify hypotenuse, opposite and adjacent sides​","Identify hypotenuse, opposite and adjacent sides​"
+1387,1388,Year 10,Summer,Foundation,1,2,""""" Use the tangent ratio to find unknown side lengths​",Use the tangent ratio to find unknown side lengths​
+1388,1389,Year 10,Summer,Foundation,1,3,""""" Use sine and cosine ratios to find unknown side lengths​",Use sine and cosine ratios to find unknown side lengths​
+1389,1390,Year 10,Summer,Foundation,1,4,""""" Use sine, cosine and tangent ratios to find unknown angles​","Use sine, cosine and tangent ratios to find unknown angles​"
+1390,1391,Year 10,Summer,Foundation,1,5,""""" Choose the right method",Choose the right method
+1391,1392,Year 10,Summer,Foundation,1,6,""""" Key angles in right-angled triangles (E)​",Key angles in right-angled triangles (E)​
+1392,1393,Year 10,Summer,Foundation,1,7,""""" Trigonometry in 3-D shapes (E)​",Trigonometry in 3-D shapes (E)​
+1393,1394,Year 10,Summer,Foundation,2,1,""""" Angles around a point, on a straight line and vertically opposite","Angles around a point, on a straight line and vertically opposite"
+1394,1395,Year 10,Summer,Foundation,2,2,""""" Angles in a triangle",Angles in a triangle
+1395,1396,Year 10,Summer,Foundation,2,3,""""" Angles in a quadrilateral",Angles in a quadrilateral
+1396,1397,Year 10,Summer,Foundation,2,4,""""" Exterior angles of a polygon",Exterior angles of a polygon
+1397,1398,Year 10,Summer,Foundation,2,5,""""" Interior angles of a polygon",Interior angles of a polygon
+1398,1399,Year 10,Summer,Foundation,2,6,""""" Solve problems with angles in polygons​ (E)",Solve problems with angles in polygons​ (E)
+1399,1400,Year 10,Summer,Foundation,2,7,""""" Alternate and corresponding angles​",Alternate and corresponding angles​
+1400,1401,Year 10,Summer,Foundation,2,8,""""" Alternate, corresponding and co-interior angles","Alternate, corresponding and co-interior angles"
+1401,1402,Year 10,Summer,Foundation,2,9,""""" Prove geometric facts (E)",Prove geometric facts (E)
+1402,1403,Year 10,Summer,Foundation,3,1,""""" Pictograms",Pictograms
+1403,1404,Year 10,Summer,Foundation,3,2,""""" Line and bar charts",Line and bar charts
+1404,1405,Year 10,Summer,Foundation,3,3,""""" Dual and composite bar charts",Dual and composite bar charts
+1405,1406,Year 10,Summer,Foundation,3,4,""""" Draw pie charts",Draw pie charts
+1406,1407,Year 10,Summer,Foundation,3,5,""""" Interpret pie charts",Interpret pie charts
+1407,1408,Year 10,Summer,Foundation,3,6,""""" Time series graphs",Time series graphs
+1408,1409,Year 10,Summer,Foundation,3,7,""""" Frequency polygons",Frequency polygons
+1409,1410,Year 10,Summer,Foundation,3,8,""""" Stem-and-leaf diagrams",Stem-and-leaf diagrams
+1410,1411,Year 10,Summer,Foundation,4,1,""""" Understand and represent vectors",Understand and represent vectors
+1411,1412,Year 10,Summer,Foundation,4,2,""""" Vector notation",Vector notation
+1412,1413,Year 10,Summer,Foundation,4,3,""""" Translate by a vector",Translate by a vector
+1413,1414,Year 10,Summer,Foundation,4,4,""""" Vectors multiplied by a scalar",Vectors multiplied by a scalar
+1414,1415,Year 10,Summer,Foundation,4,5,""""" Add vectors",Add vectors
+1415,1416,Year 10,Summer,Foundation,4,6,""""" Add and subtract vectors",Add and subtract vectors
+1416,1417,Year 10,Summer,Foundation,4,7,""""" Solve problems with vectors (E)",Solve problems with vectors (E)
+1417,1418,Year 10,Summer,Foundation,5,1,""""" Factors, multiples and primes","Factors, multiples and primes"
+1418,1419,Year 10,Summer,Foundation,5,2,""""" Prime factorisation",Prime factorisation
+1419,1420,Year 10,Summer,Foundation,5,3,""""" HCF and LCM",HCF and LCM
+1420,1421,Year 10,Summer,Foundation,5,4,""""" Square and cube numbers",Square and cube numbers
+1421,1422,Year 10,Summer,Foundation,5,5,""""" Powers and roots",Powers and roots
+1422,1423,Year 10,Summer,Foundation,5,6,""""" Negative indices",Negative indices
+1423,1424,Year 10,Summer,Foundation,5,7,""""" Irrational numbers and surds",Irrational numbers and surds
+1424,1425,Year 10,Summer,Foundation,5,8,""""" Simplify expressions with surds (E)",Simplify expressions with surds (E)
+1425,1426,Year 10,Summer,Foundation,5,9,""""" Expand brackets with surds (E)",Expand brackets with surds (E)
+1426,1427,Year 10,Summer,Foundation,6,1,""""" Pythagoras’ theorem (find the hypotenuse)",Pythagoras’ theorem (find the hypotenuse)
+1427,1428,Year 10,Summer,Foundation,6,2,""""" Pythagoras’ theorem (find any side)​",Pythagoras’ theorem (find any side)​
+1428,1429,Year 10,Summer,Foundation,6,3,""""" Identify hypotenuse, opposite and adjacent sides​","Identify hypotenuse, opposite and adjacent sides​"
+1429,1430,Year 10,Summer,Foundation,6,4,""""" Ratios in right-angled triangles",Ratios in right-angled triangles
+1430,1431,Year 10,Summer,Foundation,6,5,""""" Use the tangent ratio to find an unknown side length",Use the tangent ratio to find an unknown side length
+1431,1432,Year 10,Summer,Foundation,6,6,""""" Use the sine and cosine ratio to find an unknown side length",Use the sine and cosine ratio to find an unknown side length
+1432,1433,Year 10,Summer,Foundation,6,7,""""" Use trigonometric ratios to find an unknown side length",Use trigonometric ratios to find an unknown side length
+1433,1434,Year 10,Summer,Foundation,6,8,""""" Use trigonometric ratios to find an unknown angle",Use trigonometric ratios to find an unknown angle
+1434,1435,Year 10,Summer,Foundation,6,9,""""" Exact trigonometric values (E)",Exact trigonometric values (E)
+1435,1436,Year 10,Summer,Foundation,7,1,""""" Use one value to find another",Use one value to find another
+1436,1437,Year 10,Summer,Foundation,7,2,""""" Introduction to simultaneous equations",Introduction to simultaneous equations
+1437,1438,Year 10,Summer,Foundation,7,3,""""" Solve simultaneous equations​ using graphs",Solve simultaneous equations​ using graphs
+1438,1439,Year 10,Summer,Foundation,7,4,""""" Solve simultaneous equations (no adjustments)",Solve simultaneous equations (no adjustments)
+1439,1440,Year 10,Summer,Foundation,7,5,""""" Manipulating equations",Manipulating equations
+1440,1441,Year 10,Summer,Foundation,7,6,""""" Solve simultaneous equations (adjust one)",Solve simultaneous equations (adjust one)
+1441,1442,Year 10,Summer,Foundation,7,7,""""" Solve simultaneous equations (adjust both) (E)",Solve simultaneous equations (adjust both) (E)
+1442,1443,Year 10,Summer,Foundation,7,8,""""" Solve simultaneous equations by substitution (E)",Solve simultaneous equations by substitution (E)

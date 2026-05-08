@@ -734,7 +734,7 @@ class ImprovePickQAGUI:
 
         command_frame = ttk.LabelFrame(outer, text="QA Command Center", padding=8)
         command_frame.grid(row=4, column=0, sticky="ew", pady=(0, 4))
-        for col in range(5):
+        for col in range(7):
             command_frame.columnconfigure(col, weight=1)
 
         apply_delete_btn = ttk.Button(command_frame, text="Apply Delete Queue", command=self._command_apply_delete_queue)
@@ -755,7 +755,7 @@ class ImprovePickQAGUI:
 
         if SHOW_APPROVE_UPDATE_CONTROL:
             finalize_btn = ttk.Button(command_frame, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
-            finalize_btn.grid(row=0, column=3, sticky="w", pady=(0, 4))
+            finalize_btn.grid(row=0, column=3, sticky="w", padx=(0, 8), pady=(0, 4))
             self.command_buttons.append(finalize_btn)
             self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
 
@@ -788,7 +788,7 @@ class ImprovePickQAGUI:
             text="Publish QA Reference CSV",
             command=self._command_publish_qa_reference_csv,
         )
-        publish_qa_ref_btn.grid(row=2, column=2, sticky="w", padx=(0, 8))
+        publish_qa_ref_btn.grid(row=0, column=4, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(publish_qa_ref_btn)
         self._attach_tooltip(
             publish_qa_ref_btn,
@@ -811,7 +811,7 @@ class ImprovePickQAGUI:
             command=self._command_cancel_active_job,
             state=tk.DISABLED,
         )
-        self.cancel_job_btn.grid(row=2, column=0, sticky="w")
+        self.cancel_job_btn.grid(row=1, column=5, sticky="w", padx=(0, 8), pady=(0, 4))
         self._attach_tooltip(self.cancel_job_btn, "Requests cancellation of the currently running subprocess-backed QA command.")
 
         self.retry_job_btn = ttk.Button(
@@ -820,17 +820,17 @@ class ImprovePickQAGUI:
             command=self._command_retry_last_failed,
             state=tk.DISABLED,
         )
-        self.retry_job_btn.grid(row=2, column=1, sticky="w", padx=(0, 8))
+        self.retry_job_btn.grid(row=1, column=6, sticky="w", padx=(0, 8), pady=(0, 4))
         self._attach_tooltip(self.retry_job_btn, "Re-runs the last subprocess-backed QA command that ended in failure.")
 
         self.job_status_label = ttk.Label(command_frame, textvariable=self.job_state_var, foreground="#1f4d7a")
-        self.job_status_label.grid(row=3, column=0, columnspan=5, sticky="w", pady=(4, 0))
+        self.job_status_label.grid(row=2, column=0, columnspan=7, sticky="w", pady=(4, 0))
 
         self.job_step_label = ttk.Label(command_frame, textvariable=self.job_step_var, foreground="#444444")
-        self.job_step_label.grid(row=4, column=0, columnspan=5, sticky="w")
+        self.job_step_label.grid(row=3, column=0, columnspan=7, sticky="w")
 
         self.job_error_label = ttk.Label(command_frame, textvariable=self.job_error_var, foreground="#aa2c2c")
-        self.job_error_label.grid(row=5, column=0, columnspan=5, sticky="w")
+        self.job_error_label.grid(row=4, column=0, columnspan=7, sticky="w")
 
         notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=6)
         notes_frame.grid(row=5, column=0, sticky="ew", pady=(0, 4))
@@ -2732,7 +2732,6 @@ class ImprovePickQAGUI:
 
         labels: list[str] = []
         for small_step_id in visible_step_ids:
-            row = self.curriculum_by_id.get(small_step_id, {})
             if small_step_id in self.dup_flagged_steps:
                 marker = "✗"
             elif small_step_id in self.promoted_step_ids:
@@ -2741,7 +2740,7 @@ class ImprovePickQAGUI:
                 marker = "✓"
             else:
                 marker = "•"
-            label = f"{marker} {small_step_id} | {clean_text(row.get('topic'))} | {clean_text(row.get('small_step_name'))}"
+            label = f"{marker} {small_step_id}"
             self.step_labels_by_id[small_step_id] = label
             self.step_label_to_id[label] = small_step_id
             labels.append(label)

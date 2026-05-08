@@ -441593,3 +441593,21 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-06T12:19:12] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Decimals and percentages_14_Percentages as decimals
 [2026-05-06T13:09:46] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Decimals and percentages_15_Equivalent fractions, decimals and percentages
 [2026-05-08T09:40:07] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Perimeter of rectangles_3_Area of rectangles
+[2026-05-08T16:08:00] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Perimeter and area_2_Perimeter of rectilinear shapes
+[2026-05-08T16:12:42] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Perimeter and area_5_Area of compound shapes
+[2026-05-08T16:19:40] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Statistics_2_Read and interpret line graphs
+[2026-05-08T16:25:43] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Statistics_3_Read and interpret tables
+[2026-05-08T16:35:54] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Statistics_4_Two-way tables
+[2026-05-08T16:42:06] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Shape_1_Understand and use degrees
+[2026-05-08T16:50:44] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Shape_2_Classify angles
+[2026-05-08T16:56:27] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Shape_5_Draw lines and angles accurately
+[2026-05-08T16:57:05] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Shape_5_Draw lines and angles accurately
+[2026-05-08T17:13:28] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Shape_8_Lengths and angles in shapes
+[2026-05-08T17:20:01] QA REFERENCE PUBLISHED rows=5564 steps=327 wildcards=36 manual=297 skipped=1
+[2026-05-08T18:10:50] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Shape_9_Regular and irregular polygons
+[2026-05-08T18:15:46] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Shape_10_3-D shapes
+[2026-05-08T18:23:00] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Position and direction_1_Read and plot coordinates
+[2026-05-08T18:26:33] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Position and direction_2_Problem solving with coordinates
+[2026-05-08T18:27:03] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Position and direction_2_Problem solving with coordinates
+[2026-05-08T18:30:12] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Position and direction_3_Translation
+[2026-05-08T18:52:34] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Position and direction_6_Reflection in horizontal and vertical lines

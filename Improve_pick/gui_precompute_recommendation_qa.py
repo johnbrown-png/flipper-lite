@@ -50,7 +50,7 @@ from shared.pick_engine import (
 )
 
 
-CURRICULUM_PATH = project_root / "Curriculum" / "Maths" / "curriculum_22032026_small_steps.csv"
+CURRICULUM_PATH = project_root / "Curriculum" / "Maths" / "curriculum_08052026_small_steps.csv"
 TARGET_OVERRIDES_PATH = project_root / "qa" / "targeted_ss_wr_desc_overrides.csv"
 APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates.csv"
 CANONICAL_OVERRIDE_PATH = project_root / "qa" / "ss_desc_validated_overrides.csv"

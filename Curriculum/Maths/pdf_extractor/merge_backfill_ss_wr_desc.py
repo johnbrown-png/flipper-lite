@@ -660,7 +660,7 @@ def merge_backfill(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Merge extracted ss_wr_desc backfill into canonical curriculum")
-    parser.add_argument("--canonical", required=True, help="Path to canonical curriculum_22032026_small_steps.csv")
+    parser.add_argument("--canonical", required=True, help="Path to canonical curriculum_08052026_small_steps.csv")
     parser.add_argument("--backfill", required=True, help="Path to extracted flat backfill CSV")
     parser.add_argument("--preview", required=True, help="Path to write update preview CSV")
     parser.add_argument("--manual-review", required=True, help="Path to write manual review queue CSV")

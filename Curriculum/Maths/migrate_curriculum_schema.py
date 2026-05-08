@@ -52,7 +52,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Add additive migration columns for curriculum compatibility')
     parser.add_argument(
         '--curriculum',
-        default='Curriculum/Maths/curriculum_22032026.csv',
+        default='Curriculum/Maths/curriculum_08052026_small_steps.csv',
         help='Path to the legacy or current curriculum CSV',
     )
     parser.add_argument(
@@ -62,7 +62,7 @@ def main() -> None:
     )
     parser.add_argument(
         '--long-output',
-        default='Curriculum/Maths/curriculum_22032026_small_steps.csv',
+        default='Curriculum/Maths/curriculum_08052026_small_steps.csv',
         help='Path for the one-row-per-small-step curriculum CSV',
     )
     args = parser.parse_args()

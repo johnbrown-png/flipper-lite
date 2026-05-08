@@ -242,7 +242,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Run targeted QA experiments for selected curriculum steps')
     parser.add_argument(
         '--curriculum',
-        default=str(project_root / 'Curriculum' / 'Maths' / 'curriculum_22032026_small_steps.csv'),
+        default=str(project_root / 'Curriculum' / 'Maths' / 'curriculum_08052026_small_steps.csv'),
         help='Path to long curriculum CSV or legacy curriculum CSV',
     )
     parser.add_argument(

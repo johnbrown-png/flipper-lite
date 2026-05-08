@@ -630,7 +630,7 @@ def main():
     # Note: video_inventory.csv no longer needed - channel & duration now in precomputed_recommendations.csv
     
     # Initialize curriculum assistant (uses same dropdown UI as flipper.py)
-    curriculum_path = project_root / "Curriculum" / "Maths" / "curriculum_22032026.csv"
+    curriculum_path = project_root / "Curriculum" / "Maths" / "curriculum_08052026_small_steps.csv"
     curriculum_assistant = None
     if curriculum_path.exists():
         curriculum_assistant = CurriculumAssistant(str(curriculum_path))

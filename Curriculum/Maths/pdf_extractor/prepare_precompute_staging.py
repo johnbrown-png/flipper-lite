@@ -29,7 +29,7 @@ sys.path.insert(0, str(WORKSPACE_ROOT))
 
 from shared.curriculum_schema import curriculum_to_long_df  # noqa: E402
 
-CANONICAL_CSV = WORKSPACE_ROOT / "Curriculum" / "Maths" / "curriculum_22032026_small_steps.csv"
+CANONICAL_CSV = WORKSPACE_ROOT / "Curriculum" / "Maths" / "curriculum_08052026_small_steps.csv"
 EXISTING_FLAT_CSV = WORKSPACE_ROOT / "precomputed_recommendations_flat.csv"
 STAGING_CSV = Path(__file__).parent / "curriculum_newdesc_staging.csv"
 

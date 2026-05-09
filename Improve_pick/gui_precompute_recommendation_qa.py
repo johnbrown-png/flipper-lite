@@ -475,8 +475,7 @@ class ImprovePickQAGUI:
         self.stage4_final_open_buttons: list[ttk.Button] = []
         self.command_buttons: list[ttk.Button] = []
         self.command_tooltips: list[ToolTip] = []
-        self.cancel_job_btn: ttk.Button | None = None
-        self.retry_job_btn: ttk.Button | None = None
+
         self.job_status_label: ttk.Label | None = None
         self.job_step_label: ttk.Label | None = None
         self.job_error_label: ttk.Label | None = None
@@ -734,103 +733,89 @@ class ImprovePickQAGUI:
 
         command_frame = ttk.LabelFrame(outer, text="QA Command Center", padding=8)
         command_frame.grid(row=4, column=0, sticky="ew", pady=(0, 4))
-        for col in range(7):
+        for col in range(9):
             command_frame.columnconfigure(col, weight=1)
 
+        btn_col = 0
         apply_delete_btn = ttk.Button(command_frame, text="Apply Delete Queue", command=self._command_apply_delete_queue)
-        apply_delete_btn.grid(row=0, column=0, sticky="w", padx=(0, 8), pady=(0, 4))
+        apply_delete_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(apply_delete_btn)
         self._attach_tooltip(apply_delete_btn, "Runs delete_content.py on videos_to_delete.csv in soft-delete mode only. Local files and metadata are removed immediately, but this button does not perform the full FAISS rebuild.")
+        btn_col += 1
 
         if SHOW_FULL_REBUILD_CONTROL:
             full_rebuild_btn = ttk.Button(command_frame, text="Full Rebuild FAISS", command=self._command_full_rebuild_faiss)
-            full_rebuild_btn.grid(row=0, column=1, sticky="w", padx=(0, 8), pady=(0, 4))
+            full_rebuild_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
             self.command_buttons.append(full_rebuild_btn)
             self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. Use this when you want to physically purge deleted vectors and fully realign FAISS with current local assets.")
+            btn_col += 1
 
         sync_btn = ttk.Button(command_frame, text="Sync New Downloads", command=self._command_sync_new_downloads)
-        sync_btn.grid(row=0, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
+        sync_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(sync_btn)
         self._attach_tooltip(sync_btn, "Runs the incremental chunk/embed/index pipeline so newly downloaded material becomes searchable without a full rebuild.")
+        btn_col += 1
 
         if SHOW_APPROVE_UPDATE_CONTROL:
             finalize_btn = ttk.Button(command_frame, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
-            finalize_btn.grid(row=0, column=3, sticky="w", padx=(0, 8), pady=(0, 4))
+            finalize_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
             self.command_buttons.append(finalize_btn)
             self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
+            btn_col += 1
 
         cand_override_btn = ttk.Button(
             command_frame,
             text="Apply Cand MR",
             command=self._command_apply_manual_override,
         )
-        cand_override_btn.grid(row=1, column=0, sticky="w", padx=(0, 8), pady=(0, 4))
+        cand_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(cand_override_btn)
         self._attach_tooltip(cand_override_btn, "Uses Candidate panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
+        btn_col += 1
 
         curr_override_btn = ttk.Button(
             command_frame,
             text="Apply Curr MR",
             command=self._command_apply_precomputed_manual_override,
         )
-        curr_override_btn.grid(row=1, column=1, sticky="w", padx=(0, 8), pady=(0, 4))
+        curr_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(curr_override_btn)
         self._attach_tooltip(curr_override_btn, "Uses Precomputed panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
+        btn_col += 1
 
         if SHOW_CLEAR_OVERRIDE_CONTROL:
             clear_override_btn = ttk.Button(command_frame, text="Clear Override", command=self._command_clear_manual_override)
-            clear_override_btn.grid(row=1, column=2, sticky="w", padx=(0, 8), pady=(0, 4))
+            clear_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
             self.command_buttons.append(clear_override_btn)
             self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
+            btn_col += 1
 
         publish_qa_ref_btn = ttk.Button(
             command_frame,
             text="Publish QA Reference CSV",
             command=self._command_publish_qa_reference_csv,
         )
-        publish_qa_ref_btn.grid(row=0, column=4, sticky="w", padx=(0, 8), pady=(0, 4))
+        publish_qa_ref_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
         self.command_buttons.append(publish_qa_ref_btn)
         self._attach_tooltip(
             publish_qa_ref_btn,
             "Publishes precomputed_recommendations_flat_qa.csv from precomputed + manual overrides + wildcards. Atomic write; flipper_lite reads this file.",
         )
+        btn_col += 1
 
-        health_btn = ttk.Button(command_frame, text="Health Check", command=self._command_health_check)
-        health_btn.grid(row=1, column=3, sticky="w", padx=(0, 8), pady=(0, 4))
-        self.command_buttons.append(health_btn)
-        self._attach_tooltip(health_btn, "Checks whether the key QA files and FAISS assets exist and whether retrieval assets are loaded in this GUI session.")
-
-        open_log_btn = ttk.Button(command_frame, text="Open Log", command=self._command_open_log)
-        open_log_btn.grid(row=1, column=4, sticky="w", pady=(0, 4))
-        self.command_buttons.append(open_log_btn)
-        self._attach_tooltip(open_log_btn, "Opens the QA command log file that records command starts, completions, failures, cancels, and health checks.")
-
-        self.cancel_job_btn = ttk.Button(
-            command_frame,
-            text="Cancel Active Job",
-            command=self._command_cancel_active_job,
-            state=tk.DISABLED,
-        )
-        self.cancel_job_btn.grid(row=1, column=5, sticky="w", padx=(0, 8), pady=(0, 4))
-        self._attach_tooltip(self.cancel_job_btn, "Requests cancellation of the currently running subprocess-backed QA command.")
-
-        self.retry_job_btn = ttk.Button(
-            command_frame,
-            text="Retry Last Failed Job",
-            command=self._command_retry_last_failed,
-            state=tk.DISABLED,
-        )
-        self.retry_job_btn.grid(row=1, column=6, sticky="w", padx=(0, 8), pady=(0, 4))
-        self._attach_tooltip(self.retry_job_btn, "Re-runs the last subprocess-backed QA command that ended in failure.")
+        set_precomp_ratings_btn = ttk.Button(command_frame, text="Set All Precomp Rt to 10", command=self._command_set_all_precomputed_ratings_to_10)
+        set_precomp_ratings_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+        self.command_buttons.append(set_precomp_ratings_btn)
+        self._attach_tooltip(set_precomp_ratings_btn, "Sets all Rt (rating) values in the Precomputed (current) picks panel to 10.")
 
         self.job_status_label = ttk.Label(command_frame, textvariable=self.job_state_var, foreground="#1f4d7a")
-        self.job_status_label.grid(row=2, column=0, columnspan=7, sticky="w", pady=(4, 0))
+        self.job_status_label.grid(row=1, column=0, columnspan=9, sticky="w", pady=(4, 0))
 
         self.job_step_label = ttk.Label(command_frame, textvariable=self.job_step_var, foreground="#444444")
-        self.job_step_label.grid(row=3, column=0, columnspan=7, sticky="w")
+        self.job_step_label.grid(row=2, column=0, columnspan=9, sticky="w")
 
         self.job_error_label = ttk.Label(command_frame, textvariable=self.job_error_var, foreground="#aa2c2c")
-        self.job_error_label.grid(row=4, column=0, columnspan=7, sticky="w")
+        self.job_error_label.grid(row=3, column=0, columnspan=9, sticky="w")
 
         notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=6)
         notes_frame.grid(row=5, column=0, sticky="ew", pady=(0, 4))
@@ -901,15 +886,15 @@ class ImprovePickQAGUI:
             row_num = i + 1
             ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
 
-            p_title = ttk.Label(precomp_frame, text="", width=58)
+            p_title = ttk.Label(precomp_frame, text="", width=66)
             p_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
             self.precomputed_title_labels.append(p_title)
 
-            p_channel = ttk.Label(precomp_frame, text="", width=12)
+            p_channel = ttk.Label(precomp_frame, text="", width=5)
             p_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
             self.precomputed_channel_labels.append(p_channel)
 
-            p_score = ttk.Label(precomp_frame, text="", width=6)
+            p_score = ttk.Label(precomp_frame, text="", width=5)
             p_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.precomputed_score_labels.append(p_score)
 
@@ -921,12 +906,12 @@ class ImprovePickQAGUI:
                 *[str(rank_option) for rank_option in range(1, TOP_K + 1)],
                 command=lambda _v, idx=i: self._on_precomputed_rank_change(idx),
             )
-            p_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
+            p_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=2, pady=2)
             p_rank_menu.config(width=2)
             self.precomputed_rank_dropdowns.append(p_rank_menu)
 
             p_open = ttk.Button(precomp_frame, text="O", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
-            p_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
+            p_open.grid(row=row_num + 1, column=5, sticky="w", padx=2, pady=2)
             self.precomputed_open_buttons.append(p_open)
 
             p_delete = ttk.Button(
@@ -935,7 +920,7 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._append_result_to_videos_to_delete("current", idx),
                 state=tk.DISABLED,
             )
-            p_delete.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=2)
+            p_delete.grid(row=row_num + 1, column=6, sticky="w", padx=2, pady=2)
             self.precomputed_delete_buttons.append(p_delete)
 
             p_knockout = ttk.Button(
@@ -944,13 +929,13 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._toggle_precomputed_knockout(idx),
                 state=tk.DISABLED,
             )
-            p_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=4, pady=2)
+            p_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=2, pady=2)
             self.precomputed_knockout_buttons.append(p_knockout)
 
             p_rating_var = tk.StringVar(value="5")
             self.precomputed_rating_vars.append(p_rating_var)
             p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
-            p_menu.grid(row=row_num + 1, column=8, sticky="w", padx=4, pady=2)
+            p_menu.grid(row=row_num + 1, column=8, sticky="w", padx=2, pady=2)
             p_menu.config(width=2)
             self.precomputed_rating_dropdowns.append(p_menu)
             self._apply_precomputed_rating_color(i)
@@ -960,15 +945,15 @@ class ImprovePickQAGUI:
             row_num = i + 1
             ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
 
-            c_title = ttk.Label(candidate_results_frame, text="", width=58)
+            c_title = ttk.Label(candidate_results_frame, text="", width=66)
             c_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
             self.result_title_labels.append(c_title)
 
-            c_channel = ttk.Label(candidate_results_frame, text="", width=12)
+            c_channel = ttk.Label(candidate_results_frame, text="", width=5)
             c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
             self.result_channel_labels.append(c_channel)
 
-            c_score = ttk.Label(candidate_results_frame, text="", width=6)
+            c_score = ttk.Label(candidate_results_frame, text="", width=5)
             c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.result_score_labels.append(c_score)
 
@@ -980,12 +965,12 @@ class ImprovePickQAGUI:
                 *[str(rank_option) for rank_option in range(1, CANDIDATE_DISPLAY_K + 1)],
                 command=lambda _v, idx=i: self._on_candidate_rank_change(idx),
             )
-            c_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
+            c_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=2, pady=2)
             c_rank_menu.config(width=2)
             self.candidate_rank_dropdowns.append(c_rank_menu)
 
             c_open = ttk.Button(candidate_results_frame, text="O", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
-            c_open.grid(row=row_num + 1, column=5, sticky="w", padx=4, pady=2)
+            c_open.grid(row=row_num + 1, column=5, sticky="w", padx=2, pady=2)
             self.result_open_buttons.append(c_open)
 
             c_delete = ttk.Button(
@@ -994,7 +979,7 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._append_result_to_videos_to_delete("candidate", idx),
                 state=tk.DISABLED,
             )
-            c_delete.grid(row=row_num + 1, column=6, sticky="w", padx=4, pady=2)
+            c_delete.grid(row=row_num + 1, column=6, sticky="w", padx=2, pady=2)
             self.candidate_delete_buttons.append(c_delete)
 
             c_knockout = ttk.Button(
@@ -1003,14 +988,14 @@ class ImprovePickQAGUI:
                 command=lambda idx=i: self._toggle_candidate_knockout(idx),
                 state=tk.DISABLED,
             )
-            c_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=4, pady=2)
+            c_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=2, pady=2)
             self.candidate_knockout_buttons.append(c_knockout)
 
             c_rating_var = tk.StringVar(value="5")
             self.rating_vars.append(c_rating_var)
             # tk.OptionMenu allows per-widget background color updates.
             c_menu = tk.OptionMenu(candidate_results_frame, c_rating_var, *rating_options, command=lambda _v, idx=i: self._on_rating_change(idx))
-            c_menu.grid(row=row_num + 1, column=8, sticky="w", padx=4, pady=2)
+            c_menu.grid(row=row_num + 1, column=8, sticky="w", padx=2, pady=2)
             c_menu.config(width=2)
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
@@ -1364,12 +1349,6 @@ class ImprovePickQAGUI:
         running = self.active_job_state == JOB_STATE_RUNNING
         for btn in self.command_buttons:
             btn.config(state=tk.DISABLED if running else tk.NORMAL)
-        if self.cancel_job_btn is not None:
-            self.cancel_job_btn.config(state=tk.NORMAL if running else tk.DISABLED)
-        if self.retry_job_btn is not None:
-            self.retry_job_btn.config(
-                state=tk.NORMAL if (not running and self.last_failed_subprocess_spec is not None) else tk.DISABLED
-            )
 
     def _start_subprocess_job(self, job_name: str, command: list[str], reload_assets: bool) -> None:
         if self.active_job_state == JOB_STATE_RUNNING:
@@ -2028,56 +2007,12 @@ class ImprovePickQAGUI:
         self._populate_precomputed(small_step_id)
         self._refresh_dup_review_state()
 
-    def _command_cancel_active_job(self) -> None:
-        if self.active_job_state != JOB_STATE_RUNNING:
-            return
-        self.cancel_requested = True
-        self.job_step_var.set("Current step status: cancellation requested")
-        self._append_command_log(f"CANCEL REQUESTED for {self.active_job_name}")
-
-    def _command_retry_last_failed(self) -> None:
-        if self.active_job_state == JOB_STATE_RUNNING:
-            return
-        if self.last_failed_subprocess_spec is None:
-            messagebox.showinfo("Retry", "No failed subprocess command to retry.")
-            return
-        job_name, command, reload_assets = self.last_failed_subprocess_spec
-        self._start_subprocess_job(job_name, command, reload_assets)
-
-    def _command_health_check(self) -> None:
-        checks: list[str] = []
-        checks.append(f"qa.csv: {'ok' if QA_TRACKING_PATH.exists() else 'missing'}")
-        checks.append(f"videos_to_delete.csv: {'ok' if VIDEOS_TO_DELETE_PATH.exists() else 'missing'}")
-        checks.append(f"manual_precomputed_overrides.csv: {'ok' if MANUAL_PRECOMP_OVERRIDE_PATH.exists() else 'missing'}")
-        checks.append(f"wildcards.csv: {'ok' if WILDCARD_OVERRIDE_PATH.exists() else 'missing'}")
-        checks.append(f"precomputed_recommendations_flat_qa.csv: {'ok' if QA_REFERENCE_OUTPUT_PATH.exists() else 'missing'}")
-        checks.append(f"step_video_knockouts.csv: {'ok' if STEP_KNOCKOUT_PATH.exists() else 'missing'}")
-
-        faiss_bin = project_root / "data" / "faiss_index" / "faiss_index.bin"
-        faiss_meta = project_root / "data" / "faiss_index" / "faiss_index_metadata.json"
-        checks.append(f"faiss index: {'ok' if faiss_bin.exists() else 'missing'}")
-        checks.append(f"faiss metadata: {'ok' if faiss_meta.exists() else 'missing'}")
-        checks.append(f"retrieval assets loaded: {'yes' if (self.index is not None and self.embedder is not None) else 'no'}")
-
-        pending_delete_count = 0
-        if VIDEOS_TO_DELETE_PATH.exists():
-            try:
-                delete_df = pd.read_csv(VIDEOS_TO_DELETE_PATH)
-                pending_delete_count = len(delete_df)
-            except Exception:
-                pending_delete_count = 0
-        checks.append(f"delete queue rows: {pending_delete_count}")
-
-        message = "\n".join(checks)
-        self.status_var.set("Health check complete")
-        self._append_command_log(f"HEALTH CHECK\n{message}")
-        messagebox.showinfo("QA Health Check", message)
-
-    def _command_open_log(self) -> None:
-        QA_COMMAND_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        if not QA_COMMAND_LOG_PATH.exists():
-            QA_COMMAND_LOG_PATH.write_text("", encoding="utf-8")
-        webbrowser.open(str(QA_COMMAND_LOG_PATH))
+    def _command_set_all_precomputed_ratings_to_10(self) -> None:
+        """Sets all Rt (rating) values in the Precomputed picks panel to 10."""
+        for i in range(len(self.precomputed_rating_vars)):
+            self.precomputed_rating_vars[i].set("10")
+            self._apply_precomputed_rating_color(i)
+        self.status_var.set("All precomputed ratings set to 10")
 
     def _set_candidate_panel_state(self, text: str) -> None:
         self.candidate_panel_state_var.set(text)

@@ -441611,3 +441611,28 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-08T18:27:03] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Position and direction_2_Problem solving with coordinates
 [2026-05-08T18:30:12] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Position and direction_3_Translation
 [2026-05-08T18:52:34] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Position and direction_6_Reflection in horizontal and vertical lines
+[2026-05-09T09:41:45] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Decimals_3_Add and subtract decimals across 1
+[2026-05-09T09:43:02] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Decimals_5_Subtract decimals with the same number of decimal places
+[2026-05-09T09:45:42] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Decimals_8_Efficient strategies for adding and subtracting decimals
+[2026-05-09T09:48:03] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Decimals_8_Efficient strategies for adding and subtracting decimals
+[2026-05-09T09:50:53] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Decimals_8_Efficient strategies for adding and subtracting decimals
+[2026-05-09T09:53:02] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Decimals_8_Efficient strategies for adding and subtracting decimals
+[2026-05-09T13:11:01] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Converting units_1_Kilograms and kilometres
+[2026-05-09T13:43:36] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Negative numbers_3_Count through zero in multiples
+[2026-05-09T13:44:23] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Negative numbers_4_Compare and order negative numbers
+[2026-05-09T14:25:01] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Place value_2_Numbers to 10,000,000
+[2026-05-09T14:36:06] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Place value_5_Number line to 10,000,000
+[2026-05-09T14:37:22] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Place value_6_Compare and order any integers
+[2026-05-09T14:38:13] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Place value_7_Round any integer
+[2026-05-09T14:40:43] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_2_Common factors
+[2026-05-09T14:42:48] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_4_Rules of divisibility
+[2026-05-09T14:49:07] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_8_Solve problems with multiplication
+[2026-05-09T19:17:09] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_10_Division using factors
+[2026-05-09T19:18:06] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_11_Introduction to long division
+[2026-05-09T19:37:58] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_13_Solve problems with division
+[2026-05-09T19:38:29] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_13_Solve problems with division
+[2026-05-09T19:42:14] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_14_Solve multi-step problems
+[2026-05-09T19:50:45] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Fractions A_3_Compare and order (denominator)
+[2026-05-09T20:06:25] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Fractions A_5_Add and subtract simple fractions
+[2026-05-09T20:21:09] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Fractions B_2_Multiply fractions by fractions
+[2026-05-09T20:26:36] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Fractions B_6_Fraction of an amount

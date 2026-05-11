@@ -441636,3 +441636,66 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-09T20:06:25] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Fractions A_5_Add and subtract simple fractions
 [2026-05-09T20:21:09] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Fractions B_2_Multiply fractions by fractions
 [2026-05-09T20:26:36] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Fractions B_6_Fraction of an amount
+[2026-05-10T10:25:19] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Converting units_1_Metric measures
+[2026-05-10T10:33:12] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Converting units_4_Miles and kilometres
+[2026-05-10T10:38:39] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Converting units_5_Imperial measures
+[2026-05-10T10:41:58] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Converting units_5_Imperial measures
+[2026-05-10T20:56:30] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Ratio_2_Use ratio language
+[2026-05-10T21:11:03] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Ratio_8_Ratio problems
+[2026-05-11T08:07:16] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Algebra_4_Substitution
+[2026-05-11T08:13:59] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Algebra_5_Formulae
+[2026-05-11T08:14:16] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Algebra_5_Formulae
+[2026-05-11T09:01:02] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Algebra_6_Form equations
+[2026-05-11T09:03:32] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Algebra_8_Solve 2-step equations
+[2026-05-11T09:04:17] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Algebra_8_Solve 2-step equations
+[2026-05-11T09:06:00] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Algebra_9_Find pairs of values
+[2026-05-11T09:07:50] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Decimals_3_Round decimals
+[2026-05-11T09:08:49] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Decimals_4_Add and subtract decimals
+[2026-05-11T09:20:17] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Decimals_5_Multiply by 10, 100 and 1,000
+[2026-05-11T09:20:48] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Decimals_6_Divide by 10, 100 and 1,000
+[2026-05-11T09:22:22] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Decimals_7_Multiply decimals by integers
+[2026-05-11T09:22:59] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Decimals_8_Divide decimals by integers
+[2026-05-11T09:26:21] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Decimals_9_Multiply and divide decimals in context
+[2026-05-11T09:27:43] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Fractions decimals and percentages_1_Decimal and fraction equivalents
+[2026-05-11T09:28:42] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Fractions decimals and percentages_2_Fractions as division
+[2026-05-11T09:29:34] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Fractions decimals and percentages_3_Understand percentages
+[2026-05-11T09:29:57] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Fractions decimals and percentages_5_Equivalent fractions, decimals and percentages
+[2026-05-11T09:32:39] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Fractions decimals and percentages_8_Percentage of an amount – multi-step
+[2026-05-11T09:37:33] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Area perimeter and volume_5_Area of any triangle
+[2026-05-11T09:38:17] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Area perimeter and volume_6_Area of a parallelogram
+[2026-05-11T09:38:29] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Area perimeter and volume_6_Area of a parallelogram
+[2026-05-11T09:39:17] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Area perimeter and volume_7_Volume – counting cubes
+[2026-05-11T09:40:40] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Area perimeter and volume_8_Volume of a cuboid
+[2026-05-11T09:47:59] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Statistics_2_Dual bar charts
+[2026-05-11T09:52:19] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Statistics_6_The mean
+[2026-05-11T10:00:54] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_1_Measure and classify angles
+[2026-05-11T10:03:41] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_1_Measure and classify angles
+[2026-05-11T10:20:50] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_4_Angles in a triangle
+[2026-05-11T10:22:51] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_6_Angles in a triangle – missing angles
+[2026-05-11T10:27:53] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_7_Angles in a quadrilateral
+[2026-05-11T10:30:26] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_8_Angles in polygons
+[2026-05-11T10:30:47] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_8_Angles in polygons
+[2026-05-11T12:03:50] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_9_Circles
+[2026-05-11T12:26:45] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Position and direction_5_Reflections
+[2026-05-11T15:29:20] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Sequences_1_Describe and continue sequences
+[2026-05-11T15:30:26] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Sequences_1_Describe and continue sequences
+[2026-05-11T15:34:44] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Sequences_4_Continue linear sequences
+[2026-05-11T15:36:11] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Sequences_5_Continue non-linear sequences
+[2026-05-11T15:54:51] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Sequences_6_Term-to-term rules
+[2026-05-11T17:30:43] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Algebraic notation_4_Substitution (one step)
+[2026-05-11T17:30:51] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Algebraic notation_4_Substitution (one step)
+[2026-05-11T17:34:23] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Algebraic notation_5_2-step function machines (number)
+[2026-05-11T17:34:37] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Algebraic notation_5_2-step function machines (number)
+[2026-05-11T17:35:35] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Algebraic notation_6_2-step function machines (algebra)
+[2026-05-11T17:37:44] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Algebraic notation_8_Substitution (two step)
+[2026-05-11T17:52:52] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Expressions and equations_3_Like and unlike terms
+[2026-05-11T19:06:34] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Expressions and equations_5_Solve 1-step equations (+/–)
+[2026-05-11T19:18:35] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Four operations_4_Multiply by 0.1 and 0.01 E
+[2026-05-11T19:19:15] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Four operations_5_Multiply integers
+[2026-05-11T19:20:03] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Four operations_7_Multiply decimals
+[2026-05-11T19:20:51] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Four operations_8_Divide decimals by integers
+[2026-05-11T19:21:26] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Four operations_10_Order of operations
+[2026-05-11T19:21:46] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Averages and range_1_Mode
+[2026-05-11T19:22:11] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Averages and range_2_Mean
+[2026-05-11T19:23:54] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Averages and range_4_Range
+[2026-05-11T19:25:04] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Averages and range_5_Solve problems with averages and range

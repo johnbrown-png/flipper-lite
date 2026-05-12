@@ -441699,3 +441699,29 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-11T19:22:11] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Averages and range_2_Mean
 [2026-05-11T19:23:54] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Averages and range_4_Range
 [2026-05-11T19:25:04] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Averages and range_5_Solve problems with averages and range
+[2026-05-12T09:12:29] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Rounding and estimation_5_Understand and use error interval notation E
+[2026-05-12T09:34:39] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Graphing data_5_Coordinates in the first quadrant
+[2026-05-12T09:35:08] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Graphing data_5_Coordinates in the first quadrant
+[2026-05-12T10:28:02] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Graphing data_7_Correlation
+[2026-05-12T10:36:21] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Graphing data_8_Lines of best fit
+[2026-05-12T10:37:11] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Graphing data_8_Lines of best fit
+[2026-05-12T12:10:22] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Fractions decimals and percentages_2_Number lines with fractions and decimals
+[2026-05-12T14:35:42] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Fractions decimals and percentages_3_Tenths, hundredths, fifths and quarters
+[2026-05-12T14:40:57] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Fractions decimals and percentages_10_Compare and order fractions
+[2026-05-12T14:48:34] MANUAL OVERRIDE applied for Year 5_9-10_Autumn__Fractions A_8_Compare and order fractions greater than 1
+[2026-05-12T14:55:49] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Multiplication and division B_5_Multiply a 4-digit number by a 2-digit number
+[2026-05-12T14:57:22] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Multiplication and division B_7_Short division
+[2026-05-12T15:00:47] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Fractions B_3_Multiply a mixed number by an integer
+[2026-05-12T15:05:31] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Fractions B_7_Use fractions as operators
+[2026-05-12T15:09:52] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_9_Short division
+[2026-05-12T15:10:18] MANUAL OVERRIDE applied for Year 6_10-11_Autumn__Addition subtraction multiplication and division_9_Short division
+[2026-05-12T15:13:01] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Rounding and estimation_3_Estimate answers to calculations
+[2026-05-12T15:13:17] MANUAL OVERRIDE applied for Year 7_11-12_Autumn__Rounding and estimation_3_Estimate answers to calculations
+[2026-05-12T15:16:36] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Directed number_3_Calculations that cross zero
+[2026-05-12T15:22:14] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Directed number_6_Subtract directed numbers
+[2026-05-12T15:40:40] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Fractions and percentages of amounts_1_Fraction of an amount
+[2026-05-12T15:49:02] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Fractions and percentages of amounts_2_Use a fraction to find the whole
+[2026-05-12T15:51:28] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Fractions and percentages of amounts_6_Use a percentage to find the whole E
+[2026-05-12T15:51:42] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Fractions and percentages of amounts_6_Use a percentage to find the whole E
+[2026-05-12T15:53:36] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Convert metric units of length_1_Perimeter of a polygon
+[2026-05-12T15:54:04] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Convert metric units of length_2_Perimeter of a compound shape

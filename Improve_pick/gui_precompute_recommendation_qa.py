@@ -37,6 +37,10 @@ from query_embedder import QueryEmbedder
 from data_pipeline.deletion_tracker import DeletionTracker
 from data_pipeline.instruction_quality_scorer import InstructionQualityScorer
 from shared.curriculum_schema import curriculum_to_long_df
+from data_pipeline.chunker import TranscriptChunker
+from data_pipeline.embedder import EmbeddingGenerator
+from data_pipeline.indexer import FAISSIndexBuilder
+from shared.config import OPENAI_API_KEY, EMBEDDING_MODEL, EMBEDDING_DIMENSIONS, CHUNKED_DIR, EMBEDDINGS_DIR, FAISS_INDEX_DIR, CAPTIONS_DIR
 from shared.pick_engine import (
     build_query_text,
     build_stage2_shortlist as shared_build_stage2_shortlist,
@@ -397,9 +401,6 @@ class ImprovePickQAGUI:
         self.constraints_numerical_domain_var = tk.StringVar(value="")
         self.constraints_reject_rule_fail_gate_var = tk.StringVar(value="")
         self.notes_var = tk.StringVar(value="")
-        self.job_state_var = tk.StringVar(value="Job state: idle")
-        self.job_step_var = tk.StringVar(value="Current step status: ready")
-        self.job_error_var = tk.StringVar(value="")
 
         self.curriculum_df = pd.DataFrame()
         self.curriculum_by_id: dict[str, dict[str, object]] = {}
@@ -475,10 +476,6 @@ class ImprovePickQAGUI:
         self.stage4_final_open_buttons: list[ttk.Button] = []
         self.command_buttons: list[ttk.Button] = []
         self.command_tooltips: list[ToolTip] = []
-
-        self.job_status_label: ttk.Label | None = None
-        self.job_step_label: ttk.Label | None = None
-        self.job_error_label: ttk.Label | None = None
 
         # Dup proximity review state
         self.dup_review_mode = False
@@ -731,34 +728,28 @@ class ImprovePickQAGUI:
             foreground="#555555",
         ).grid(row=1, column=2, columnspan=3, sticky="w", pady=(4, 0))
 
-        command_frame = ttk.LabelFrame(outer, text="QA Command Center", padding=8)
-        command_frame.grid(row=4, column=0, sticky="ew", pady=(0, 4))
+        command_frame = ttk.LabelFrame(outer, text="QA Command Center", padding=4)
+        command_frame.grid(row=4, column=0, sticky="ew", pady=(0, 2))
         for col in range(9):
             command_frame.columnconfigure(col, weight=1)
 
         btn_col = 0
         apply_delete_btn = ttk.Button(command_frame, text="Apply Delete Queue", command=self._command_apply_delete_queue)
-        apply_delete_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+        apply_delete_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
         self.command_buttons.append(apply_delete_btn)
         self._attach_tooltip(apply_delete_btn, "Runs delete_content.py on videos_to_delete.csv in soft-delete mode only. Local files and metadata are removed immediately, but this button does not perform the full FAISS rebuild.")
         btn_col += 1
 
         if SHOW_FULL_REBUILD_CONTROL:
             full_rebuild_btn = ttk.Button(command_frame, text="Full Rebuild FAISS", command=self._command_full_rebuild_faiss)
-            full_rebuild_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+            full_rebuild_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
             self.command_buttons.append(full_rebuild_btn)
             self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. Use this when you want to physically purge deleted vectors and fully realign FAISS with current local assets.")
             btn_col += 1
 
-        sync_btn = ttk.Button(command_frame, text="Sync New Downloads", command=self._command_sync_new_downloads)
-        sync_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
-        self.command_buttons.append(sync_btn)
-        self._attach_tooltip(sync_btn, "Runs the incremental chunk/embed/index pipeline so newly downloaded material becomes searchable without a full rebuild.")
-        btn_col += 1
-
         if SHOW_APPROVE_UPDATE_CONTROL:
             finalize_btn = ttk.Button(command_frame, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
-            finalize_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+            finalize_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
             self.command_buttons.append(finalize_btn)
             self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
             btn_col += 1
@@ -768,7 +759,7 @@ class ImprovePickQAGUI:
             text="Apply Cand MR",
             command=self._command_apply_manual_override,
         )
-        cand_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+        cand_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
         self.command_buttons.append(cand_override_btn)
         self._attach_tooltip(cand_override_btn, "Uses Candidate panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
         btn_col += 1
@@ -778,14 +769,14 @@ class ImprovePickQAGUI:
             text="Apply Curr MR",
             command=self._command_apply_precomputed_manual_override,
         )
-        curr_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+        curr_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
         self.command_buttons.append(curr_override_btn)
         self._attach_tooltip(curr_override_btn, "Uses Precomputed panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
         btn_col += 1
 
         if SHOW_CLEAR_OVERRIDE_CONTROL:
             clear_override_btn = ttk.Button(command_frame, text="Clear Override", command=self._command_clear_manual_override)
-            clear_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+            clear_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
             self.command_buttons.append(clear_override_btn)
             self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
             btn_col += 1
@@ -795,7 +786,7 @@ class ImprovePickQAGUI:
             text="Publish QA Reference CSV",
             command=self._command_publish_qa_reference_csv,
         )
-        publish_qa_ref_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+        publish_qa_ref_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
         self.command_buttons.append(publish_qa_ref_btn)
         self._attach_tooltip(
             publish_qa_ref_btn,
@@ -804,21 +795,12 @@ class ImprovePickQAGUI:
         btn_col += 1
 
         set_precomp_ratings_btn = ttk.Button(command_frame, text="Set All Precomp Rt to 10", command=self._command_set_all_precomputed_ratings_to_10)
-        set_precomp_ratings_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=(0, 4))
+        set_precomp_ratings_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
         self.command_buttons.append(set_precomp_ratings_btn)
         self._attach_tooltip(set_precomp_ratings_btn, "Sets all Rt (rating) values in the Precomputed (current) picks panel to 10.")
 
-        self.job_status_label = ttk.Label(command_frame, textvariable=self.job_state_var, foreground="#1f4d7a")
-        self.job_status_label.grid(row=1, column=0, columnspan=9, sticky="w", pady=(4, 0))
-
-        self.job_step_label = ttk.Label(command_frame, textvariable=self.job_step_var, foreground="#444444")
-        self.job_step_label.grid(row=2, column=0, columnspan=9, sticky="w")
-
-        self.job_error_label = ttk.Label(command_frame, textvariable=self.job_error_var, foreground="#aa2c2c")
-        self.job_error_label.grid(row=3, column=0, columnspan=9, sticky="w")
-
-        notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=6)
-        notes_frame.grid(row=5, column=0, sticky="ew", pady=(0, 4))
+        notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=4)
+        notes_frame.grid(row=5, column=0, sticky="ew", pady=(0, 2))
         notes_frame.columnconfigure(1, weight=1)
         ttk.Label(notes_frame, text="QA note (~15 words):").grid(row=0, column=0, sticky="w", padx=(0, 8))
         self.notes_entry = ttk.Entry(notes_frame, textvariable=self.notes_var)
@@ -1333,16 +1315,6 @@ class ImprovePickQAGUI:
 
     def _set_job_state(self, state: str, step_text: str = "", error_text: str = "") -> None:
         self.active_job_state = state
-        if state == JOB_STATE_RUNNING:
-            self.job_state_var.set(f"Job state: running ({self.active_job_name or 'job'})")
-        else:
-            self.job_state_var.set(f"Job state: {state}")
-        if step_text:
-            self.job_step_var.set(f"Current step status: {step_text}")
-        if error_text:
-            self.job_error_var.set(error_text)
-        elif state != JOB_STATE_FAILED:
-            self.job_error_var.set("")
         self._refresh_command_controls()
 
     def _refresh_command_controls(self) -> None:
@@ -1502,13 +1474,6 @@ class ImprovePickQAGUI:
             "--rebuild-index",
         ]
         self._start_subprocess_job("Full Rebuild FAISS", command, reload_assets=True)
-
-    def _command_sync_new_downloads(self) -> None:
-        command = self._python_cmd_prefix() + [
-            "data_pipeline/run_pipeline.py",
-            "--index-only",
-        ]
-        self._start_subprocess_job("Sync New Downloads", command, reload_assets=True)
 
     def _command_finalize_current_step(self) -> None:
         if self.active_job_state == JOB_STATE_RUNNING:
@@ -4600,3 +4565,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

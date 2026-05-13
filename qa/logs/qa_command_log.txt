@@ -441725,3 +441725,52 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-12T15:51:42] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Fractions and percentages of amounts_6_Use a percentage to find the whole E
 [2026-05-12T15:53:36] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Convert metric units of length_1_Perimeter of a polygon
 [2026-05-12T15:54:04] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Convert metric units of length_2_Perimeter of a compound shape
+[2026-05-12T18:47:40] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_1_Convert metric units of length
+[2026-05-12T18:49:53] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_2_Perimeter of a polygon
+[2026-05-12T18:50:18] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_2_Perimeter of a polygon
+[2026-05-12T18:53:46] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_3_Perimeter of a compound shape
+[2026-05-12T18:56:19] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_4_Area of rectangles and parallelograms
+[2026-05-12T18:56:31] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_4_Area of rectangles and parallelograms
+[2026-05-12T18:57:31] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_5_Area of a triangle
+[2026-05-12T18:58:24] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_5_Area of a triangle
+[2026-05-12T19:02:37] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_6_Area of a trapezium
+[2026-05-12T19:04:30] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_7_Solve problems with perimeter and area
+[2026-05-12T19:05:24] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_7_Solve problems with perimeter and area
+[2026-05-12T19:09:08] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Perimeter and area_8_Form expressions with perimeter and area  E
+[2026-05-12T19:11:41] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Properties of number_1_Multiples
+[2026-05-12T19:12:02] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Properties of number_2_Factors
+[2026-05-12T19:13:28] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Properties of number_3_Prime numbers
+[2026-05-12T19:14:19] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Properties of number_4_Write a number as a product of prime factors
+[2026-05-12T20:28:06] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Properties of number_7_Explore higher powers and roots (E)
+[2026-05-12T20:29:07] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Properties of number_9_Lowest common multiple (LCM)
+[2026-05-12T20:31:51] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Properties of number_11_Use factors to simplify calculations (E)
+[2026-05-12T20:32:57] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Speed distance and time_1_Convert between milliseconds, seconds, minutes and hours
+[2026-05-12T20:33:26] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Speed distance and time_2_Convert between hours, days, months and years
+[2026-05-12T20:38:09] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Speed distance and time_5_Calculate speed
+[2026-05-12T20:42:56] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Speed distance and time_5_Calculate speed
+[2026-05-12T20:44:09] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Speed distance and time_8_Interpret distance-time graphs
+[2026-05-12T20:48:56] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Add and subtract fractions_9_Add and subtract simple algebraic fractions (E)
+[2026-05-13T10:05:29] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Angles and polygons_1_Draw and measure lines and angles
+[2026-05-13T10:22:20] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Angles and polygons_6_Recognise and name polygons
+[2026-05-13T10:27:56] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Angles and polygons_10_Parallel and perpendicular lines
+[2026-05-13T10:33:21] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Angles and polygons_12_Angles in any polygon  E
+[2026-05-13T11:02:04] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Ratio (1)_2_Ratio problems (whole given)
+[2026-05-13T11:27:57] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Ratio (1)_5_Simplify ratios
+[2026-05-13T11:31:00] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Ratio (1)_5_Simplify ratios
+[2026-05-13T11:33:37] START Sync New Downloads: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe data_pipeline/run_pipeline.py --index-only
+[2026-05-13T12:52:57] START Sync New Downloads (in-process: chunk, embed, index)
+[2026-05-13T14:41:10] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Coordinates and graphs_4_Recognise and use the line y = x
+[2026-05-13T15:04:16] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Coordinates and graphs_7_Introduce gradient (y = mx)
+[2026-05-13T15:17:36] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Multiply and divide fractions_7_Divide fractions
+[2026-05-13T15:18:22] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Multiply and divide fractions_8_Multiply and divide mixed numbers
+[2026-05-13T15:22:01] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Multiply and divide fractions_9_Multiply and divide algebraic fractions E
+[2026-05-13T15:32:51] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Symmetry and reflection_1_Line symmetry
+[2026-05-13T15:35:08] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Symmetry and reflection_6_Describe a reflection E
+[2026-05-13T15:39:59] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Area volume and density_2_Area of a 2-D shape
+[2026-05-13T15:43:09] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Area volume and density_4_Recognise prisms
+[2026-05-13T15:43:24] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Area volume and density_4_Recognise prisms
+[2026-05-13T15:46:05] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Equations and inequalities_2_Solve more complex equations
+[2026-05-13T16:02:59] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Equations and inequalities_6_Understand and use inequalities
+[2026-05-13T16:35:54] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Percentages_4_Convert between percentages and decimals greater than 1
+[2026-05-13T16:49:27] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Percentages_8_Express one number as a fraction or a percentage of another no calculator
+[2026-05-13T18:34:41] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Indices_1_Add and subtract expressions with indices

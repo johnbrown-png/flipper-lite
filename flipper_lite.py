@@ -716,7 +716,7 @@ def main():
                     breadcrumb_parts.append(f"Term: {ctx['term']}")
                 
                 # Add difficulty only if it has a value
-                difficulty = ctx.get('difficulty', '').strip()
+                difficulty = str(ctx.get('difficulty') or '').strip()
                 if difficulty:
                     breadcrumb_parts.append(f"Difficulty: {difficulty}")
                 

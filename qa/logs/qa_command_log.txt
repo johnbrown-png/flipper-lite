@@ -441808,3 +441808,4 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-14T11:34:31] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_11_Spending overseas
 [2026-05-14T11:36:44] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_12_Insurance
 [2026-05-14T11:58:10] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Constructions and congruence_6_Construct a perpendicular from or to a point
+[2026-05-14T13:36:24] QA REFERENCE PUBLISHED rows=5037 steps=482 wildcards=35 manual=453 skipped=13

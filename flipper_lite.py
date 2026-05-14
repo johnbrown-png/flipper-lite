@@ -13,6 +13,7 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from search_app.curriculum_assistant import CurriculumAssistant
+from flipper_search.streamlit_ui import render_search_ui
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -760,6 +761,50 @@ def main():
             st.session_state.display_results = results
             st.session_state.display_status = 'complete'
             st.rerun()
+
+    # ==========================================
+    # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)
+    # ==========================================
+    if curriculum_path.exists():
+        st.markdown("---")
+        with st.expander("🔍 Search by Topic Description", expanded=False):
+            st.markdown("""
+            Describe what support is needed in natural language.
+            Examples: "adding fractions with different denominators", "gradient of a straight line", "collecting like terms".
+            """)
+
+            embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
+            search_result = render_search_ui(
+                curriculum_csv_path=str(curriculum_path),
+                embeddings_path=str(embeddings_path),
+                use_semantic=True,
+            )
+
+            if search_result:
+                action, result_dict = search_result
+                if action == 'small_step_search' and result_dict:
+                    st.session_state.display_status = 'loading'
+                    st.session_state.display_step_name = result_dict.get('small_step_name', result_dict.get('small_step', ''))
+                    st.session_state.curriculum_context = {
+                        'age': result_dict.get('age', ''),
+                        'term': result_dict.get('term', ''),
+                        'difficulty': result_dict.get('difficulty', ''),
+                        'topic': result_dict.get('topic', ''),
+                        'small_step': result_dict.get('small_step_name', ''),
+                    }
+
+                    results = lookup_videos_for_step(
+                        recommendations_df,
+                        year=result_dict.get('year', ''),
+                        term=result_dict.get('term', ''),
+                        difficulty=result_dict.get('difficulty', ''),
+                        topic=result_dict.get('topic', ''),
+                        small_step=result_dict.get('small_step_name', ''),
+                        small_step_id=result_dict.get('small_step_id', ''),
+                    )
+                    st.session_state.display_results = results
+                    st.session_state.display_status = 'complete'
+                    st.rerun()
     
     # Sidebar with info
     with st.sidebar:

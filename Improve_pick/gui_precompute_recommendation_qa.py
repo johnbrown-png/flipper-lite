@@ -489,6 +489,7 @@ class ImprovePickQAGUI:
         self.dup_review_btn: ttk.Button | None = None
         self.dup_jump_btn: ttk.Button | None = None
         self.dup_flag_btn: ttk.Button | None = None
+        self.dup_unflag_btn: ttk.Button | None = None
 
         self.active_job_state = JOB_STATE_IDLE
         self.active_job_name = ""
@@ -627,6 +628,14 @@ class ImprovePickQAGUI:
             command=self._flag_current_step_redundant,
         )
         self.dup_flag_btn.grid(row=4, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
+
+        self.dup_unflag_btn = ttk.Button(
+            selector_frame,
+            text="Undo Redundant Mark",
+            command=self._unflag_current_step_redundant,
+            state=tk.DISABLED,
+        )
+        self.dup_unflag_btn.grid(row=4, column=5, sticky="w", padx=(8, 0), pady=(4, 0))
 
         # Row 5: per-step dup score display
         ttk.Label(
@@ -4385,15 +4394,29 @@ def _flag_current_step_redundant(self) -> None:
     if not sid:
         return
     if sid in self.dup_flagged_steps:
-        self.dup_flagged_steps.discard(sid)
-        if self.dup_flag_btn is not None:
-            self.dup_flag_btn.config(text="Mark Step Redundant")
-        self.status_var.set(f"Marked keep: {sid}")
-    else:
-        self.dup_flagged_steps.add(sid)
-        if self.dup_flag_btn is not None:
-            self.dup_flag_btn.config(text="Mark Step Keep")
-        self.status_var.set(f"Marked redundant: {sid}")
+        self.status_var.set(f"Already marked redundant: {sid}")
+        self._update_dup_score_display()
+        return
+
+    self.dup_flagged_steps.add(sid)
+    self.status_var.set(f"Marked redundant: {sid}")
+    self._save_dup_flagged_steps()
+    current = self._selected_small_step_id()
+    self._refresh_step_combo_labels(preserve_step_id=current)
+    self._update_dup_score_display()
+
+
+def _unflag_current_step_redundant(self) -> None:
+    sid = self._selected_small_step_id()
+    if not sid:
+        return
+    if sid not in self.dup_flagged_steps:
+        self.status_var.set(f"Step is not marked redundant: {sid}")
+        self._update_dup_score_display()
+        return
+
+    self.dup_flagged_steps.discard(sid)
+    self.status_var.set(f"Removed redundant mark: {sid}")
     self._save_dup_flagged_steps()
     current = self._selected_small_step_id()
     self._refresh_step_combo_labels(preserve_step_id=current)
@@ -4458,20 +4481,22 @@ def _update_dup_score_display(self) -> None:
     sid = self._selected_small_step_id()
     if not sid or not self.dup_scores:
         self.dup_score_display_var.set("")
+        if self.dup_unflag_btn is not None:
+            self.dup_unflag_btn.config(state=tk.DISABLED)
         return
     s = self.dup_scores.get(sid)
     if s is None:
         self.dup_score_display_var.set("High-dup: no proximal duplicates in same term")
-        if self.dup_flag_btn is not None:
-            self.dup_flag_btn.config(text="Mark Step Redundant")
+        if self.dup_unflag_btn is not None:
+            self.dup_unflag_btn.config(state=tk.NORMAL if sid in self.dup_flagged_steps else tk.DISABLED)
         return
     flagged = "  [FLAGGED REDUNDANT]" if sid in self.dup_flagged_steps else ""
     self.dup_score_display_var.set(
         f"High-dup score: H={s['H']:.3f}  A={s['A']:.3f}  C={s['C']:.3f}"
         f"  n={s['n_links']}  nearest_d={s['nearest_d']}{flagged}"
     )
-    if self.dup_flag_btn is not None:
-        self.dup_flag_btn.config(text="Mark Step Keep" if sid in self.dup_flagged_steps else "Mark Step Redundant")
+    if self.dup_unflag_btn is not None:
+        self.dup_unflag_btn.config(state=tk.NORMAL if sid in self.dup_flagged_steps else tk.DISABLED)
 
 
 def _populate_dup_neighbours(self, small_step_id: str) -> None:
@@ -4550,6 +4575,7 @@ ImprovePickQAGUI._compute_dup_scores = _compute_dup_scores
 ImprovePickQAGUI._load_dup_flagged_steps = _load_dup_flagged_steps
 ImprovePickQAGUI._save_dup_flagged_steps = _save_dup_flagged_steps
 ImprovePickQAGUI._flag_current_step_redundant = _flag_current_step_redundant
+ImprovePickQAGUI._unflag_current_step_redundant = _unflag_current_step_redundant
 ImprovePickQAGUI._toggle_dup_review_mode = _toggle_dup_review_mode
 ImprovePickQAGUI._jump_to_next_dup_hotspot = _jump_to_next_dup_hotspot
 ImprovePickQAGUI._update_dup_score_display = _update_dup_score_display

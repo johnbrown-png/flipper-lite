@@ -441774,3 +441774,37 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-13T16:35:54] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Percentages_4_Convert between percentages and decimals greater than 1
 [2026-05-13T16:49:27] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Percentages_8_Express one number as a fraction or a percentage of another no calculator
 [2026-05-13T18:34:41] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Indices_1_Add and subtract expressions with indices
+[2026-05-14T08:07:10] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Angles in parallel lines and polygons_1_Basic angle rules and notation
+[2026-05-14T08:26:37] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Angles in parallel lines and polygons_7_Find unknown lengths and angles in special quadrilaterals
+[2026-05-14T08:26:52] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Angles in parallel lines and polygons_7_Find unknown lengths and angles in special quadrilaterals
+[2026-05-14T08:28:12] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Angles in parallel lines and polygons_8_Exterior angles of a polygon
+[2026-05-14T08:30:36] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Angles in parallel lines and polygons_9_Interior angles of a polygon
+[2026-05-14T08:33:37] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Angles in parallel lines and polygons_11_Prove simple geometric facts  E
+[2026-05-14T08:49:11] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Tables and probability_6_Sample spaces for 1 or more events
+[2026-05-14T09:08:12] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Graphs and charts_1_Pictograms and bar charts
+[2026-05-14T09:08:35] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Graphs and charts_1_Pictograms and bar charts
+[2026-05-14T09:09:01] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Graphs and charts_2_Vertical line charts
+[2026-05-14T09:10:04] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Graphs and charts_5_Line graphs
+[2026-05-14T09:10:22] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Graphs and charts_6_Choose the most appropriate graph or chart
+[2026-05-14T09:21:08] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Graphs and charts_7_Compare distributions using graphs
+[2026-05-14T10:04:36] MANUAL OVERRIDE applied for Year 8_12-13_Summer__Sequences_2_Generate a sequence given a simple algebraic rule
+[2026-05-14T10:07:43] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Properties of number_1_Factors, multiples and primes
+[2026-05-14T10:08:20] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Properties of number_2_Write a number as a product of prime factors
+[2026-05-14T10:08:45] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Properties of number_4_Highest common factor (HCF) and lowest common multiple (LCM)
+[2026-05-14T10:20:50] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Properties of number_8_Introduction to surds E
+[2026-05-14T10:20:59] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Properties of number_8_Introduction to surds E
+[2026-05-14T10:31:37] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Percentages_9_Compound interest
+[2026-05-14T10:34:35] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Percentages_8_Simple interest
+[2026-05-14T10:39:23] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Area and volume_10_Convert metric units of area and volume E
+[2026-05-14T10:51:14] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Fractions_1_Add and subtract fractions
+[2026-05-14T10:51:53] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Fractions_2_Multiply and divide fractions
+[2026-05-14T10:55:53] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Rates_2_Distance–time graphs
+[2026-05-14T11:03:44] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Rates_3_Flow problems and their graphs
+[2026-05-14T11:14:09] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Standard form_2_Compare and order numbers in standard form
+[2026-05-14T11:14:19] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Standard form_2_Compare and order numbers in standard form
+[2026-05-14T11:23:22] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_1_Understand a bank account
+[2026-05-14T11:26:03] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_5_Jobs and pay
+[2026-05-14T11:29:28] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_6_Investments
+[2026-05-14T11:34:31] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_11_Spending overseas
+[2026-05-14T11:36:44] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_12_Insurance
+[2026-05-14T11:58:10] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Constructions and congruence_6_Construct a perpendicular from or to a point

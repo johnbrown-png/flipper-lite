@@ -9,3 +9,4 @@ faiss-cpu>=1.7.4
 numpy>=1.24.0
 streamlit>=1.30.0
 textstat>=0.7.3
+scikit-learn>=1.3.0

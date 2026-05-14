@@ -12,7 +12,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-from curriculum_index import CurriculumIndex
+from .curriculum_index import CurriculumIndex
 
 
 def build_embeddings(
@@ -36,7 +36,7 @@ def build_embeddings(
     # Load curriculum
     print(f"Loading curriculum from: {curriculum_csv_path}")
     index = CurriculumIndex(curriculum_csv_path)
-    print(f"✓ Loaded {len(index.embedding_ids)} small steps")
+    print(f"✓ Loaded {len(index.get_searchable_text_all())} small steps")
     print()
     
     # Initialize embedder

@@ -10,8 +10,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from curriculum_index import CurriculumIndex
-from search_engine import SearchEngine
+from .curriculum_index import CurriculumIndex
+from .search_engine import SearchEngine
 
 
 def test_search(
@@ -40,7 +40,7 @@ def test_search(
     print(f"Loading curriculum: {curriculum_csv_path}")
     try:
         index = CurriculumIndex(curriculum_csv_path)
-        print(f"✓ Loaded {len(index.embedding_ids)} small steps")
+        print(f"✓ Loaded {len(index.get_searchable_text_all())} small steps")
     except Exception as e:
         print(f"✗ Failed to load curriculum: {e}")
         return False

@@ -441809,3 +441809,23 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-14T11:36:44] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_12_Insurance
 [2026-05-14T11:58:10] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Constructions and congruence_6_Construct a perpendicular from or to a point
 [2026-05-14T13:36:24] QA REFERENCE PUBLISHED rows=5037 steps=482 wildcards=35 manual=453 skipped=13
+[2026-05-14T13:38:37] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Constructions and congruence_8_Identify congruent shapes
+[2026-05-14T13:41:42] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Constructions and congruence_9_Congruent triangles
+[2026-05-14T15:10:12] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Algebraic manipulation_7_Solve quadratic equations E
+[2026-05-14T15:13:49] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Recognise enlargement and similarity_1_Work out unknown lengths and angles in similar shapes
+[2026-05-14T15:47:01] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Similarity_1_Recognise enlargement and similarity
+[2026-05-14T15:48:37] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Similarity_3_Solve problems with similar triangles E
+[2026-05-14T15:49:57] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Similarity_4_Ratio in right-angled triangles E
+[2026-05-14T15:50:12] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Similarity_4_Ratio in right-angled triangles E
+[2026-05-14T16:03:53] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Non-linear graphs_4_Interpret quadratic graphs
+[2026-05-14T16:12:39] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Non-linear graphs_5_Interpret reciprocal​ and exponential graphs​
+[2026-05-14T16:15:02] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Non-linear graphs_8_Interpret roots, intercepts and turning points (E)
+[2026-05-14T16:17:24] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Pythagoras theorem_1_Solve equations with squares and square roots
+[2026-05-14T16:20:06] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Pythagoras theorem_1_Solve equations with squares and square roots
+[2026-05-14T16:20:58] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Pythagoras theorem_6_Use Pythagoras’ theorem on coordinate axes
+[2026-05-14T16:22:58] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Pythagoras theorem_8_Pythagoras’ theorem in 3-D shapes E
+[2026-05-14T16:24:58] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Pythagoras theorem_8_Pythagoras’ theorem in 3-D shapes E
+[2026-05-14T16:25:07] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Pythagoras theorem_8_Pythagoras’ theorem in 3-D shapes E
+[2026-05-14T17:10:52] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Sets and probability_2_Intersection of a set
+[2026-05-14T17:13:47] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Sets and probability_6_Use diagrams to work out probabilities
+[2026-05-14T17:14:56] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Sets and probability_8_Expected outcomes

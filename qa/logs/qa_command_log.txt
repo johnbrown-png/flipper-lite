@@ -441845,3 +441845,37 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-15T13:11:01] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Percentages_7_Simple interest
 [2026-05-15T13:21:14] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Percentages_9_Choose appropriate methods to solve percentage problems
 [2026-05-15T13:21:35] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Percentages_9_Choose appropriate methods to solve percentage problems
+[2026-05-15T13:41:19] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Ratio and scale_5_Share in a ratio (algebraically)
+[2026-05-15T13:43:23] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Ratio and scale_6_Share in a ratio (algebraically) (E)
+[2026-05-15T14:45:38] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_1_Expand triple brackets
+[2026-05-15T14:46:04] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_2_Factorise quadratic expressions
+[2026-05-15T14:46:46] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_3_Factorise more complex quadratic expressions (E)
+[2026-05-15T14:47:22] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_4_Difference of two squares
+[2026-05-15T14:48:05] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_5_Solve quadratic equations equal to 0
+[2026-05-15T14:48:33] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_6_Solve quadratic equations by factorisation
+[2026-05-15T14:48:58] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_7_Solve more complex quadratic equations by factorisation (E)
+[2026-05-15T14:49:18] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_8_Complete the square
+[2026-05-15T14:49:38] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_9_Complete the square with more complex quadratic expressions (E)
+[2026-05-15T14:49:58] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_10_Solve quadratic equations by completing the square (E)
+[2026-05-15T14:50:21] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_11_Solve quadratic equations using the quadratic formula
+[2026-05-15T14:50:44] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Quadratic expressions and equations_12_Solve quadratic equations using the quadratic formula
+[2026-05-15T14:51:18] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Quadratic expressions and equations_1_Expand double brackets
+[2026-05-15T14:51:43] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Quadratic expressions and equations_2_Factorise quadratic expressions (positive only)
+[2026-05-15T14:52:15] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Quadratic expressions and equations_3_Factorise quadratic expressions
+[2026-05-15T14:52:46] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Quadratic expressions and equations_4_Difference of two squares (E)
+[2026-05-15T14:53:48] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Quadratic expressions and equations_5_Solve quadratic equations equal to 0
+[2026-05-15T14:56:33] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Quadratic expressions and equations_6_Solve quadratic equations by factorisation
+[2026-05-15T14:57:03] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Quadratic expressions and equations_7_Quadratic graphs of the form y = x2 + a
+[2026-05-15T14:57:35] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Work with fractions_8_Solve problems with fractions
+[2026-05-15T14:58:04] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Work with fractions_8_Add and subtract more complex algebraic fractions (E)
+[2026-05-15T15:00:02] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Work with fractions_9_Multiply and divide more complex algebraic fractions (E)
+[2026-05-15T15:13:36] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_8_Solve multi-step problems
+[2026-05-15T15:16:07] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_8_Solve multi-step problems
+[2026-05-15T15:16:44] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_8_Solve multi-step problems
+[2026-05-15T15:17:08] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_8_Solve multi-step problems
+[2026-05-15T15:18:27] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Straight line graphs_8_Equation of a straight-line graph given two points
+[2026-05-15T15:21:04] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_2_Use the property that probabilities sum to 1
+[2026-05-15T15:22:57] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_2_Use the property that probabilities sum to 1
+[2026-05-15T15:23:34] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_2_Use the property that probabilities sum to 1
+[2026-05-15T15:26:48] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_6_Two-way tables and frequency trees
+[2026-05-15T15:33:32] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Probability_2_Use the property that probabilities sum to 1

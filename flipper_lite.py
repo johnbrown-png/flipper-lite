@@ -767,7 +767,7 @@ def main():
     # ==========================================
     if curriculum_path.exists():
         st.markdown("---")
-        with st.expander("🔍 Search by Topic Description", expanded=False):
+        with st.expander("What can we help with today?", expanded=False):
             st.markdown("""
             Describe what support is needed in natural language.
             Examples: "adding fractions with different denominators", "gradient of a straight line", "collecting like terms".

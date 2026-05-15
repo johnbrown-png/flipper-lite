@@ -441829,3 +441829,19 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-14T17:10:52] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Sets and probability_2_Intersection of a set
 [2026-05-14T17:13:47] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Sets and probability_6_Use diagrams to work out probabilities
 [2026-05-14T17:14:56] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Sets and probability_8_Expected outcomes
+[2026-05-15T10:45:24] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Transformations_8_Translation
+[2026-05-15T11:22:51] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Transformations_9_Describe a translation
+[2026-05-15T11:30:09] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Transformations_9_Describe a translation
+[2026-05-15T11:34:09] MANUAL OVERRIDE applied for Year 9_13-14_Summer__Transformations_10_Reflection
+[2026-05-15T11:52:27] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Algebraic manipulation_2_Laws of indices
+[2026-05-15T12:20:56] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Algebraic manipulation_3_Simplify expressions
+[2026-05-15T12:23:08] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Algebraic manipulation_5_Powers of powers
+[2026-05-15T12:23:20] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Algebraic manipulation_5_Powers of powers
+[2026-05-15T12:31:11] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Equations inequalities and formulae_3_Solve equations with unknowns on both sides
+[2026-05-15T12:31:22] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_3_Solve equations with unknowns on both sides
+[2026-05-15T12:31:46] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Equations inequalities and formulae_4_Understand inequalities
+[2026-05-15T12:32:01] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_4_Understand inequalities
+[2026-05-15T13:10:45] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Percentages_7_Simple interest
+[2026-05-15T13:11:01] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Percentages_7_Simple interest
+[2026-05-15T13:21:14] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Percentages_9_Choose appropriate methods to solve percentage problems
+[2026-05-15T13:21:35] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Percentages_9_Choose appropriate methods to solve percentage problems

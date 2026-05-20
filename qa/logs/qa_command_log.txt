@@ -441903,3 +441903,111 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-19T20:31:32] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Vectors_2_Vector notation
 [2026-05-19T20:34:34] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Graphs and diagrams_3_Dual and composite bar charts
 [2026-05-19T20:45:12] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Graphs and diagrams_6_Time series graphs
+[2026-05-20T10:37:18] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Graphs and diagrams_7_Frequency polygons
+[2026-05-20T11:02:06] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Vectors_7_Vectors in quadrilaterals
+[2026-05-20T11:08:42] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Vectors_8_Parallel vectors
+[2026-05-20T11:14:05] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Vectors_4_Vectors multiplied by a scalar
+[2026-05-20T11:23:05] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Factors and powers_4_Four operations with surds
+[2026-05-20T11:25:12] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Vectors_5_Add vectors
+[2026-05-20T11:34:21] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Vectors_6_Add and subtract vectors
+[2026-05-20T11:36:24] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Factors and powers_6_Expand single brackets with surds
+[2026-05-20T11:45:13] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Vectors_4_Vectors multiplied by a scalar
+[2026-05-20T11:58:38] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Ratio and proportion_1_Solve problems with ratio
+[2026-05-20T12:01:39] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Ratio and proportion_3_Best buy problems
+[2026-05-20T12:03:39] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Ratio and proportion_3_Conversion graphs
+[2026-05-20T12:04:56] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Ratio and proportion_4_Conversion graphs
+[2026-05-20T12:06:35] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Ratio and proportion_4_Exchange rates
+[2026-05-20T12:07:34] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Ratio and proportion_5_Exchange rates
+[2026-05-20T14:20:15] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Ratio and proportion_8_Inverse proportion equations (E)
+[2026-05-20T14:20:56] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Ratio and proportion_9_Direct and indirect proportion graphs
+[2026-05-20T14:30:07] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Area and volume_3_Volume of cones and pyramids
+[2026-05-20T14:31:05] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Area and volume_5_Volume of cones and pyramids
+[2026-05-20T14:32:49] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Area and volume_5_Volume and surface area of a frustrum (E)
+[2026-05-20T14:34:53] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Area and volume_6_Convert metric units of area and volume
+[2026-05-20T14:35:27] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Area and volume_8_Surface area of a pyramid (E)
+[2026-05-20T14:36:50] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Area and volume_10_Convert metric units of area (E)
+[2026-05-20T14:38:15] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Area and volume_11_Convert metric units of volume (E)
+[2026-05-20T15:37:30] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Similarity and congruence_5_Areas of similar shapes
+[2026-05-20T15:39:34] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Similarity and congruence_6_Volumes of similar shapes
+[2026-05-20T15:40:39] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Similarity and congruence_7_Solve problems with area and volume in similar shapes
+[2026-05-20T15:41:26] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Similarity and congruence_8_Prove a pair of triangles are congruent
+[2026-05-20T15:42:23] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_1_Describe and continue arithmetic and geometric sequences
+[2026-05-20T15:42:54] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_1_Describe and continue arithmetic and geometric sequences
+[2026-05-20T15:45:06] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_1_Describe and continue arithmetic and geometric sequences
+[2026-05-20T15:45:22] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_1_Describe and continue arithmetic and geometric sequences
+[2026-05-20T15:45:25] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_1_Describe and continue arithmetic and geometric sequences
+[2026-05-20T15:45:32] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_1_Describe and continue arithmetic and geometric sequences
+[2026-05-20T15:48:00] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_3_Generate a sequence given an algebraic rule
+[2026-05-20T15:50:01] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Sequences and proof_3_Describe and continue sequences involving surds (E)
+[2026-05-20T15:50:44] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Sequences and proof_3_Describe and continue sequences involving surds (E)
+[2026-05-20T15:52:01] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Sequences and proof_4_Generate a sequence given an algebraic rule
+[2026-05-20T15:53:02] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_5_Represent numbers algebraically (E)
+[2026-05-20T15:53:48] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Sequences and proof_5_nth term of a linear sequence
+[2026-05-20T15:57:53] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Sequences and proof_6_Arguments and counterexamples (E)
+[2026-05-20T15:59:55] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Sequences and proof_7_Represent numbers algebraically
+[2026-05-20T16:00:39] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Sequences and proof_8_Algebraic arguments and proof
+[2026-05-20T16:02:06] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Circle theorems_1_Angles in circles
+[2026-05-20T16:04:30] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Circle theorems_3_Circle theorem (angles in a semicircle)
+[2026-05-20T16:05:30] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Circle theorems_4_Circle theorem (angles in the same segment)
+[2026-05-20T16:06:27] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Work with circles_5_Arc length and perimeter (E)
+[2026-05-20T16:07:47] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Circle theorems_5_Circle theorem (angles in a cyclic quadrilateral)
+[2026-05-20T16:09:40] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Work with circles_7_Solve problems with circles
+[2026-05-20T16:10:21] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Circle theorems_8_Circle theorem (two tangents from a point)
+[2026-05-20T16:11:26] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Circle theorems_10_Solve problems with circle theorems
+[2026-05-20T16:13:39] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Set notation and Venn diagrams_1_Venn diagrams
+[2026-05-20T16:15:10] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Higher_Vectors_2_Ratios with vectors (E)
+[2026-05-20T16:16:18] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Functions and graphs_2_Write an expression or formula from a function machine
+[2026-05-20T16:21:08] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Functions and graphs_3_Inverse functions
+[2026-05-20T16:21:23] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Functions and graphs_3_Inverse functions
+[2026-05-20T16:23:47] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Functions and graphs_6_Exponential graphs
+[2026-05-20T16:24:16] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Functions and graphs_7_Trigonometric graphs (E)
+[2026-05-20T16:26:22] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Functions and graphs_11_More complex transformations of the graph of a function (E)
+[2026-05-20T16:26:34] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Functions and graphs_11_More complex transformations of the graph of a function (E)
+[2026-05-20T16:26:39] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Functions and graphs_11_More complex transformations of the graph of a function (E)
+[2026-05-20T16:26:45] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Functions and graphs_11_More complex transformations of the graph of a function (E)
+[2026-05-20T16:28:26] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Equations and formulae_1_Solve equations
+[2026-05-20T16:29:45] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Equations and formulae_2_Form and solve inequalities
+[2026-05-20T16:32:51] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Equations and formulae_6_Quadratic inequalities (E)
+[2026-05-20T16:34:23] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Equations and formulae_7_Solve simultaneous equations
+[2026-05-20T16:35:54] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Equations and formulae_7_Understand iterative processes
+[2026-05-20T16:37:21] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Equations and formulae_8_Solve simultaneous equations
+[2026-05-20T16:37:59] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Equations and formulae_8_Solve simultaneous equations
+[2026-05-20T16:40:04] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Rates_1_Convert between hours and minutes
+[2026-05-20T16:41:34] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Rates_3_Interpret distance-time graphs
+[2026-05-20T16:42:45] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Angles bearings and trigonometry_3_Scale drawings using bearings
+[2026-05-20T16:43:46] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Rates_4_Draw distance-time graphs
+[2026-05-20T16:44:56] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Angles bearings and trigonometry_4_Calculate bearings using angles rules
+[2026-05-20T16:46:48] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Rates_6_Convert compound units (E)
+[2026-05-20T16:47:57] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Angles bearings and trigonometry_6_Solve problems with bearings using Pythagoras and trigonometry
+[2026-05-20T16:48:58] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Angles bearings and trigonometry_7_Sine and cosine rules
+[2026-05-20T16:50:25] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Angles bearings and trigonometry_1_Angles in lines and shapes
+[2026-05-20T16:51:31] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Angles bearings and trigonometry_2_Solve problems with angles in parallel lines
+[2026-05-20T16:52:58] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Angles bearings and trigonometry_3_Solve problems with angles and algebra (E)
+[2026-05-20T16:54:42] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Angles bearings and trigonometry_5_Understand and represent bearings
+[2026-05-20T16:55:53] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Angles bearings and trigonometry_7_Scale drawings using bearings
+[2026-05-20T17:01:47] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Transformations_4_Reflection
+[2026-05-20T17:04:37] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Transformations_9_Invariant points (E)
+[2026-05-20T17:05:27] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Constructions and Loci_10_Solve loci problems
+[2026-05-20T17:06:40] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Transformations_2_Enlargement (fractional scale factor)
+[2026-05-20T17:07:22] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Rates_2_Distance-time graphs
+[2026-05-20T17:08:37] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Transformations_3_Line symmetry and rotational symmetry
+[2026-05-20T17:10:28] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Foundation_Transformations_5_Rotation
+[2026-05-20T17:11:18] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Rates_5_Convert compound units
+[2026-05-20T17:12:27] QA REFERENCE PUBLISHED rows=5037 steps=617 wildcards=35 manual=588 skipped=35
+[2026-05-20T17:13:59] MANUAL OVERRIDE applied for Year 7_11-12_Summer__Add and subtract fractions_10_Substitution and solving equations with fractions (E)
+[2026-05-20T17:15:22] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Ratio (1)_4_Ratio problems (difference given)
+[2026-05-20T17:15:57] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Ratio (1)_4_Ratio problems (difference given)
+[2026-05-20T17:17:36] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Proportion and scale_2_Conversion graphs
+[2026-05-20T17:20:01] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Proportion and scale_3_Convert between currencies
+[2026-05-20T17:45:24] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Area volume and density_1_Name 2-D and 3-D shapes
+[2026-05-20T17:47:12] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Equations and inequalities_4_Form and solve equations
+[2026-05-20T17:48:54] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Rates_5_Convert compound units E
+[2026-05-20T17:50:02] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Maths and money_12_Insurance
+[2026-05-20T17:51:28] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Non-linear graphs_9_Equation of a tangent to a circle (E)
+[2026-05-20T17:52:41] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Rounding and estimation_4_Use of a calculator
+[2026-05-20T17:54:06] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Rounding and estimation_4_Use of a calculator
+[2026-05-20T17:55:40] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-linear graphs_2_Intercepts and roots of quadratic graphs (E)
+[2026-05-20T17:57:07] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Vectors_3_Vectors multiplied by a scalar
+[2026-05-20T21:40:41] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Vectors_5_Add and subtract vectors
+[2026-05-20T21:41:37] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Vectors_6_Vector journeys in shapes
+[2026-05-20T21:42:27] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Area and volume_1_Isometric drawings

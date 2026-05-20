@@ -441879,3 +441879,27 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-15T15:23:34] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_2_Use the property that probabilities sum to 1
 [2026-05-15T15:26:48] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_6_Two-way tables and frequency trees
 [2026-05-15T15:33:32] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Probability_2_Use the property that probabilities sum to 1
+[2026-05-19T13:35:43] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Interpret and represent data_4_Averages from a grouped frequency table
+[2026-05-19T13:36:16] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Interpret and represent data_4_Averages from a grouped frequency table
+[2026-05-19T13:37:53] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_8_Scatter graphs
+[2026-05-19T13:38:10] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_8_Scatter graphs
+[2026-05-19T13:46:23] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Non-linear graphs_8_Equation of a circle
+[2026-05-19T14:02:32] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_9_Interpolation and extrapolation (E)
+[2026-05-19T14:03:08] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_9_Interpolation and extrapolation (E)
+[2026-05-19T15:01:50] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Non-calculator methods_3_Solve multi-step problems
+[2026-05-19T15:02:41] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Rounding and estimation_3_Estimate answers to calculations
+[2026-05-19T15:06:12] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Rounding and estimation_5_Error intervals (including truncation) (E)
+[2026-05-19T16:28:26] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-linear graphs_3_Cubic graphs
+[2026-05-19T18:56:55] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_7_Solve problems with angles and algebra
+[2026-05-19T18:58:19] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_7_Solve problems with angles and algebra
+[2026-05-19T20:10:36] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_8_Prove geometric facts (E)
+[2026-05-19T20:13:50] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Angles_1_Angles around a point, on a straight line and vertically opposite
+[2026-05-19T20:15:56] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Graphs and diagrams_2_Time series graphs
+[2026-05-19T20:17:23] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Graphs and diagrams_3_Frequency polygons
+[2026-05-19T20:20:37] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Graphs and diagrams_7_Draw cumulative frequency diagrams
+[2026-05-19T20:24:53] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Graphs and diagrams_8_Interpret cumulative frequency diagrams
+[2026-05-19T20:25:33] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Angles_9_Prove geometric facts (E)
+[2026-05-19T20:29:09] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Graphs and diagrams_2_Line and bar charts
+[2026-05-19T20:31:32] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Vectors_2_Vector notation
+[2026-05-19T20:34:34] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Graphs and diagrams_3_Dual and composite bar charts
+[2026-05-19T20:45:12] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Graphs and diagrams_6_Time series graphs

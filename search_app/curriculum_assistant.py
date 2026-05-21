@@ -73,6 +73,8 @@ class CurriculumAssistant:
         age_options = ['Age ?'] + ages
         if 'curr_year' not in st.session_state or st.session_state.curr_year not in age_options:
             st.session_state.curr_year = 'Age ?'
+        if 'year_select_topic_search' not in st.session_state or st.session_state.year_select_topic_search not in age_options:
+            st.session_state.year_select_topic_search = st.session_state.curr_year
         # Keep Age control compact on every rerun.
         st.markdown("""
         <style>
@@ -89,7 +91,6 @@ class CurriculumAssistant:
             selected_year = st.selectbox(
                 "Age",
                 age_options,
-                index=age_options.index(st.session_state.curr_year),
                 key="year_select_topic_search",
                 label_visibility="collapsed"
             )
@@ -97,6 +98,9 @@ class CurriculumAssistant:
             st.session_state.curr_year = selected_year
             st.session_state.curr_difficulty = 'All'
             st.session_state.curr_topic = 'Topic ?'
+            # Reset dependent widget states immediately so dropdown text refreshes on age change.
+            st.session_state.difficulty_select_topic_search = 'All'
+            st.session_state.topic_select_topic_search = 'Topic ?'
             st.rerun()
 
         # Difficulty dropdown for ages 14-15 and 15-16
@@ -105,16 +109,18 @@ class CurriculumAssistant:
         if show_difficulty:
             if 'curr_difficulty' not in st.session_state or st.session_state.curr_difficulty not in difficulty_options:
                 st.session_state.curr_difficulty = 'All'
+            if 'difficulty_select_topic_search' not in st.session_state or st.session_state.difficulty_select_topic_search not in difficulty_options:
+                st.session_state.difficulty_select_topic_search = st.session_state.curr_difficulty
             selected_difficulty = st.selectbox(
                 "Difficulty",
                 difficulty_options,
-                index=difficulty_options.index(st.session_state.curr_difficulty),
                 key="difficulty_select_topic_search",
                 label_visibility="collapsed"
             )
             if selected_difficulty != st.session_state.curr_difficulty:
                 st.session_state.curr_difficulty = selected_difficulty
                 st.session_state.curr_topic = 'Topic ?'
+                st.session_state.topic_select_topic_search = 'Topic ?'
                 st.rerun()
 
         # Only show Topic dropdown after Age is selected (and difficulty if required)
@@ -127,10 +133,11 @@ class CurriculumAssistant:
             topic_options = ['Topic ?'] + topics
             if 'curr_topic' not in st.session_state or st.session_state.curr_topic not in topic_options:
                 st.session_state.curr_topic = 'Topic ?'
+            if 'topic_select_topic_search' not in st.session_state or st.session_state.topic_select_topic_search not in topic_options:
+                st.session_state.topic_select_topic_search = st.session_state.curr_topic
             selected_topic = st.selectbox(
                 "Topic",
                 topic_options,
-                index=topic_options.index(st.session_state.curr_topic),
                 key="topic_select_topic_search",
                 label_visibility="collapsed"
             )

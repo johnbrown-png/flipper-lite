@@ -78,9 +78,9 @@ class CurriculumAssistant:
         <style>
         div[data-testid="stSelectbox"] label[aria-label="Age"] ~ div:first-child,
         div[data-testid="stSelectbox"][aria-label="Age"] > div:first-child {
-            width: 7ch !important;
-            min-width: 7ch !important;
-            max-width: 7ch !important;
+            width: 12ch !important;
+            min-width: 12ch !important;
+            max-width: 12ch !important;
         }
         </style>
         """, unsafe_allow_html=True)

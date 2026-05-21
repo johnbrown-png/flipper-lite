@@ -73,25 +73,26 @@ class CurriculumAssistant:
         age_options = ['Age ?'] + ages
         if 'curr_year' not in st.session_state or st.session_state.curr_year not in age_options:
             st.session_state.curr_year = 'Age ?'
-        # Custom CSS for Age dropdown width
-            st.markdown("""
-            <style>
-            /* Set Age dropdown width to 15ch for all selectboxes labeled Age */
-            div[data-testid="stSelectbox"] label[aria-label="Age"] ~ div:first-child,
-            div[data-testid="stSelectbox"][aria-label="Age"] > div:first-child {
-                width: 15ch !important;
-                min-width: 15ch !important;
-                max-width: 15ch !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-        selected_year = st.selectbox(
-            "Age",
-            age_options,
-            index=age_options.index(st.session_state.curr_year),
-            key="year_select_topic_search",
-            label_visibility="collapsed"
-        )
+        # Keep Age control compact on every rerun.
+        st.markdown("""
+        <style>
+        div[data-testid="stSelectbox"] label[aria-label="Age"] ~ div:first-child,
+        div[data-testid="stSelectbox"][aria-label="Age"] > div:first-child {
+            width: 7ch !important;
+            min-width: 7ch !important;
+            max-width: 7ch !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        age_col, _age_spacer_col = st.columns([1, 14])
+        with age_col:
+            selected_year = st.selectbox(
+                "Age",
+                age_options,
+                index=age_options.index(st.session_state.curr_year),
+                key="year_select_topic_search",
+                label_visibility="collapsed"
+            )
         if selected_year != st.session_state.curr_year:
             st.session_state.curr_year = selected_year
             st.session_state.curr_difficulty = 'All'

@@ -84,7 +84,7 @@ class CurriculumAssistant:
         }
         </style>
         """, unsafe_allow_html=True)
-        age_col, _age_spacer_col = st.columns([1, 14])
+        age_col, _age_spacer_col = st.columns([4, 11])
         with age_col:
             selected_year = st.selectbox(
                 "Age",

@@ -32,6 +32,18 @@ class CurriculumAssistant:
         except Exception as e:
             st.error(f"Error loading curriculum: {e}")
             return None
+
+    @staticmethod
+    def _clear_parent_results_state():
+        """Clear previously displayed results when navigation context changes."""
+        st.session_state.display_status = 'idle'
+        st.session_state.display_results = []
+        st.session_state.display_step_name = ""
+        st.session_state.curriculum_context = None
+        if 'current_video' in st.session_state:
+            st.session_state.current_video = None
+        if 'viewing_video' in st.session_state:
+            st.session_state.viewing_video = False
     
     def render(self):
         """Render the curriculum assistant UI and return selected text"""
@@ -101,6 +113,7 @@ class CurriculumAssistant:
             # Reset dependent widget states immediately so dropdown text refreshes on age change.
             st.session_state.difficulty_select_topic_search = 'All'
             st.session_state.topic_select_topic_search = 'Topic ?'
+            self._clear_parent_results_state()
             st.rerun()
 
         # Difficulty dropdown for ages 14-15 and 15-16
@@ -121,6 +134,7 @@ class CurriculumAssistant:
                 st.session_state.curr_difficulty = selected_difficulty
                 st.session_state.curr_topic = 'Topic ?'
                 st.session_state.topic_select_topic_search = 'Topic ?'
+                self._clear_parent_results_state()
                 st.rerun()
 
         # Only show Topic dropdown after Age is selected (and difficulty if required)
@@ -143,6 +157,7 @@ class CurriculumAssistant:
             )
             if selected_topic != st.session_state.curr_topic:
                 st.session_state.curr_topic = selected_topic
+                self._clear_parent_results_state()
                 st.rerun()
 
             # Show small steps if topic selected

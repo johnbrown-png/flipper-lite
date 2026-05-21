@@ -44,6 +44,67 @@ class CurriculumAssistant:
             st.session_state.current_video = None
         if 'viewing_video' in st.session_state:
             st.session_state.viewing_video = False
+
+    def get_adjacent_steps(self, ctx):
+        """Return (prev_step_dict, next_step_dict) for the step described in ctx.
+
+        Both dicts are ready to be written into st.session_state.pending_insertion.
+        Returns (None, None) if the curriculum is not loaded or context is missing.
+        Wraps cyclically: next of last step is first; prev of first is last.
+        """
+        if self.df is None or not ctx:
+            return None, None
+        try:
+            topic = ctx.get('topic')
+            age = ctx.get('age')
+            difficulty = ctx.get('difficulty') or ''
+            current_num = int(ctx.get('small_step_num_in_topic', -1))
+            if not topic or not age or current_num < 0:
+                return None, None
+
+            mask = (self.df['age'] == age) & (self.df['topic'] == topic)
+            if difficulty:
+                mask &= (self.df['difficulty'] == difficulty)
+            steps = self.df[mask].sort_values('small_step_num_in_topic', kind='stable').reset_index(drop=True)
+            if steps.empty:
+                return None, None
+
+            nums = steps['small_step_num_in_topic'].tolist()
+            try:
+                pos = nums.index(current_num)
+            except ValueError:
+                return None, None
+
+            n = len(steps)
+            prev_row = steps.iloc[(pos - 1) % n]
+            next_row = steps.iloc[(pos + 1) % n]
+
+            def _row_to_dict(row):
+                step_text = str(row['small_step_name']).strip()
+                full_desc = str(row.get('ss_wr_desc', '')).strip()
+                example_text = str(row.get('ss_desc', '')).strip()
+                diff_val = row.get('difficulty', '')
+                if pd.isna(diff_val):
+                    diff_val = ''
+                return {
+                    'action': 'small_step_search',
+                    'year': row['year'],
+                    'term': row['term'],
+                    'difficulty': diff_val,
+                    'topic': row['topic'],
+                    'small_step': step_text,
+                    'small_step_desc': example_text if example_text else full_desc,
+                    'small_step_full_desc': full_desc,
+                    'small_step_id': row['small_step_id'],
+                    'small_step_num': int(row['small_step_num']),
+                    'small_step_num_in_topic': int(row['small_step_num_in_topic']),
+                    'age': row['age'],
+                    'display_text': step_text if not example_text else f"{step_text} - {example_text}",
+                }
+
+            return _row_to_dict(prev_row), _row_to_dict(next_row)
+        except Exception:
+            return None, None
     
     def render(self):
         """Render the curriculum assistant UI and return selected text"""

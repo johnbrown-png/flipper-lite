@@ -465,6 +465,12 @@ def render_result_card(result):
                 use_container_width=True,
                 type="primary"
             ):
+                results_list = st.session_state.get('display_results', [])
+                try:
+                    idx = next(i for i, r in enumerate(results_list) if r.get('video_id') == result.get('video_id'))
+                except StopIteration:
+                    idx = 0
+                st.session_state.current_video_index = idx
                 st.session_state.current_video = result
                 st.rerun()
         
@@ -649,6 +655,8 @@ def main():
         st.session_state.display_step_name = ""
     if 'curriculum_context' not in st.session_state:
         st.session_state.curriculum_context = None
+    if 'current_video_index' not in st.session_state:
+        st.session_state.current_video_index = 0
     
     # ==========================================
     # RESULTS SECTION (Always visible above the fold)
@@ -688,9 +696,20 @@ def main():
             """,
             unsafe_allow_html=True
         )
-        if st.button("✕  Close video", key="close_inline_video", type="secondary"):
-            st.session_state.current_video = None
-            st.rerun()
+        btn_col_close, btn_col_next = st.columns([3, 1])
+        with btn_col_close:
+            if st.button("✕  Close video", key="close_inline_video", type="secondary", use_container_width=True):
+                st.session_state.current_video = None
+                st.session_state.current_video_index = 0
+                st.rerun()
+        with btn_col_next:
+            results_for_cycling = st.session_state.get('display_results', [])
+            if len(results_for_cycling) > 1:
+                if st.button("▶▶  Next Video", key="next_video_btn", type="primary", use_container_width=True):
+                    next_idx = (st.session_state.current_video_index + 1) % len(results_for_cycling)
+                    st.session_state.current_video_index = next_idx
+                    st.session_state.current_video = results_for_cycling[next_idx]
+                    st.rerun()
         st.markdown("---")
 
     if st.session_state.display_status == 'idle':
@@ -772,11 +791,59 @@ def main():
                         unsafe_allow_html=True,
                     )
             
+            # ---- Next Small Step / Back one navigation ----
+            if curriculum_assistant and curriculum_assistant.df is not None:
+                ctx = st.session_state.get('curriculum_context')
+                if ctx and ctx.get('small_step_num_in_topic') is not None:
+                    prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
+                    if prev_step or next_step:
+                        nav_col_back, nav_col_next = st.columns(2)
+                        with nav_col_back:
+                            if prev_step and st.button(
+                                "◀  Back one",
+                                key="step_nav_back",
+                                use_container_width=True,
+                                help=f"Previous: {prev_step['small_step']}",
+                            ):
+                                st.session_state.pending_step_nav = prev_step
+                                st.rerun()
+                        with nav_col_next:
+                            if next_step and st.button(
+                                "Next Small Step  ▶",
+                                key="step_nav_next",
+                                type="primary",
+                                use_container_width=True,
+                                help=f"Next: {next_step['small_step']}",
+                            ):
+                                st.session_state.pending_step_nav = next_step
+                                st.rerun()
+
             for result in st.session_state.display_results:
                 render_result_card(result)
         else:
             st.warning("No videos found for this step. Try a different curriculum step.")
     
+    # ==========================================
+    # STEP NAVIGATION (pending_step_nav from Next/Back buttons)
+    # ==========================================
+    if st.session_state.get('pending_step_nav'):
+        nav = st.session_state.pop('pending_step_nav')
+        st.session_state.curriculum_context = nav
+        st.session_state.display_step_name = nav.get('small_step', '')
+        # Update topic dropdown to keep UI consistent
+        st.session_state.curr_topic = nav.get('topic', st.session_state.get('curr_topic', 'Topic ?'))
+        st.session_state.topic_select_topic_search = st.session_state.curr_topic
+        st.session_state.current_video = None
+        st.session_state.current_video_index = 0
+        results = lookup_videos_for_step(
+            recommendations_df,
+            nav.get('year'), nav.get('term'), nav.get('difficulty', ''),
+            nav.get('topic'), nav.get('small_step'), nav.get('small_step_id', '')
+        )
+        st.session_state.display_results = results
+        st.session_state.display_status = 'complete'
+        st.rerun()
+
     # ==========================================
     # CURRICULUM ASSISTANT (Below results)
     # ==========================================

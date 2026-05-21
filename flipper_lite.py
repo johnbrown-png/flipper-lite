@@ -696,7 +696,7 @@ def main():
             """,
             unsafe_allow_html=True
         )
-        btn_col_close, btn_col_next = st.columns([3, 1])
+        _btn_spacer_l, btn_col_close, btn_col_next, _btn_spacer_r = st.columns([3, 1, 1, 3])
         with btn_col_close:
             if st.button("✕  Close video", key="close_inline_video", type="secondary", use_container_width=True):
                 st.session_state.current_video = None
@@ -797,7 +797,7 @@ def main():
                 if ctx and ctx.get('small_step_num_in_topic') is not None:
                     prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
                     if prev_step or next_step:
-                        nav_col_back, nav_col_next = st.columns(2)
+                        _nav_spacer_l, nav_col_back, nav_col_next, _nav_spacer_r = st.columns([3, 1, 1, 3])
                         with nav_col_back:
                             if prev_step and st.button(
                                 "◀  Back one",

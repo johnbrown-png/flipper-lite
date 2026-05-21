@@ -733,6 +733,27 @@ def main():
                 if breadcrumb_parts:
                     breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
                     st.markdown(f"<p style='font-size: 0.9rem; margin-bottom: 1rem;'>{breadcrumb_text}</p>", unsafe_allow_html=True)
+
+                small_step_desc = str(ctx.get('small_step_desc') or '').strip()
+                if small_step_desc:
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background: rgba(255, 255, 255, 0.82);
+                            border-left: 4px solid #4a90c8;
+                            border-radius: 8px;
+                            padding: 0.75rem 1rem;
+                            margin: 0 0 1rem 0;
+                            box-shadow: 0 2px 8px rgba(30, 58, 95, 0.08);
+                            color: #1e3a5f;
+                            font-size: 0.95rem;
+                            line-height: 1.4;
+                        ">
+                            {small_step_desc}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
             
             for result in st.session_state.display_results:
                 render_result_card(result)

@@ -13,7 +13,6 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from search_app.curriculum_assistant import CurriculumAssistant
-from flipper_search.streamlit_ui import render_search_ui
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -21,6 +20,9 @@ import pandas as pd
 import math
 
 from shared.curriculum_schema import normalize_precomputed_df
+
+# Mothballed feature toggle: keep code path for future re-enable.
+ENABLE_FLIPPER_SEARCH = False
 
 # Configure page
 st.set_page_config(
@@ -764,9 +766,11 @@ def main():
             st.rerun()
 
     # ==========================================
-    # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)
+    # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search - mothballed)
     # ==========================================
-    if curriculum_path.exists():
+    if ENABLE_FLIPPER_SEARCH and curriculum_path.exists():
+        from flipper_search.streamlit_ui import render_search_ui
+
         st.markdown("---")
         with st.expander("What can we help with today?", expanded=False):
             st.markdown("""

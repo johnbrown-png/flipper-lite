@@ -564,7 +564,7 @@ def main():
             color: #2c5f8d;
             text-align: center;
             margin-top: 1rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0rem;
             font-weight: 400;
         ">
             Pick the learners age and topic to play AI curated education videos for each Small Step in the White Rose Maths curriculum
@@ -619,8 +619,6 @@ def main():
             Registered in Scotland, Edinburgh, EH15 2BG [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
             """)
     
-    st.markdown("<br>", unsafe_allow_html=True)
-    
     # Load precomputed recommendations
     recommendations_df = load_precomputed_recommendations_flat()
     
@@ -653,7 +651,10 @@ def main():
     # ==========================================
     # RESULTS SECTION (Always visible above the fold)
     # ==========================================
-    st.markdown("---")
+    st.markdown(
+        "<hr style='margin: 0.05rem 0 0.05rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.25);'>",
+        unsafe_allow_html=True,
+    )
     
     # ==========================================
     # INLINE VIDEO PANEL (shown when a video is selected)

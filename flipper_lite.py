@@ -739,17 +739,34 @@ def main():
                     st.markdown(
                         f"""
                         <div style="
-                            background: rgba(255, 255, 255, 0.82);
-                            border-left: 4px solid #4a90c8;
-                            border-radius: 8px;
-                            padding: 0.75rem 1rem;
+                            background: linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(234,242,250,0.96) 100%);
+                            border: 1px solid rgba(74, 144, 200, 0.28);
+                            border-left: 7px solid #1e3a5f;
+                            border-radius: 12px;
+                            padding: 0.85rem 1rem 0.9rem 1rem;
                             margin: 0 0 1rem 0;
-                            box-shadow: 0 2px 8px rgba(30, 58, 95, 0.08);
-                            color: #1e3a5f;
-                            font-size: 0.95rem;
-                            line-height: 1.4;
+                            box-shadow: 0 6px 18px rgba(30, 58, 95, 0.12);
+                            color: #18324f;
+                            font-size: 0.96rem;
+                            line-height: 1.45;
                         ">
+                            <div style="
+                                display: inline-block;
+                                background: #1e3a5f;
+                                color: #ffffff;
+                                font-size: 0.72rem;
+                                font-weight: 700;
+                                letter-spacing: 0.08em;
+                                text-transform: uppercase;
+                                padding: 0.22rem 0.55rem;
+                                border-radius: 999px;
+                                margin-bottom: 0.45rem;
+                            ">
+                                Selected small step
+                            </div>
+                            <div style="font-weight: 500;">
                             {small_step_desc}
+                            </div>
                         </div>
                         """,
                         unsafe_allow_html=True,

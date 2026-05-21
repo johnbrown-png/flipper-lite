@@ -17,8 +17,7 @@ class CurriculumAssistant:
     def __init__(self, csv_path):
         """Initialize with path to curriculum CSV"""
         self.csv_path = Path(csv_path)
-        self.df = None
-        self._load_curriculum()
+        self.df = self._load_curriculum()
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes to allow for curriculum updates
     def _load_curriculum(_self):
@@ -52,6 +51,8 @@ class CurriculumAssistant:
         Returns (None, None) if the curriculum is not loaded or context is missing.
         Wraps cyclically: next of last step is first; prev of first is last.
         """
+        if self.df is None:
+            self.df = self._load_curriculum()
         if self.df is None or not ctx:
             return None, None
         try:

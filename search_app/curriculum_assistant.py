@@ -18,6 +18,62 @@ class CurriculumAssistant:
         """Initialize with path to curriculum CSV"""
         self.csv_path = Path(csv_path)
         self.df = self._load_curriculum()
+        self._recommendations_csv_path = self._resolve_recommendations_csv_path()
+        self.duplicate_step_ids = set()
+        self._refresh_duplicate_flags()
+
+    @staticmethod
+    def _resolve_recommendations_csv_path():
+        """Prefer the QA recommendations CSV when available, else fall back to base CSV."""
+        project_root = Path(__file__).resolve().parent.parent
+        qa_csv_path = project_root / 'precomputed_recommendations_flat_qa.csv'
+        base_csv_path = project_root / 'precomputed_recommendations_flat.csv'
+        return qa_csv_path if qa_csv_path.exists() else base_csv_path
+
+    @st.cache_data(ttl=300)
+    def _load_duplicate_step_ids(_self, recommendations_csv_path: str):
+        """Load small_step_ids flagged duplicate=1 in the recommendations CSV."""
+        path = Path(recommendations_csv_path)
+        if not path.exists():
+            return []
+        try:
+            df = pd.read_csv(path)
+            if 'small_step_id' not in df.columns or 'duplicate' not in df.columns:
+                return []
+            step_ids = df['small_step_id'].astype(str).str.strip()
+            duplicate_numeric = pd.to_numeric(df['duplicate'], errors='coerce').fillna(0)
+            duplicate_text = df['duplicate'].astype(str).str.strip().str.lower()
+            is_duplicate = (duplicate_numeric > 0) | duplicate_text.isin({'1', 'true', 'yes', 'y'})
+            valid_ids = is_duplicate & step_ids.ne('') & step_ids.ne('nan')
+            return sorted(set(step_ids[valid_ids].tolist()))
+        except Exception:
+            return []
+
+    def _refresh_duplicate_flags(self):
+        """Refresh duplicate flags from recommendations CSV (cached)."""
+        self._recommendations_csv_path = self._resolve_recommendations_csv_path()
+        self.duplicate_step_ids = set(self._load_duplicate_step_ids(str(self._recommendations_csv_path)))
+
+    def _get_topic_steps(self, age, topic, difficulty=''):
+        """Return topic steps in curriculum order, excluding duplicate-flagged rows."""
+        if self.df is None:
+            self.df = self._load_curriculum()
+        if self.df is None:
+            return pd.DataFrame()
+
+        mask = (self.df['age'] == age) & (self.df['topic'] == topic)
+        if difficulty:
+            mask &= (self.df['difficulty'] == difficulty)
+
+        topic_steps = self.df[mask].sort_values('small_step_num_in_topic', kind='stable').copy()
+        if topic_steps.empty:
+            return topic_steps
+
+        self._refresh_duplicate_flags()
+        if self.duplicate_step_ids:
+            topic_steps = topic_steps[~topic_steps['small_step_id'].isin(self.duplicate_step_ids)].copy()
+
+        return topic_steps.reset_index(drop=True)
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes to allow for curriculum updates
     def _load_curriculum(_self):
@@ -59,22 +115,26 @@ class CurriculumAssistant:
             topic = ctx.get('topic')
             age = ctx.get('age')
             difficulty = ctx.get('difficulty') or ''
+            current_sid = str(ctx.get('small_step_id', '')).strip()
             current_num = int(ctx.get('small_step_num_in_topic', -1))
-            if not topic or not age or current_num < 0:
+            if not topic or not age:
                 return None, None
 
-            mask = (self.df['age'] == age) & (self.df['topic'] == topic)
-            if difficulty:
-                mask &= (self.df['difficulty'] == difficulty)
-            steps = self.df[mask].sort_values('small_step_num_in_topic', kind='stable').reset_index(drop=True)
+            steps = self._get_topic_steps(age=age, topic=topic, difficulty=difficulty)
             if steps.empty:
                 return None, None
 
-            nums = steps['small_step_num_in_topic'].tolist()
-            try:
-                pos = nums.index(current_num)
-            except ValueError:
-                return None, None
+            if current_sid:
+                sid_matches = steps.index[steps['small_step_id'] == current_sid].tolist()
+                if not sid_matches:
+                    return None, None
+                pos = sid_matches[0]
+            else:
+                nums = steps['small_step_num_in_topic'].tolist()
+                try:
+                    pos = nums.index(current_num)
+                except ValueError:
+                    return None, None
 
             n = len(steps)
             prev_row = steps.iloc[(pos - 1) % n]
@@ -224,22 +284,26 @@ class CurriculumAssistant:
 
             # Show small steps if topic selected
             if st.session_state.curr_topic != 'Topic ?':
-                topic_steps = filtered_df[filtered_df['topic'] == st.session_state.curr_topic]
+                topic_steps = self._get_topic_steps(
+                    age=st.session_state.curr_year,
+                    topic=st.session_state.curr_topic,
+                    difficulty=st.session_state.curr_difficulty if show_difficulty else '',
+                )
                 if not topic_steps.empty:
-                    topic_steps = topic_steps.sort_values('small_step_num_in_topic', kind='stable')
                     if len(topic_steps) > 0:
-                        for _, row in topic_steps.iterrows():
-                            step_num = int(row['small_step_num_in_topic'])
+                        for display_step_num, (_, row) in enumerate(topic_steps.iterrows(), start=1):
                             step_text = str(row['small_step_name']).strip()
                             full_desc = str(row.get('ss_wr_desc', '')).strip()
                             example_text = str(row.get('ss_desc', '')).strip()
                             col_content, col_button = st.columns([9, 1])
                             with col_content:
-                                st.markdown(f"**{step_num}.** {step_text}")
+                                st.markdown(f"**{display_step_num}.** {step_text}")
                                 if example_text:
                                     st.caption(example_text)
                             with col_button:
-                                if st.button("Search", key=f"find_step_topic_{step_num}", help="Find videos for this step"):
+                                step_id = str(row.get('small_step_id', '')).strip()
+                                button_key = f"find_step_topic_{display_step_num}_{step_id}" if step_id else f"find_step_topic_{display_step_num}"
+                                if st.button("Search", key=button_key, help="Find videos for this step"):
                                     difficulty_val = row.get('difficulty', '')
                                     if pd.isna(difficulty_val):
                                         difficulty_val = ''
@@ -254,7 +318,8 @@ class CurriculumAssistant:
                                         'small_step_full_desc': full_desc,
                                         'small_step_id': row['small_step_id'],
                                         'small_step_num': int(row['small_step_num']),
-                                        'small_step_num_in_topic': step_num,
+                                        'small_step_num_in_topic': int(row['small_step_num_in_topic']),
+                                        'display_small_step_num_in_topic': display_step_num,
                                         'age': row['age'],
                                         'display_text': step_text if not example_text else f"{step_text} - {example_text}"
                                     }
@@ -262,7 +327,7 @@ class CurriculumAssistant:
                     else:
                         st.caption("No small steps available for this topic.")
                 else:
-                    st.caption("No data found for this topic.")
+                    st.caption("No non-duplicate small steps available for this topic.")
         return None, None
         return None, None
     

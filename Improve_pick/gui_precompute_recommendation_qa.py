@@ -1666,14 +1666,17 @@ class ImprovePickQAGUI:
             ]["small_step_id"].tolist()
         )
         wildcard_steps = set(self.wildcard_df["small_step_id"].tolist()) if not self.wildcard_df.empty else set()
+        duplicate_steps = set(self.dup_flagged_steps)
         target_steps = sorted(manual_steps | wildcard_steps)
 
         if not target_steps:
+            base_df["duplicate"] = base_df["small_step_id"].isin(duplicate_steps).astype(int)
             return base_df, {
                 "steps_touched": 0,
                 "wildcard_steps": 0,
                 "manual_steps": 0,
                 "skipped_steps": 0,
+                "duplicate_steps": len(duplicate_steps),
             }
 
         keep_mask = ~(
@@ -1709,12 +1712,15 @@ class ImprovePickQAGUI:
         if replacement_frames:
             output_df = pd.concat([output_df, *replacement_frames], ignore_index=True)
 
+        output_df["duplicate"] = output_df["small_step_id"].isin(duplicate_steps).astype(int)
+
         output_df = output_df.sort_values(["small_step_id", "rank"], kind="stable")
         return output_df, {
             "steps_touched": len(replacement_frames),
             "wildcard_steps": wildcard_count,
             "manual_steps": manual_count,
             "skipped_steps": skipped_count,
+            "duplicate_steps": len(duplicate_steps),
         }
 
     def _command_publish_qa_reference_csv(self) -> None:
@@ -1732,6 +1738,7 @@ class ImprovePickQAGUI:
                 self.precomputed_df = precomp_df
 
             self._reload_wildcards_df()
+            self.dup_flagged_steps = self._load_dup_flagged_steps()
             published_df, stats = self._build_published_precomputed_df()
 
             # Validation guard: enforce contiguous top ranks for each touched step.
@@ -1765,7 +1772,8 @@ class ImprovePickQAGUI:
                 f"wildcards={stats['wildcard_steps']} manual={stats['manual_steps']} skipped={stats['skipped_steps']}"
             )
             self.status_var.set(
-                f"Published QA reference CSV: steps={stats['steps_touched']}, wildcards={stats['wildcard_steps']}, manual={stats['manual_steps']}"
+                f"Published QA reference CSV: steps={stats['steps_touched']}, wildcards={stats['wildcard_steps']}, "
+                f"manual={stats['manual_steps']}, duplicate_steps={stats['duplicate_steps']}"
             )
             self._refresh_dup_review_state()
             messagebox.showinfo(
@@ -1775,6 +1783,7 @@ class ImprovePickQAGUI:
                 f"Steps touched: {stats['steps_touched']}\n"
                 f"Wildcard steps: {stats['wildcard_steps']}\n"
                 f"Manual-override steps: {stats['manual_steps']}\n"
+                f"Duplicate-hidden steps: {stats['duplicate_steps']}\n"
                 f"Skipped steps: {stats['skipped_steps']}",
             )
         except Exception as exc:

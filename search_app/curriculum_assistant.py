@@ -19,6 +19,7 @@ class CurriculumAssistant:
         self.csv_path = Path(csv_path)
         self.df = self._load_curriculum()
         self._recommendations_csv_path = self._resolve_recommendations_csv_path()
+        self._dup_flagged_csv_path = self._resolve_dup_flagged_csv_path()
         self.duplicate_step_ids = set()
         self._refresh_duplicate_flags()
 
@@ -30,8 +31,14 @@ class CurriculumAssistant:
         base_csv_path = project_root / 'precomputed_recommendations_flat.csv'
         return qa_csv_path if qa_csv_path.exists() else base_csv_path
 
+    @staticmethod
+    def _resolve_dup_flagged_csv_path():
+        """Path for manual duplicate flags authored in Improve Pick."""
+        project_root = Path(__file__).resolve().parent.parent
+        return project_root / 'qa' / 'dup_flagged_steps.csv'
+
     @st.cache_data(ttl=300)
-    def _load_duplicate_step_ids(_self, recommendations_csv_path: str):
+    def _load_duplicate_step_ids(_self, recommendations_csv_path: str, recommendations_mtime: float = 0.0):
         """Load small_step_ids flagged duplicate=1 in the recommendations CSV."""
         path = Path(recommendations_csv_path)
         if not path.exists():
@@ -50,9 +57,32 @@ class CurriculumAssistant:
             return []
 
     def _refresh_duplicate_flags(self):
-        """Refresh duplicate flags from recommendations CSV (cached)."""
+        """Refresh duplicate flags from recommendations CSV and sidecar flags (cached)."""
         self._recommendations_csv_path = self._resolve_recommendations_csv_path()
-        self.duplicate_step_ids = set(self._load_duplicate_step_ids(str(self._recommendations_csv_path)))
+        self._dup_flagged_csv_path = self._resolve_dup_flagged_csv_path()
+
+        rec_mtime = self._recommendations_csv_path.stat().st_mtime if self._recommendations_csv_path.exists() else 0.0
+        sidecar_mtime = self._dup_flagged_csv_path.stat().st_mtime if self._dup_flagged_csv_path.exists() else 0.0
+
+        from_recommendations = set(self._load_duplicate_step_ids(str(self._recommendations_csv_path), rec_mtime))
+        from_sidecar = set(self._load_dup_flagged_step_ids(str(self._dup_flagged_csv_path), sidecar_mtime))
+        self.duplicate_step_ids = from_recommendations | from_sidecar
+
+    @st.cache_data(ttl=300)
+    def _load_dup_flagged_step_ids(_self, dup_flagged_csv_path: str, dup_flagged_mtime: float = 0.0):
+        """Load duplicate step ids from qa/dup_flagged_steps.csv sidecar."""
+        path = Path(dup_flagged_csv_path)
+        if not path.exists():
+            return []
+        try:
+            df = pd.read_csv(path)
+            if 'small_step_id' not in df.columns:
+                return []
+            step_ids = df['small_step_id'].astype(str).str.strip()
+            valid_ids = step_ids.ne('') & step_ids.ne('nan')
+            return sorted(set(step_ids[valid_ids].tolist()))
+        except Exception:
+            return []
 
     def _get_topic_steps(self, age, topic, difficulty=''):
         """Return topic steps in curriculum order, excluding duplicate-flagged rows."""

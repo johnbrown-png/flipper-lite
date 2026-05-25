@@ -442012,3 +442012,4 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-20T21:41:37] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Vectors_6_Vector journeys in shapes
 [2026-05-20T21:42:27] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Area and volume_1_Isometric drawings
 [2026-05-21T09:36:35] QA REFERENCE PUBLISHED rows=5038 steps=631 wildcards=35 manual=602 skipped=35
+[2026-05-25T13:59:27] QA REFERENCE PUBLISHED rows=5038 steps=631 wildcards=35 manual=602 skipped=35

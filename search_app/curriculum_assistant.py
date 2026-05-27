@@ -88,31 +88,41 @@ class CurriculumAssistant:
             return 999
 
     def _build_topic_search_rows(self):
-        """Build deduplicated topic-age rows with KS4 split by Foundation/Higher."""
+        """Build deduplicated topic-age rows for prefix search table."""
         if self.df is None:
             self.df = self._load_curriculum()
         if self.df is None:
-            return pd.DataFrame(columns=['topic', 'age', 'difficulty'])
+            return pd.DataFrame(columns=['topic', 'age'])
 
-        rows = self.df[['topic', 'age', 'difficulty']].copy()
+        rows = self.df[['topic', 'age']].copy()
         rows['topic'] = rows['topic'].astype(str).str.strip()
         rows['age'] = rows['age'].astype(str).str.strip()
-        rows['difficulty'] = rows['difficulty'].astype(str).str.strip()
 
         rows = rows[(rows['topic'] != '') & (rows['topic'].str.lower() != 'nan')]
         rows = rows[(rows['age'] != '') & (rows['age'].str.lower() != 'nan')]
 
-        ks4_mask = rows['age'].isin(['14-15', '15-16'])
-        rows = rows[(~ks4_mask) | rows['difficulty'].isin(['Foundation', 'Higher'])]
-        rows.loc[~ks4_mask, 'difficulty'] = ''
-
-        rows = rows.drop_duplicates(subset=['topic', 'age', 'difficulty']).copy()
+        rows = rows.drop_duplicates(subset=['topic', 'age']).copy()
         rows['topic_sort'] = rows['topic'].str.lower()
         rows['age_sort'] = rows['age'].apply(self._age_sort_key)
-        rows['difficulty_sort'] = rows['difficulty'].map({'Foundation': 0, 'Higher': 1}).fillna(2)
 
-        rows = rows.sort_values(['topic_sort', 'age_sort', 'difficulty_sort', 'age'], kind='stable')
-        return rows[['topic', 'age', 'difficulty']].reset_index(drop=True)
+        rows = rows.sort_values(['topic_sort', 'age_sort', 'age'], kind='stable')
+        return rows[['topic', 'age']].reset_index(drop=True)
+
+    def _get_topic_difficulty_options(self, age, topic):
+        """Return available Foundation/Higher difficulty options for a topic/age pair."""
+        if self.df is None:
+            self.df = self._load_curriculum()
+        if self.df is None:
+            return []
+
+        mask = (self.df['age'] == age) & (self.df['topic'] == topic)
+        subset = self.df[mask].copy()
+        if subset.empty or 'difficulty' not in subset.columns:
+            return []
+
+        diff = subset['difficulty'].astype(str).str.strip()
+        opts = sorted(set(d for d in diff.tolist() if d in {'Foundation', 'Higher'}), key=lambda x: 0 if x == 'Foundation' else 1)
+        return opts
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes to allow for curriculum updates
     def _load_curriculum(_self):
@@ -243,6 +253,54 @@ class CurriculumAssistant:
             st.session_state.topic_prefix_search = ''
             st.session_state.clear_topic_prefix_on_open = False
 
+        def _apply_topic_open_selection(age_val, topic_val, difficulty_val=''):
+            """Apply selection from prefix table and route into existing topic/small-step flow."""
+            st.session_state.curr_year = age_val
+            st.session_state.year_select_topic_search = age_val
+
+            if age_val in ['13-14', '14-15']:
+                chosen = difficulty_val if difficulty_val in ['Foundation', 'Higher'] else 'Foundation'
+                st.session_state.curr_difficulty = chosen
+                st.session_state.difficulty_select_topic_search = chosen
+            else:
+                st.session_state.curr_difficulty = 'All'
+                st.session_state.difficulty_select_topic_search = 'All'
+
+            st.session_state.curr_topic = topic_val
+            st.session_state.topic_select_topic_search = topic_val
+            st.session_state.clear_topic_prefix_on_open = True
+            self._clear_parent_results_state()
+
+        pending_topic_open = st.session_state.get('pending_topic_open')
+        if pending_topic_open:
+            pending_age = pending_topic_open.get('age', '')
+            pending_topic = pending_topic_open.get('topic', '')
+            difficulty_options = self._get_topic_difficulty_options(pending_age, pending_topic)
+            if not difficulty_options:
+                difficulty_options = ['Foundation', 'Higher']
+
+            st.info(f"Choose difficulty for {pending_topic} ({pending_age})")
+            if 'pending_open_difficulty' not in st.session_state or st.session_state.pending_open_difficulty not in difficulty_options:
+                st.session_state.pending_open_difficulty = difficulty_options[0]
+
+            st.radio(
+                "Difficulty",
+                options=difficulty_options,
+                key='pending_open_difficulty',
+                horizontal=True,
+            )
+            p1, p2, _ = st.columns([1, 1, 5])
+            with p1:
+                if st.button('Continue', key='confirm_pending_topic_open'):
+                    chosen_diff = st.session_state.get('pending_open_difficulty', difficulty_options[0])
+                    st.session_state.pending_topic_open = None
+                    _apply_topic_open_selection(pending_age, pending_topic, chosen_diff)
+                    st.rerun()
+            with p2:
+                if st.button('Cancel', key='cancel_pending_topic_open'):
+                    st.session_state.pending_topic_open = None
+                    st.rerun()
+
         # Prefix topic search: hidden until user types.
         topic_prefix = st.text_input(
             "",
@@ -260,47 +318,34 @@ class CurriculumAssistant:
                 st.caption(f"No topics begin with '{topic_prefix}'.")
             else:
                 st.caption(f"{len(matches)} topic/age matches")
-                h1, h2, h3, h4 = st.columns([6, 1.5, 1.5, 1.2])
+                h1, h2, h4 = st.columns([7, 1.8, 1.2])
                 with h1:
                     st.markdown("**Topic**")
                 with h2:
                     st.markdown("**Age**")
-                with h3:
-                    st.markdown("**Difficulty**")
                 with h4:
                     st.markdown("**Action**")
                 for idx, row in matches.iterrows():
                     topic_val = row['topic']
                     age_val = row['age']
-                    difficulty_val = row['difficulty']
-                    diff_display = difficulty_val if difficulty_val else 'All'
 
-                    c1, c2, c3, c4 = st.columns([6, 1.5, 1.5, 1.2])
+                    c1, c2, c4 = st.columns([7, 1.8, 1.2])
                     with c1:
                         st.write(topic_val)
                     with c2:
                         st.write(age_val)
-                    with c3:
-                        st.write(diff_display)
                     with c4:
-                        btn_key = f"open_topic_match_{idx}_{age_val}_{difficulty_val}_{topic_val}".replace(' ', '_')
+                        btn_key = f"open_topic_match_{idx}_{age_val}_{topic_val}".replace(' ', '_')
                         if st.button("Open", key=btn_key):
-                            st.session_state.curr_year = age_val
-                            st.session_state.year_select_topic_search = age_val
-
-                            if age_val in ['14-15', '15-16']:
-                                selected_diff = difficulty_val if difficulty_val in ['Foundation', 'Higher'] else 'Foundation'
-                                st.session_state.curr_difficulty = selected_diff
-                                st.session_state.difficulty_select_topic_search = selected_diff
+                            if age_val in ['13-14', '14-15']:
+                                st.session_state.pending_topic_open = {
+                                    'age': age_val,
+                                    'topic': topic_val,
+                                }
+                                st.rerun()
                             else:
-                                st.session_state.curr_difficulty = 'All'
-                                st.session_state.difficulty_select_topic_search = 'All'
-
-                            st.session_state.curr_topic = topic_val
-                            st.session_state.topic_select_topic_search = topic_val
-                            st.session_state.clear_topic_prefix_on_open = True
-                            self._clear_parent_results_state()
-                            st.rerun()
+                                _apply_topic_open_selection(age_val, topic_val, '')
+                                st.rerun()
 
 
         # --- Final: Age -> Topic -> Small Steps UI ---

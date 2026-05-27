@@ -255,6 +255,15 @@ class CurriculumAssistant:
                 st.caption(f"No topics begin with '{topic_prefix}'.")
             else:
                 st.caption(f"{len(matches)} topic/age matches")
+                h1, h2, h3, h4 = st.columns([6, 1.5, 1.5, 1.2])
+                with h1:
+                    st.markdown("**Topic**")
+                with h2:
+                    st.markdown("**Age**")
+                with h3:
+                    st.markdown("**Difficulty**")
+                with h4:
+                    st.markdown("**Action**")
                 for idx, row in matches.iterrows():
                     topic_val = row['topic']
                     age_val = row['age']

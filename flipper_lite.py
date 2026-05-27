@@ -797,7 +797,33 @@ def main():
                 if ctx and ctx.get('small_step_num_in_topic') is not None:
                     prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
                     if prev_step or next_step:
-                        _nav_spacer_l, nav_col_back, nav_col_next, _nav_spacer_r = st.columns([3, 1, 1, 3])
+                        _nav_spacer_l, nav_col_home, nav_col_back, nav_col_next, _nav_spacer_r = st.columns([2, 1, 1, 1, 2])
+                        with nav_col_home:
+                            if st.button(
+                                "Back to search",
+                                key="step_nav_home",
+                                use_container_width=True,
+                                help="Return to search with no filters",
+                            ):
+                                st.session_state.display_status = 'idle'
+                                st.session_state.display_results = []
+                                st.session_state.display_step_name = ""
+                                st.session_state.curriculum_context = None
+                                st.session_state.current_video = None
+                                st.session_state.current_video_index = 0
+
+                                st.session_state.curr_year = 'Age ?'
+                                st.session_state.year_select_topic_search = 'Age ?'
+                                st.session_state.curr_difficulty = 'All'
+                                st.session_state.difficulty_select_topic_search = 'All'
+                                st.session_state.curr_topic = 'Topic ?'
+                                st.session_state.topic_select_topic_search = 'Topic ?'
+                                st.session_state.topic_prefix_search = ''
+                                st.session_state.pending_topic_open = None
+                                st.session_state.pending_open_difficulty = 'Foundation'
+                                st.session_state.clear_topic_prefix_on_open = False
+                                st.session_state.pending_step_nav = None
+                                st.rerun()
                         with nav_col_back:
                             if prev_step and st.button(
                                 "◀  Back one",

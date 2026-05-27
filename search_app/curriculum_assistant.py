@@ -241,7 +241,7 @@ class CurriculumAssistant:
         # Prefix topic search: hidden until user types.
         topic_prefix = st.text_input(
             "",
-            placeholder="Search e.g. Fractions, algebra)",
+            placeholder="Search e.g. fractions, algebra",
             key="topic_prefix_search"
         )
 

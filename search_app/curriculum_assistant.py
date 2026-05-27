@@ -238,6 +238,11 @@ class CurriculumAssistant:
             else:
                 return None, None
 
+        # Clear active topic prefix after selecting an Open result row.
+        if st.session_state.get('clear_topic_prefix_on_open'):
+            st.session_state.topic_prefix_search = ''
+            st.session_state.clear_topic_prefix_on_open = False
+
         # Prefix topic search: hidden until user types.
         topic_prefix = st.text_input(
             "",
@@ -293,6 +298,7 @@ class CurriculumAssistant:
 
                             st.session_state.curr_topic = topic_val
                             st.session_state.topic_select_topic_search = topic_val
+                            st.session_state.clear_topic_prefix_on_open = True
                             self._clear_parent_results_state()
                             st.rerun()
 

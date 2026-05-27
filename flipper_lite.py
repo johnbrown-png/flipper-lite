@@ -826,7 +826,7 @@ def main():
                                 st.rerun()
                         with nav_col_back:
                             if prev_step and st.button(
-                                "◀  Back one",
+                                "◀  Previous Small Step",
                                 key="step_nav_back",
                                 use_container_width=True,
                                 help=f"Previous: {prev_step['small_step']}",

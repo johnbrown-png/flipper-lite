@@ -77,6 +77,42 @@ class CurriculumAssistant:
             topic_steps = topic_steps[~topic_steps['small_step_id'].isin(self.duplicate_step_ids)].copy()
 
         return topic_steps.reset_index(drop=True)
+
+    @staticmethod
+    def _age_sort_key(age_value):
+        """Sort age bands numerically by their first number (e.g., 5-6, 10-11)."""
+        try:
+            age_text = str(age_value).strip()
+            return int(age_text.split('-')[0])
+        except Exception:
+            return 999
+
+    def _build_topic_search_rows(self):
+        """Build deduplicated topic-age rows with KS4 split by Foundation/Higher."""
+        if self.df is None:
+            self.df = self._load_curriculum()
+        if self.df is None:
+            return pd.DataFrame(columns=['topic', 'age', 'difficulty'])
+
+        rows = self.df[['topic', 'age', 'difficulty']].copy()
+        rows['topic'] = rows['topic'].astype(str).str.strip()
+        rows['age'] = rows['age'].astype(str).str.strip()
+        rows['difficulty'] = rows['difficulty'].astype(str).str.strip()
+
+        rows = rows[(rows['topic'] != '') & (rows['topic'].str.lower() != 'nan')]
+        rows = rows[(rows['age'] != '') & (rows['age'].str.lower() != 'nan')]
+
+        ks4_mask = rows['age'].isin(['14-15', '15-16'])
+        rows = rows[(~ks4_mask) | rows['difficulty'].isin(['Foundation', 'Higher'])]
+        rows.loc[~ks4_mask, 'difficulty'] = ''
+
+        rows = rows.drop_duplicates(subset=['topic', 'age', 'difficulty']).copy()
+        rows['topic_sort'] = rows['topic'].str.lower()
+        rows['age_sort'] = rows['age'].apply(self._age_sort_key)
+        rows['difficulty_sort'] = rows['difficulty'].map({'Foundation': 0, 'Higher': 1}).fillna(2)
+
+        rows = rows.sort_values(['topic_sort', 'age_sort', 'difficulty_sort', 'age'], kind='stable')
+        return rows[['topic', 'age', 'difficulty']].reset_index(drop=True)
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes to allow for curriculum updates
     def _load_curriculum(_self):
@@ -202,9 +238,58 @@ class CurriculumAssistant:
             else:
                 return None, None
 
+        # Prefix topic search: hidden until user types.
+        topic_prefix = st.text_input(
+            "Search topic",
+            placeholder="Type topic letters (e.g., A, Al, Fra)",
+            key="topic_prefix_search"
+        )
 
-        # --- New: Age dropdown above free-text topic search ---
-        # --- Final: Only Age -> Topic -> Small Steps UI ---
+        topic_prefix = (topic_prefix or '').strip()
+        if topic_prefix:
+            prefix_lower = topic_prefix.lower()
+            search_rows = self._build_topic_search_rows()
+            matches = search_rows[search_rows['topic'].str.lower().str.startswith(prefix_lower)]
+
+            if matches.empty:
+                st.caption(f"No topics begin with '{topic_prefix}'.")
+            else:
+                st.caption(f"{len(matches)} topic/age matches")
+                for idx, row in matches.iterrows():
+                    topic_val = row['topic']
+                    age_val = row['age']
+                    difficulty_val = row['difficulty']
+                    diff_display = difficulty_val if difficulty_val else 'All'
+
+                    c1, c2, c3, c4 = st.columns([6, 1.5, 1.5, 1.2])
+                    with c1:
+                        st.write(topic_val)
+                    with c2:
+                        st.write(age_val)
+                    with c3:
+                        st.write(diff_display)
+                    with c4:
+                        btn_key = f"open_topic_match_{idx}_{age_val}_{difficulty_val}_{topic_val}".replace(' ', '_')
+                        if st.button("Open", key=btn_key):
+                            st.session_state.curr_year = age_val
+                            st.session_state.year_select_topic_search = age_val
+
+                            if age_val in ['14-15', '15-16']:
+                                selected_diff = difficulty_val if difficulty_val in ['Foundation', 'Higher'] else 'Foundation'
+                                st.session_state.curr_difficulty = selected_diff
+                                st.session_state.difficulty_select_topic_search = selected_diff
+                            else:
+                                st.session_state.curr_difficulty = 'All'
+                                st.session_state.difficulty_select_topic_search = 'All'
+
+                            st.session_state.curr_topic = topic_val
+                            st.session_state.topic_select_topic_search = topic_val
+                            st.session_state.topic_prefix_search = ''
+                            self._clear_parent_results_state()
+                            st.rerun()
+
+
+        # --- Final: Age -> Topic -> Small Steps UI ---
         # Age dropdown
         ages = sorted(self.df['age'].dropna().unique(), key=lambda x: int(str(x).split('-')[0]) if '-' in str(x) else 0)
         age_options = ['Age ?'] + ages

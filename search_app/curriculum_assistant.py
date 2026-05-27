@@ -284,7 +284,6 @@ class CurriculumAssistant:
 
                             st.session_state.curr_topic = topic_val
                             st.session_state.topic_select_topic_search = topic_val
-                            st.session_state.topic_prefix_search = ''
                             self._clear_parent_results_state()
                             st.rerun()
 

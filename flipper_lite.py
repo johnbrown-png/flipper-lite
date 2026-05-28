@@ -487,7 +487,8 @@ def render_result_card(result, compact=False):
             # Display circular gauge with label - centered
             st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)
             st.markdown(create_circular_progress_svg(combined_pct, size=56 if compact else 80), unsafe_allow_html=True)
-            st.markdown("<div style='font-size:0.75rem; color:#666; margin-top:4px;'>Combined</div>", unsafe_allow_html=True)
+            combined_label_size = "0.56rem" if compact else "0.75rem"
+            st.markdown(f"<div style='font-size:{combined_label_size}; color:#666; margin-top:4px;'>Combined</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
         with col_content:
@@ -566,9 +567,9 @@ def main():
                 f"""
                 <div style="
                     background: {HEADER_GRADIENT};
-                    width: 86px;
-                    height: 86px;
-                    border-radius: 12px;
+                    width: 43px;
+                    height: 43px;
+                    border-radius: 8px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -578,11 +579,13 @@ def main():
                     <div style="
                         font-family: 'Poppins', sans-serif;
                         color: #ffffff;
-                        font-size: 2.1rem;
-                        font-weight: 700;
-                        line-height: 1;
-                        letter-spacing: -0.03em;
-                    ">FS</div>
+                        font-size: 0.34rem;
+                        font-weight: 600;
+                        line-height: 1.05;
+                        letter-spacing: 0;
+                        text-align: center;
+                        padding: 0 2px;
+                    ">Flipper School</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -639,52 +642,53 @@ def main():
             """, unsafe_allow_html=True)
     
     with col2:
-        with st.popover("ℹ️", use_container_width=True):
-            st.markdown("### Flipper School - Cur*AI*ted Education Videos")
-            
-            st.markdown("#### Our goal:")
-            st.markdown("""
-            Flipper School aims to support maths learning by making it easier for educators 
-            everywhere to find the best instructional videos linked to highly regarded curriculum White Rose 
-            based on the UK National Curriculum and Singapore Mastery learning (depth before speed) 
-            Concrete → Pictorial → Abstract (CPA) progression. Via videos we aim to provide some context 
-            and quick/light introductions to topics to complement other forms of learning.
-            """)
+        if not results_focus_mode:
+            with st.popover("ℹ️", use_container_width=True):
+                st.markdown("### Flipper School - Cur*AI*ted Education Videos")
+                
+                st.markdown("#### Our goal:")
+                st.markdown("""
+                Flipper School aims to support maths learning by making it easier for educators 
+                everywhere to find the best instructional videos linked to highly regarded curriculum White Rose 
+                based on the UK National Curriculum and Singapore Mastery learning (depth before speed) 
+                Concrete → Pictorial → Abstract (CPA) progression. Via videos we aim to provide some context 
+                and quick/light introductions to topics to complement other forms of learning.
+                """)
 
-            st.markdown("#### Why flipped/ flipped classroom:")
-            st.markdown("""
-            Flipper School was named after flipped classrooms the idea of reversing the learning of introductory concepts 
-            back onto the learner. This frees up instructional time to be more efficient, allowing it to focus on what its best for,
-            embedding, exploration, elaboration and mastery.                                  .
-            """)
-            
-            st.markdown("#### How our service works:")
-            st.markdown("""
-            At Flipper School, experienced education researchers find the best education videos on youtube, 
-            selecting those that are safe, most relevant to learning maths and provide the highest 
-            instructional quality. We use advanced language processing to match video content to the 
-            White Rose Mathematics curriculum. The most relevant videos are shortlisted and then scored 
-            for instructional quality using AI, the top three videos are presented.
-            """)
-            
-            st.markdown("#### How it might be used:")
-            st.markdown("""
-            As the White Rose curriculum is sequential and later topics require mastery of earlier topics 
-            we recommend users find the latest topic the learner has mastered then view following videos 
-            in order, at the pace that suits other teaching.
-            """)
-            
-            st.markdown("#### Feedback:")
-            st.markdown("""
-            We are keen to hear any views you have on Flipper Schools to help us improve our contribution 
-            to learning. Please contact [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
-            """)
-            
-            st.markdown("#### Contact:")
-            st.markdown("""
-            FLIPPER EDUCATION LTD Company number: SC882978
-            Registered in Scotland, Edinburgh, EH15 2BG [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
-            """)
+                st.markdown("#### Why flipped/ flipped classroom:")
+                st.markdown("""
+                Flipper School was named after flipped classrooms the idea of reversing the learning of introductory concepts 
+                back onto the learner. This frees up instructional time to be more efficient, allowing it to focus on what its best for,
+                embedding, exploration, elaboration and mastery.                                  .
+                """)
+                
+                st.markdown("#### How our service works:")
+                st.markdown("""
+                At Flipper School, experienced education researchers find the best education videos on youtube, 
+                selecting those that are safe, most relevant to learning maths and provide the highest 
+                instructional quality. We use advanced language processing to match video content to the 
+                White Rose Mathematics curriculum. The most relevant videos are shortlisted and then scored 
+                for instructional quality using AI, the top three videos are presented.
+                """)
+                
+                st.markdown("#### How it might be used:")
+                st.markdown("""
+                As the White Rose curriculum is sequential and later topics require mastery of earlier topics 
+                we recommend users find the latest topic the learner has mastered then view following videos 
+                in order, at the pace that suits other teaching.
+                """)
+                
+                st.markdown("#### Feedback:")
+                st.markdown("""
+                We are keen to hear any views you have on Flipper Schools to help us improve our contribution 
+                to learning. Please contact [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
+                """)
+                
+                st.markdown("#### Contact:")
+                st.markdown("""
+                FLIPPER EDUCATION LTD Company number: SC882978
+                Registered in Scotland, Edinburgh, EH15 2BG [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
+                """)
     
     # Load precomputed recommendations
     recommendations_df = load_precomputed_recommendations_flat()

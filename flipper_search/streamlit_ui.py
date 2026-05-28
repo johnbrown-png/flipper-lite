@@ -74,6 +74,8 @@ def render_search_ui(
         st.session_state.flipper_search_results = []
     if 'flipper_search_pending' not in st.session_state:
         st.session_state.flipper_search_pending = None
+    if 'flipper_search_submitted' not in st.session_state:
+        st.session_state.flipper_search_submitted = False
     
     # Check for pending selection
     if st.session_state.flipper_search_pending:
@@ -116,24 +118,26 @@ def render_search_ui(
     selected_epoch = 'All'  # epoch filter disabled; always search all epochs
     
     # Search input
+    def _submit_search() -> None:
+        st.session_state.flipper_search_submitted = True
+
     search_query = st.text_input(
         "Search",
         key='flipper_search_input',
         label_visibility='collapsed',
         placeholder="e.g. 'adding fractions', 'gradient of a straight line'...",
+        on_change=_submit_search,
     )
-    
-    # Search button
-    col_btn, col_status = st.columns([1, 3])
-    with col_btn:
-        search_clicked = st.button("🔍 Search", key='flipper_search_btn', use_container_width=True)
-    
-    # Execute search
-    if search_clicked and search_query.strip():
+
+    # Execute search when the user presses Enter in the text box.
+    if st.session_state.get('flipper_search_submitted') and search_query.strip():
         with st.spinner("Searching curriculum..."):
             results = engine.search(search_query, top_k=10)
             st.session_state.flipper_search_results = results
             st.session_state.flipper_search_query = search_query
+    
+    if st.session_state.get('flipper_search_submitted'):
+        st.session_state.flipper_search_submitted = False
     
     # Display results
     if st.session_state.flipper_search_results:

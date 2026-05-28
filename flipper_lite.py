@@ -21,8 +21,8 @@ import math
 
 from shared.curriculum_schema import normalize_precomputed_df
 
-# Mothballed feature toggle: keep code path for future re-enable.
-ENABLE_FLIPPER_SEARCH = True
+# Mothballed topic-table search: hidden by default; set True to re-enable display.
+ENABLE_TOPIC_TABLE_SEARCH = False
 
 # Configure page
 st.set_page_config(
@@ -1038,6 +1038,7 @@ def main():
     # CURRICULUM ASSISTANT (Below results)
     # ==========================================
     if curriculum_assistant:
+        st.markdown("#### Search by Small Step")
         # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
         action, text = curriculum_assistant.render()
         if action == 'small_step_search' and text:
@@ -1063,7 +1064,7 @@ def main():
     # ==========================================
     # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search - mothballed)
     # ==========================================
-    if ENABLE_FLIPPER_SEARCH and curriculum_path.exists():
+    if ENABLE_TOPIC_TABLE_SEARCH and curriculum_path.exists():
         from flipper_search.streamlit_ui import render_search_ui
 
         st.markdown("---")

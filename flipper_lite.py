@@ -426,8 +426,8 @@ def render_video_player(video_data):
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_result_card(result):
-    """Render a single video result card"""
+def render_result_card(result, compact=False):
+    """Render a single video result card."""
     
     # Get video ID, topic, and small_step for tracking
     video_id = result['video_id']
@@ -438,18 +438,22 @@ def render_result_card(result):
     dom_id = f"video-card-{video_id}-{topic}-{small_step}".replace(' ', '_').replace('"', '').replace("'", '')
 
     with st.container():
-        # Layout: thumbnail, circular progress indicator, and content
-        col_thumb, col_gauge, col_content = st.columns([1.2, 0.5, 3.3])
+        # Compact mode keeps all three cards visible in one viewport.
+        if compact:
+            col_thumb, col_gauge, col_content = st.columns([0.95, 0.4, 3.65])
+        else:
+            col_thumb, col_gauge, col_content = st.columns([1.2, 0.5, 3.3])
 
         with col_thumb:
             # Clickable thumbnail with visible play button overlay
             unique_key = f"{video_id}_{topic}_{small_step}".replace(' ', '_').replace('"', '').replace("'", '')
             
             # Thumbnail with hover effect and button
+            thumb_style = "width: 100%; max-height: 120px; object-fit: cover; border-radius: 8px; display: block;" if compact else "width: 100%; border-radius: 8px; display: block;"
             st.markdown(f"""
                 <div style='position: relative; width: 100%;' class='video-thumbnail-container'>
                     <img src='https://img.youtube.com/vi/{video_id}/mqdefault.jpg' 
-                         style='width: 100%; border-radius: 8px; display: block;'
+                         style='{thumb_style}'
                          class='video-card' 
                          data-video-id='{video_id}' 
                          data-topic='{topic}' 
@@ -460,7 +464,7 @@ def render_result_card(result):
             
             # Clean watch button
             if st.button(
-                "▶ Watch",
+                "▶ Watch" if not compact else "Watch",
                 key=f"play_{unique_key}",
                 use_container_width=True,
                 type="primary"
@@ -482,13 +486,19 @@ def render_result_card(result):
             
             # Display circular gauge with label - centered
             st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)
-            st.markdown(create_circular_progress_svg(combined_pct, size=80), unsafe_allow_html=True)
+            st.markdown(create_circular_progress_svg(combined_pct, size=56 if compact else 80), unsafe_allow_html=True)
             st.markdown("<div style='font-size:0.75rem; color:#666; margin-top:4px;'>Combined</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
         with col_content:
             # Video title at the top (larger font)
-            st.markdown(f"<div style='font-size:1.1rem; font-weight:600; margin-bottom:0.3rem'>{result['title']}</div>", unsafe_allow_html=True)
+            title_style = (
+                "font-size:0.95rem; font-weight:600; margin-bottom:0.18rem; "
+                "line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;"
+                if compact else
+                "font-size:1.1rem; font-weight:600; margin-bottom:0.3rem"
+            )
+            st.markdown(f"<div style='{title_style}'>{result['title']}</div>", unsafe_allow_html=True)
 
             # Channel and duration below title, after a space
             channel = result.get('channel', '')
@@ -497,17 +507,22 @@ def render_result_card(result):
             duration_display = format_duration(duration) if duration else ''
             if channel_display or duration_display:
                 display_line = f"{channel_display} | {duration_display}" if channel_display and duration_display else channel_display or duration_display
-                st.markdown(f"<div style='font-size:0.95rem; color:#2c5f8d; margin-bottom:0.5rem'>{display_line}</div>", unsafe_allow_html=True)
+                meta_font = "0.82rem" if compact else "0.95rem"
+                meta_margin = "0.2rem" if compact else "0.5rem"
+                st.markdown(f"<div style='font-size:{meta_font}; color:#2c5f8d; margin-bottom:{meta_margin}'>{display_line}</div>", unsafe_allow_html=True)
 
             # Display individual score details as text
             st.caption(f"🔍 Semantic: {semantic_pct}% | 📚 Instruction: {instruction_pct}%")
             
             # Display instruction justification if available
             justification = result.get('instruction_justification', '')
-            if justification and str(justification).strip():
+            if (not compact) and justification and str(justification).strip():
                 st.markdown(f"<div style='font-size:0.9rem; color:#555; margin-top:0.5rem; font-style:italic; padding:0.5rem; background:#f8f9fa; border-left:3px solid #4a90c8; border-radius:4px;'>💡 {justification}</div>", unsafe_allow_html=True)
 
-        st.markdown("---")
+        if compact:
+            st.markdown("<hr style='margin: 0.35rem 0 0.35rem 0; border:0; border-top:1px solid rgba(44, 95, 141, 0.18);'>", unsafe_allow_html=True)
+        else:
+            st.markdown("---")
 
 
 def main():
@@ -518,6 +533,11 @@ def main():
         st.session_state.viewing_video = False
     if 'current_video' not in st.session_state:
         st.session_state.current_video = None
+
+    results_focus_mode = (
+        st.session_state.get('display_status') == 'complete'
+        and bool(st.session_state.get('display_results'))
+    )
     
     # ========== COLOR SCHEME ==========
     # Professional Blue (Trustworthy, Clean, Modern)
@@ -525,11 +545,50 @@ def main():
     MAIN_TEXT_COLOR = "#f0f4f8"
     AI_ACCENT_COLOR = "#FFD700"
     
+    if results_focus_mode:
+        st.markdown(
+            """
+            <style>
+            .block-container {
+                padding-top: 0.5rem !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
     # Custom Styled Header
-    col1, col2 = st.columns([0.95, 0.05])
+    col1, col2 = st.columns([0.09, 0.91] if results_focus_mode else [0.95, 0.05])
     
     with col1:
-        st.markdown(f"""
+        if results_focus_mode:
+            st.markdown(
+                f"""
+                <div style="
+                    background: {HEADER_GRADIENT};
+                    width: 86px;
+                    height: 86px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 3px 7px rgba(0,0,0,0.14);
+                    margin-bottom: 0.2rem;
+                ">
+                    <div style="
+                        font-family: 'Poppins', sans-serif;
+                        color: #ffffff;
+                        font-size: 2.1rem;
+                        font-weight: 700;
+                        line-height: 1;
+                        letter-spacing: -0.03em;
+                    ">FS</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
         <div style="
             background: {HEADER_GRADIENT};
@@ -564,20 +623,20 @@ def main():
         </div>
         """, unsafe_allow_html=True)
         
-        # Subheading below banner
-        st.markdown("""
-        <p style="
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.2rem;
-            color: #2c5f8d;
-            text-align: center;
-            margin-top: 1rem;
-            margin-bottom: 0rem;
-            font-weight: 400;
-        ">
-            Pick the learners age and topic to play AI curated education videos for each Small Step in the White Rose Maths curriculum
-        </p>
-        """, unsafe_allow_html=True)
+            # Subheading below banner
+            st.markdown("""
+            <p style="
+                font-family: 'Poppins', sans-serif;
+                font-size: 1.2rem;
+                color: #2c5f8d;
+                text-align: center;
+                margin-top: 1rem;
+                margin-bottom: 0rem;
+                font-weight: 400;
+            ">
+                Pick the learners age and topic to play AI curated education videos for each Small Step in the White Rose Maths curriculum
+            </p>
+            """, unsafe_allow_html=True)
     
     with col2:
         with st.popover("ℹ️", use_container_width=True):
@@ -751,45 +810,68 @@ def main():
                 # Display breadcrumb with smaller font and separators
                 if breadcrumb_parts:
                     breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
-                    st.markdown(f"<p style='font-size: 0.9rem; margin-bottom: 1rem;'>{breadcrumb_text}</p>", unsafe_allow_html=True)
+                    breadcrumb_margin = "0.35rem" if results_focus_mode else "1rem"
+                    st.markdown(f"<p style='font-size: 0.84rem; margin-bottom: {breadcrumb_margin};'>{breadcrumb_text}</p>", unsafe_allow_html=True)
 
                 small_step_desc = str(ctx.get('small_step_desc') or '').strip()
                 if small_step_desc:
-                    st.markdown(
-                        f"""
-                        <div style="
-                            background: linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(234,242,250,0.96) 100%);
-                            border: 1px solid rgba(74, 144, 200, 0.28);
-                            border-left: 7px solid #1e3a5f;
-                            border-radius: 12px;
-                            padding: 0.85rem 1rem 0.9rem 1rem;
-                            margin: 0 0 1rem 0;
-                            box-shadow: 0 6px 18px rgba(30, 58, 95, 0.12);
-                            color: #18324f;
-                            font-size: 0.96rem;
-                            line-height: 1.45;
-                        ">
+                    if results_focus_mode:
+                        st.markdown(
+                            f"""
                             <div style="
-                                display: inline-block;
-                                background: #1e3a5f;
-                                color: #ffffff;
-                                font-size: 0.72rem;
-                                font-weight: 700;
-                                letter-spacing: 0.08em;
-                                text-transform: uppercase;
-                                padding: 0.22rem 0.55rem;
-                                border-radius: 999px;
-                                margin-bottom: 0.45rem;
+                                background: rgba(255,255,255,0.82);
+                                border: 1px solid rgba(74, 144, 200, 0.25);
+                                border-radius: 9px;
+                                padding: 0.35rem 0.6rem;
+                                margin: 0 0 0.45rem 0;
+                                color: #18324f;
+                                font-size: 0.8rem;
+                                line-height: 1.3;
+                                white-space: nowrap;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                            " title="{small_step_desc}">
+                                <strong>Selected small step:</strong> {small_step_desc}
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(
+                            f"""
+                            <div style="
+                                background: linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(234,242,250,0.96) 100%);
+                                border: 1px solid rgba(74, 144, 200, 0.28);
+                                border-left: 7px solid #1e3a5f;
+                                border-radius: 12px;
+                                padding: 0.85rem 1rem 0.9rem 1rem;
+                                margin: 0 0 1rem 0;
+                                box-shadow: 0 6px 18px rgba(30, 58, 95, 0.12);
+                                color: #18324f;
+                                font-size: 0.96rem;
+                                line-height: 1.45;
                             ">
-                                Selected small step
+                                <div style="
+                                    display: inline-block;
+                                    background: #1e3a5f;
+                                    color: #ffffff;
+                                    font-size: 0.72rem;
+                                    font-weight: 700;
+                                    letter-spacing: 0.08em;
+                                    text-transform: uppercase;
+                                    padding: 0.22rem 0.55rem;
+                                    border-radius: 999px;
+                                    margin-bottom: 0.45rem;
+                                ">
+                                    Selected small step
+                                </div>
+                                <div style="font-weight: 500;">
+                                {small_step_desc}
+                                </div>
                             </div>
-                            <div style="font-weight: 500;">
-                            {small_step_desc}
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                            """,
+                            unsafe_allow_html=True,
+                        )
             
             # ---- Next Small Step / Back one navigation ----
             if curriculum_assistant and curriculum_assistant.df is not None:
@@ -845,7 +927,7 @@ def main():
                                 st.rerun()
 
             for result in st.session_state.display_results:
-                render_result_card(result)
+                render_result_card(result, compact=results_focus_mode)
         else:
             st.warning("No videos found for this step. Try a different curriculum step.")
     

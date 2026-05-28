@@ -318,7 +318,18 @@ class CurriculumAssistant:
                 st.caption(f"No topics begin with '{topic_prefix}'.")
             else:
                 st.caption(f"{len(matches)} topic/age matches")
-                h1, h2, h4 = st.columns([7, 1.8, 1.2])
+                longest_topic_len = max(len(str(v)) for v in matches['topic'])
+                longest_age_len = max(len(str(v)) for v in matches['age'])
+
+                # Keep columns compact and left-justified based on visible search results.
+                topic_col_chars = max(len('Topic'), longest_topic_len + 2)
+                age_col_chars = max(len('Age'), 5, longest_age_len)
+                action_col_chars = max(len('Action'), len('Open') + 2)
+                compact_total = topic_col_chars + age_col_chars + action_col_chars
+                spacer_chars = max(16, compact_total * 2)
+                col_spec = [topic_col_chars, age_col_chars, action_col_chars, spacer_chars]
+
+                h1, h2, h4, _hs = st.columns(col_spec)
                 with h1:
                     st.markdown("**Topic**")
                 with h2:
@@ -329,7 +340,7 @@ class CurriculumAssistant:
                     topic_val = row['topic']
                     age_val = row['age']
 
-                    c1, c2, c4 = st.columns([7, 1.8, 1.2])
+                    c1, c2, c4, _cs = st.columns(col_spec)
                     with c1:
                         st.write(topic_val)
                     with c2:

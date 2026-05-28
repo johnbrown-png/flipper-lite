@@ -21,8 +21,11 @@ import math
 
 from shared.curriculum_schema import normalize_precomputed_df
 
-# Mothballed topic-table search: hidden by default; set True to re-enable display.
+# Mothballed topic-table search (prefix text box + table): hidden by default.
 ENABLE_TOPIC_TABLE_SEARCH = False
+
+# Natural-language Flipper Search (search_engine.py / streamlit_ui.py): enabled by default.
+ENABLE_FLIPPER_SEARCH = True
 
 # Configure page
 st.set_page_config(
@@ -1062,9 +1065,9 @@ def main():
             st.rerun()
 
     # ==========================================
-    # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search - mothballed)
+    # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)
     # ==========================================
-    if ENABLE_TOPIC_TABLE_SEARCH and curriculum_path.exists():
+    if ENABLE_FLIPPER_SEARCH and curriculum_path.exists():
         from flipper_search.streamlit_ui import render_search_ui
 
         st.markdown("---")

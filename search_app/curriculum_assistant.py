@@ -231,6 +231,11 @@ class CurriculumAssistant:
             background-color: #b71c1c !important;
             color: #fff !important;
         }
+        /* Keep prefix-search Open buttons on one line */
+        button[key^="open_topic_match_"] {
+            white-space: nowrap !important;
+            min-width: 7.5rem !important;
+        }
         </style>
         ''', unsafe_allow_html=True)
 
@@ -324,7 +329,8 @@ class CurriculumAssistant:
                 # Keep columns compact and left-justified based on visible search results.
                 topic_col_chars = max(len('Topic'), longest_topic_len + 2)
                 age_col_chars = max(len('Age'), 5, longest_age_len)
-                action_col_chars = max(len('Action'), len('Open') + 2)
+                # Give Action enough width so Open never wraps.
+                action_col_chars = max(12, len('Action') + 4, len('Open') + 6)
                 compact_total = topic_col_chars + age_col_chars + action_col_chars
                 spacer_chars = max(16, compact_total * 2)
                 col_spec = [topic_col_chars, age_col_chars, action_col_chars, spacer_chars]

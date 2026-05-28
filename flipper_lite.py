@@ -515,8 +515,8 @@ def render_result_card(result, compact=False):
                 if compact:
                     st.markdown(
                         f"""
-                        <div style='font-size:0.74rem; color:#4b5f73; margin-top:0.12rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;' title='{justification}'>
-                            LLM: {justification}
+                        <div style='font-size:0.91rem; color:#4b5f73; margin-top:0.12rem; line-height:1.22; white-space:normal;'>
+                            {justification}
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -786,6 +786,7 @@ def main():
             prev_step = None
             next_step = None
             show_step_nav = False
+            compact_small_step_desc = ""
 
             if curriculum_assistant and curriculum_assistant.df is not None and ctx and ctx.get('small_step_num_in_topic') is not None:
                 prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
@@ -881,26 +882,7 @@ def main():
                 small_step_desc = str(ctx.get('small_step_desc') or '').strip()
                 if small_step_desc:
                     if results_focus_mode:
-                        st.markdown(
-                            f"""
-                            <div style="
-                                background: rgba(255,255,255,0.82);
-                                border: 1px solid rgba(74, 144, 200, 0.25);
-                                border-radius: 9px;
-                                padding: 0.35rem 0.6rem;
-                                margin: 0 0 0.45rem 0;
-                                color: #18324f;
-                                font-size: 0.8rem;
-                                line-height: 1.3;
-                                white-space: nowrap;
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                            " title="{small_step_desc}">
-                                <strong>Selected small step:</strong> {small_step_desc}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                        compact_small_step_desc = small_step_desc
                     else:
                         st.markdown(
                             f"""
@@ -988,6 +970,28 @@ def main():
 
             for result in st.session_state.display_results:
                 render_result_card(result, compact=results_focus_mode)
+
+            if results_focus_mode and compact_small_step_desc:
+                st.markdown(
+                    f"""
+                    <div style="
+                        background: rgba(255,255,255,0.82);
+                        border: 1px solid rgba(74, 144, 200, 0.25);
+                        border-radius: 9px;
+                        padding: 0.35rem 0.6rem;
+                        margin: 0.2rem 0 0.45rem 0;
+                        color: #18324f;
+                        font-size: 0.8rem;
+                        line-height: 1.3;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    " title="{compact_small_step_desc}">
+                        <strong>Selected small step:</strong> {compact_small_step_desc}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
         else:
             st.warning("No videos found for this step. Try a different curriculum step.")
     

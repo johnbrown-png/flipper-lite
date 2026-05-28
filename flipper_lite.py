@@ -553,6 +553,8 @@ def main():
     MAIN_TEXT_COLOR = "#f0f4f8"
     AI_ACCENT_COLOR = "#FFD700"
     
+    results_header_slot = None
+
     if results_focus_mode:
         st.markdown(
             f"""
@@ -560,17 +562,12 @@ def main():
             .block-container {{
                 padding-top: 0 !important;
             }}
-            .results-brand-floating {{
-                position: fixed;
-                top: 14px;
-                left: 18px;
+            .results-brand-inline {{
                 margin: 0;
-                z-index: 10000;
                 font-family: 'Poppins', sans-serif;
                 font-weight: 600;
                 line-height: 1;
                 letter-spacing: -0.01em;
-                pointer-events: none;
                 white-space: nowrap;
             }}
             .results-brand-main,
@@ -595,13 +592,10 @@ def main():
             }}
             </style>
             <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-            <div class="results-brand-floating">
-                <span class="results-brand-main">Flipper School</span>
-                <span class="results-brand-sub"> - Cur<span class="results-brand-ai">AI</span>ted Education Videos</span>
-            </div>
             """,
             unsafe_allow_html=True,
         )
+        results_header_slot = st.container()
     else:
         # Custom Styled Header
         col1, col2 = st.columns([0.95, 0.05])
@@ -814,45 +808,29 @@ def main():
                 prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
                 show_step_nav = bool(prev_step or next_step)
 
-            # Display breadcrumb heading if curriculum context is available
-            if ctx:
-                # Build breadcrumb with labeled sections
-                breadcrumb_parts = []
-                
-                if ctx.get('age'):
-                    breadcrumb_parts.append(f"Age: {ctx['age']}")
-                
-                if ctx.get('term'):
-                    breadcrumb_parts.append(f"Term: {ctx['term']}")
-                
-                # Add difficulty only if it has a value
-                difficulty = str(ctx.get('difficulty') or '').strip()
-                if difficulty:
-                    breadcrumb_parts.append(f"Difficulty: {difficulty}")
-                
-                if ctx.get('topic'):
-                    breadcrumb_parts.append(f"Topic: {ctx['topic']}")
-                
-                # Display breadcrumb with smaller font and separators
-                if breadcrumb_parts:
-                    breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
-                    breadcrumb_text_plain = " | ".join(breadcrumb_parts)
+            if results_focus_mode and results_header_slot is not None:
+                with results_header_slot:
+                    if show_step_nav:
+                        brand_col, nav_home_col, nav_back_col, nav_next_col = st.columns([7.8, 1.3, 1.35, 1.35])
+                    else:
+                        brand_col = st.columns([1])[0]
 
-                    if results_focus_mode and show_step_nav:
-                        bc_col, nav_home_col, nav_back_col, nav_next_col = st.columns([8.0, 1.3, 1.35, 1.35])
-                        with bc_col:
-                            st.markdown(
-                                f"""
-                                <div style='font-size:0.84rem; margin:0 0 0.35rem 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;' title='{breadcrumb_text_plain}'>
-                                    {breadcrumb_text}
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
+                    with brand_col:
+                        st.markdown(
+                            """
+                            <div class='results-brand-inline'>
+                                <span class='results-brand-main'>Flipper School</span>
+                                <span class='results-brand-sub'> - Cur<span class='results-brand-ai'>AI</span>ted Education Videos</span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+
+                    if show_step_nav:
                         with nav_home_col:
                             if st.button(
                                 "Back to search",
-                                key="step_nav_home",
+                                key="step_nav_home_top",
                                 use_container_width=True,
                                 help="Return to search with no filters",
                             ):
@@ -878,7 +856,7 @@ def main():
                         with nav_back_col:
                             if prev_step and st.button(
                                 "◀  Previous Step",
-                                key="step_nav_back",
+                                key="step_nav_back_top",
                                 use_container_width=True,
                                 help=f"Previous: {prev_step['small_step']}",
                             ):
@@ -887,12 +865,51 @@ def main():
                         with nav_next_col:
                             if next_step and st.button(
                                 "Next Step  ▶",
-                                key="step_nav_next",
+                                key="step_nav_next_top",
                                 use_container_width=True,
                                 help=f"Next: {next_step['small_step']}",
                             ):
                                 st.session_state.pending_step_nav = next_step
                                 st.rerun()
+
+                    st.markdown(
+                        "<hr style='margin: 0.15rem 0 0.3rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.2);'>",
+                        unsafe_allow_html=True,
+                    )
+
+            # Display breadcrumb heading if curriculum context is available
+            if ctx:
+                # Build breadcrumb with labeled sections
+                breadcrumb_parts = []
+                
+                if ctx.get('age'):
+                    breadcrumb_parts.append(f"Age: {ctx['age']}")
+                
+                if ctx.get('term'):
+                    breadcrumb_parts.append(f"Term: {ctx['term']}")
+                
+                # Add difficulty only if it has a value
+                difficulty = str(ctx.get('difficulty') or '').strip()
+                if difficulty:
+                    breadcrumb_parts.append(f"Difficulty: {difficulty}")
+                
+                if ctx.get('topic'):
+                    breadcrumb_parts.append(f"Topic: {ctx['topic']}")
+                
+                # Display breadcrumb with smaller font and separators
+                if breadcrumb_parts:
+                    breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
+                    breadcrumb_text_plain = " | ".join(breadcrumb_parts)
+
+                    if results_focus_mode:
+                        st.markdown(
+                            f"""
+                            <div style='font-size:0.84rem; margin:0 0 0.35rem 0; white-space:normal; overflow-wrap:anywhere;' title='{breadcrumb_text_plain}'>
+                                {breadcrumb_text}
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                     else:
                         breadcrumb_margin = "0.35rem" if results_focus_mode else "1rem"
                         breadcrumb_top_margin = "0" if results_focus_mode else "0.5rem"

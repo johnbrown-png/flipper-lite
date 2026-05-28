@@ -216,8 +216,13 @@ class CurriculumAssistant:
         except Exception:
             return None, None
     
-    def render(self):
-        """Render the curriculum assistant UI and return selected text"""
+    def render(self, show_topic_table_search=True):
+        """Render the curriculum assistant UI and return selected text.
+
+        Args:
+            show_topic_table_search: Whether to show the prefix topic-table search UI.
+                The Age -> Topic -> Small Steps flow remains visible regardless.
+        """
         # --- Custom CSS: Make Search buttons red (curriculum navigation only) ---
         st.markdown('''
         <style>
@@ -276,93 +281,97 @@ class CurriculumAssistant:
             st.session_state.clear_topic_prefix_on_open = True
             self._clear_parent_results_state()
 
-        pending_topic_open = st.session_state.get('pending_topic_open')
-        if pending_topic_open:
-            pending_age = pending_topic_open.get('age', '')
-            pending_topic = pending_topic_open.get('topic', '')
-            difficulty_options = self._get_topic_difficulty_options(pending_age, pending_topic)
-            if not difficulty_options:
-                difficulty_options = ['Foundation', 'Higher']
+        if show_topic_table_search:
+            pending_topic_open = st.session_state.get('pending_topic_open')
+            if pending_topic_open:
+                pending_age = pending_topic_open.get('age', '')
+                pending_topic = pending_topic_open.get('topic', '')
+                difficulty_options = self._get_topic_difficulty_options(pending_age, pending_topic)
+                if not difficulty_options:
+                    difficulty_options = ['Foundation', 'Higher']
 
-            st.info(f"Choose difficulty for {pending_topic} ({pending_age})")
-            if 'pending_open_difficulty' not in st.session_state or st.session_state.pending_open_difficulty not in difficulty_options:
-                st.session_state.pending_open_difficulty = difficulty_options[0]
+                st.info(f"Choose difficulty for {pending_topic} ({pending_age})")
+                if 'pending_open_difficulty' not in st.session_state or st.session_state.pending_open_difficulty not in difficulty_options:
+                    st.session_state.pending_open_difficulty = difficulty_options[0]
 
-            st.radio(
-                "Difficulty",
-                options=difficulty_options,
-                key='pending_open_difficulty',
-                horizontal=True,
+                st.radio(
+                    "Difficulty",
+                    options=difficulty_options,
+                    key='pending_open_difficulty',
+                    horizontal=True,
+                )
+                p1, p2, _ = st.columns([1, 1, 5])
+                with p1:
+                    if st.button('Continue', key='confirm_pending_topic_open'):
+                        chosen_diff = st.session_state.get('pending_open_difficulty', difficulty_options[0])
+                        st.session_state.pending_topic_open = None
+                        _apply_topic_open_selection(pending_age, pending_topic, chosen_diff)
+                        st.rerun()
+                with p2:
+                    if st.button('Cancel', key='cancel_pending_topic_open'):
+                        st.session_state.pending_topic_open = None
+                        st.rerun()
+
+            # Prefix topic search: hidden until user types.
+            topic_prefix = st.text_input(
+                "",
+                placeholder="Search e.g. fractions, algebra...",
+                key="topic_prefix_search"
             )
-            p1, p2, _ = st.columns([1, 1, 5])
-            with p1:
-                if st.button('Continue', key='confirm_pending_topic_open'):
-                    chosen_diff = st.session_state.get('pending_open_difficulty', difficulty_options[0])
-                    st.session_state.pending_topic_open = None
-                    _apply_topic_open_selection(pending_age, pending_topic, chosen_diff)
-                    st.rerun()
-            with p2:
-                if st.button('Cancel', key='cancel_pending_topic_open'):
-                    st.session_state.pending_topic_open = None
-                    st.rerun()
 
-        # Prefix topic search: hidden until user types.
-        topic_prefix = st.text_input(
-            "",
-            placeholder="Search e.g. fractions, algebra...",
-            key="topic_prefix_search"
-        )
+            topic_prefix = (topic_prefix or '').strip()
+            if topic_prefix:
+                prefix_lower = topic_prefix.lower()
+                search_rows = self._build_topic_search_rows()
+                matches = search_rows[search_rows['topic'].str.lower().str.startswith(prefix_lower)]
 
-        topic_prefix = (topic_prefix or '').strip()
-        if topic_prefix:
-            prefix_lower = topic_prefix.lower()
-            search_rows = self._build_topic_search_rows()
-            matches = search_rows[search_rows['topic'].str.lower().str.startswith(prefix_lower)]
+                if matches.empty:
+                    st.caption(f"No topics begin with '{topic_prefix}'.")
+                else:
+                    st.caption(f"{len(matches)} topic/age matches")
+                    longest_topic_len = max(len(str(v)) for v in matches['topic'])
+                    longest_age_len = max(len(str(v)) for v in matches['age'])
 
-            if matches.empty:
-                st.caption(f"No topics begin with '{topic_prefix}'.")
-            else:
-                st.caption(f"{len(matches)} topic/age matches")
-                longest_topic_len = max(len(str(v)) for v in matches['topic'])
-                longest_age_len = max(len(str(v)) for v in matches['age'])
+                    # Keep columns compact and left-justified based on visible search results.
+                    topic_col_chars = max(len('Topic'), longest_topic_len + 2)
+                    age_col_chars = max(len('Age'), 5, longest_age_len)
+                    # Give Action enough width so Open never wraps.
+                    action_col_chars = max(12, len('Action') + 4, len('Open') + 6)
+                    compact_total = topic_col_chars + age_col_chars + action_col_chars
+                    spacer_chars = max(16, compact_total * 2)
+                    col_spec = [topic_col_chars, age_col_chars, action_col_chars, spacer_chars]
 
-                # Keep columns compact and left-justified based on visible search results.
-                topic_col_chars = max(len('Topic'), longest_topic_len + 2)
-                age_col_chars = max(len('Age'), 5, longest_age_len)
-                # Give Action enough width so Open never wraps.
-                action_col_chars = max(12, len('Action') + 4, len('Open') + 6)
-                compact_total = topic_col_chars + age_col_chars + action_col_chars
-                spacer_chars = max(16, compact_total * 2)
-                col_spec = [topic_col_chars, age_col_chars, action_col_chars, spacer_chars]
+                    h1, h2, h4, _hs = st.columns(col_spec)
+                    with h1:
+                        st.markdown("**Topic**")
+                    with h2:
+                        st.markdown("**Age**")
+                    with h4:
+                        st.markdown("")
+                    for idx, row in matches.iterrows():
+                        topic_val = row['topic']
+                        age_val = row['age']
 
-                h1, h2, h4, _hs = st.columns(col_spec)
-                with h1:
-                    st.markdown("**Topic**")
-                with h2:
-                    st.markdown("**Age**")
-                with h4:
-                    st.markdown("")
-                for idx, row in matches.iterrows():
-                    topic_val = row['topic']
-                    age_val = row['age']
-
-                    c1, c2, c4, _cs = st.columns(col_spec)
-                    with c1:
-                        st.write(topic_val)
-                    with c2:
-                        st.write(age_val)
-                    with c4:
-                        btn_key = f"open_topic_match_{idx}_{age_val}_{topic_val}".replace(' ', '_')
-                        if st.button("Open", key=btn_key):
-                            if age_val in ['13-14', '14-15']:
-                                st.session_state.pending_topic_open = {
-                                    'age': age_val,
-                                    'topic': topic_val,
-                                }
-                                st.rerun()
-                            else:
-                                _apply_topic_open_selection(age_val, topic_val, '')
-                                st.rerun()
+                        c1, c2, c4, _cs = st.columns(col_spec)
+                        with c1:
+                            st.write(topic_val)
+                        with c2:
+                            st.write(age_val)
+                        with c4:
+                            btn_key = f"open_topic_match_{idx}_{age_val}_{topic_val}".replace(' ', '_')
+                            if st.button("Open", key=btn_key):
+                                if age_val in ['13-14', '14-15']:
+                                    st.session_state.pending_topic_open = {
+                                        'age': age_val,
+                                        'topic': topic_val,
+                                    }
+                                    st.rerun()
+                                else:
+                                    _apply_topic_open_selection(age_val, topic_val, '')
+                                    st.rerun()
+        else:
+            # Ensure hidden topic-table search state does not leak into the visible dropdown flow.
+            st.session_state.pending_topic_open = None
 
 
         # --- Final: Age -> Topic -> Small Steps UI ---

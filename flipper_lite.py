@@ -1040,7 +1040,7 @@ def main():
     if curriculum_assistant:
         st.markdown("#### Search by Small Step")
         # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
-        action, text = curriculum_assistant.render()
+        action, text = curriculum_assistant.render(show_topic_table_search=ENABLE_TOPIC_TABLE_SEARCH)
         if action == 'small_step_search' and text:
             # Handle small step selection with CSV lookup
             st.session_state.display_status = 'loading'

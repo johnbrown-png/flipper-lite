@@ -82,7 +82,22 @@ def render_search_ui(
         return 'small_step_search', result
     
     # UI Header
-    st.markdown("### 🔍 Search by Topic")
+    st.markdown(
+        """
+        <p style="
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            color: #2c5f8d;
+            text-align: left;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 400;
+        ">
+            Search by Topic
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
     
     # --- Epoch selector mothballed: keep for future re-enable ---
     # ENABLE_EPOCH_FILTER = False  # set True to restore epoch dropdown

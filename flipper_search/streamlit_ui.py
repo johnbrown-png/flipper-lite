@@ -84,28 +84,28 @@ def render_search_ui(
     # UI Header
     st.markdown("### 🔍 Search by Topic")
     
-    # Epoch selector
-    epoch_names = ['All'] + list(EPOCHS.keys())
-    epoch_displays = ['All'] + [get_epoch_display_name(e) for e in EPOCHS.keys()]
-    
-    col_epoch, col_spacer = st.columns([3, 1])
-    with col_epoch:
-        selected_epoch_idx = st.selectbox(
-            "Schooling Epoch (optional filter):",
-            range(len(epoch_displays)),
-            format_func=lambda i: epoch_displays[i],
-            key='flipper_search_epoch',
-            label_visibility='collapsed'
-        )
-        selected_epoch = epoch_names[selected_epoch_idx] if selected_epoch_idx < len(epoch_names) else 'All'
+    # --- Epoch selector mothballed: keep for future re-enable ---
+    # ENABLE_EPOCH_FILTER = False  # set True to restore epoch dropdown
+    # epoch_names = ['All'] + list(EPOCHS.keys())
+    # epoch_displays = ['All'] + [get_epoch_display_name(e) for e in EPOCHS.keys()]
+    # col_epoch, col_spacer = st.columns([3, 1])
+    # with col_epoch:
+    #     selected_epoch_idx = st.selectbox(
+    #         "Schooling Epoch (optional filter):",
+    #         range(len(epoch_displays)),
+    #         format_func=lambda i: epoch_displays[i],
+    #         key='flipper_search_epoch',
+    #         label_visibility='collapsed'
+    #     )
+    #     selected_epoch = epoch_names[selected_epoch_idx] if selected_epoch_idx < len(epoch_names) else 'All'
+    selected_epoch = 'All'  # epoch filter disabled; always search all epochs
     
     # Search input
-    st.markdown("**Describe what you need help with:**")
     search_query = st.text_input(
-        "e.g., 'adding fractions with different denominators', 'gradient of a straight line'",
+        "Search",
         key='flipper_search_input',
         label_visibility='collapsed',
-        placeholder="Type your question or topic...",
+        placeholder="e.g. 'adding fractions', 'gradient of a straight line'...",
     )
     
     # Search button

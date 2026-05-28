@@ -1078,31 +1078,31 @@ def main():
             use_semantic=True,
         )
 
-            if search_result:
-                action, result_dict = search_result
-                if action == 'small_step_search' and result_dict:
-                    st.session_state.display_status = 'loading'
-                    st.session_state.display_step_name = result_dict.get('small_step_name', result_dict.get('small_step', ''))
-                    st.session_state.curriculum_context = {
-                        'age': result_dict.get('age', ''),
-                        'term': result_dict.get('term', ''),
-                        'difficulty': result_dict.get('difficulty', ''),
-                        'topic': result_dict.get('topic', ''),
-                        'small_step': result_dict.get('small_step_name', ''),
-                    }
+        if search_result:
+            action, result_dict = search_result
+            if action == 'small_step_search' and result_dict:
+                st.session_state.display_status = 'loading'
+                st.session_state.display_step_name = result_dict.get('small_step_name', result_dict.get('small_step', ''))
+                st.session_state.curriculum_context = {
+                    'age': result_dict.get('age', ''),
+                    'term': result_dict.get('term', ''),
+                    'difficulty': result_dict.get('difficulty', ''),
+                    'topic': result_dict.get('topic', ''),
+                    'small_step': result_dict.get('small_step_name', ''),
+                }
 
-                    results = lookup_videos_for_step(
-                        recommendations_df,
-                        year=result_dict.get('year', ''),
-                        term=result_dict.get('term', ''),
-                        difficulty=result_dict.get('difficulty', ''),
-                        topic=result_dict.get('topic', ''),
-                        small_step=result_dict.get('small_step_name', ''),
-                        small_step_id=result_dict.get('small_step_id', ''),
-                    )
-                    st.session_state.display_results = results
-                    st.session_state.display_status = 'complete'
-                    st.rerun()
+                results = lookup_videos_for_step(
+                    recommendations_df,
+                    year=result_dict.get('year', ''),
+                    term=result_dict.get('term', ''),
+                    difficulty=result_dict.get('difficulty', ''),
+                    topic=result_dict.get('topic', ''),
+                    small_step=result_dict.get('small_step_name', ''),
+                    small_step_id=result_dict.get('small_step_id', ''),
+                )
+                st.session_state.display_results = results
+                st.session_state.display_status = 'complete'
+                st.rerun()
     
     # Sidebar with info
     with st.sidebar:

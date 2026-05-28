@@ -654,7 +654,7 @@ def main():
                 margin-bottom: 0rem;
                 font-weight: 400;
             ">
-                Pick the learners age and topic to play AI curated education videos for each Small Step in the White Rose Maths curriculum
+                Play AI curated education videos for each Small Step in the White Rose Maths curriculum
             </p>
             """, unsafe_allow_html=True)
 
@@ -1041,7 +1041,7 @@ def main():
     # CURRICULUM ASSISTANT (Below results)
     # ==========================================
     if curriculum_assistant:
-        st.markdown("#### Search by Small Step")
+        st.markdown("#### Pick by Small Step")
         # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
         action, text = curriculum_assistant.render(show_topic_table_search=ENABLE_TOPIC_TABLE_SEARCH)
         if action == 'small_step_search' and text:

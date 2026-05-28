@@ -564,20 +564,38 @@ def main():
                 margin: 0;
                 z-index: 10000;
                 font-family: 'Poppins', sans-serif;
-                font-size: 1.68rem;
                 font-weight: 600;
                 line-height: 1;
                 letter-spacing: -0.01em;
+                pointer-events: none;
+                white-space: nowrap;
+            }}
+            .results-brand-main,
+            .results-brand-sub {{
                 background: {HEADER_GRADIENT};
                 -webkit-background-clip: text;
                 background-clip: text;
                 color: transparent;
                 text-shadow: 0 0 0 rgba(30, 58, 95, 0.02);
-                pointer-events: none;
+            }}
+            .results-brand-main {{
+                font-size: 1.68rem;
+            }}
+            .results-brand-sub {{
+                font-size: 0.945rem;
+                margin-left: 0.1rem;
+            }}
+            .results-brand-ai {{
+                color: {AI_ACCENT_COLOR};
+                -webkit-text-fill-color: {AI_ACCENT_COLOR};
+                background: none;
             }}
             </style>
             <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-            <div class="results-brand-floating">Flipper School</div>
+            <div class="results-brand-floating">
+                <span class="results-brand-main">Flipper School</span>
+                <span class="results-brand-sub"> - Cur<span class="results-brand-ai">AI</span>ted Education Videos</span>
+            </div>
             """,
             unsafe_allow_html=True,
         )

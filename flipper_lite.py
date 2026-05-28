@@ -555,12 +555,12 @@ def main():
             }}
             .results-brand-floating {{
                 position: fixed;
-                top: 0;
-                left: 0;
+                top: 8px;
+                left: 12px;
                 margin: 0;
                 z-index: 10000;
                 font-family: 'Poppins', sans-serif;
-                font-size: 2.04rem;
+                font-size: 1.53rem;
                 font-weight: 600;
                 line-height: 1;
                 letter-spacing: -0.01em;
@@ -1127,6 +1127,26 @@ def main():
             });
         }
 
+        // Reduce only step-navigation button footprint in results mode.
+        function applyCompactStepNavButtons() {
+            const targets = [
+                'Back to search',
+                '◀  Previous Small Step',
+                'Next Small Step  ▶'
+            ];
+            const buttons = parentDoc.querySelectorAll('button');
+            buttons.forEach(btn => {
+                const text = (btn.textContent || '').trim();
+                const isTarget = targets.some(t => text.includes(t));
+                if (isTarget) {
+                    btn.style.fontSize = '0.5em';
+                    btn.style.padding = '0.12rem 0.35rem';
+                    btn.style.minHeight = '1.05rem';
+                    btn.style.lineHeight = '1';
+                }
+            });
+        }
+
         // Attach click handlers to video links
         function attachClickHandlers() {
             const videoLinks = parentDoc.querySelectorAll('a.video-link[data-video-id]');
@@ -1155,6 +1175,7 @@ def main():
         function initialize() {
             applyWatchedStyling();
             attachClickHandlers();
+            applyCompactStepNavButtons();
         }
 
         // Run initialization

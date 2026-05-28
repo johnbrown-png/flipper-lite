@@ -606,32 +606,33 @@ def main():
         with col1:
             st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-        <div style="
-            background: {HEADER_GRADIENT};
-            padding: 1.5rem 2rem;
-            border-radius: 10px;
-            margin-bottom: 0rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        ">
+        <div style="margin-bottom: 0rem;">
             <h1 style="
                 font-family: 'Poppins', sans-serif;
                 font-weight: 550;
                 font-size: 2.5rem;
                 margin: 0;
-                color: #ffffff;
                 letter-spacing: -0.5px;
             ">
                 <span style="
                     font-size: 3.2rem;
                     font-weight: 600;
-                    color: {MAIN_TEXT_COLOR};
+                    background: {HEADER_GRADIENT};
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    color: transparent;
+                    text-shadow: 0 0 0 rgba(30, 58, 95, 0.02);
                 ">
                     Flipper School
                 </span>
                 <span style="
                     font-size: 1.8rem;
                     font-weight: 600;
-                    color: {MAIN_TEXT_COLOR};
+                    background: {HEADER_GRADIENT};
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    color: transparent;
+                    text-shadow: 0 0 0 rgba(30, 58, 95, 0.02);
                 ">
                      - Cur<span style="color: {AI_ACCENT_COLOR};">AI</span>ted Education Videos
                 </span>

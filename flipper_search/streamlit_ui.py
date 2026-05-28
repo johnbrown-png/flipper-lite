@@ -11,10 +11,20 @@ Provides:
 import streamlit as st
 from pathlib import Path
 from typing import Optional, Tuple
+import re
 
 from .curriculum_index import CurriculumIndex
 from .search_engine import SearchEngine
 from .epoch_definitions import EPOCHS, get_epoch_display_name
+
+
+def _year_sort_key(result: dict) -> tuple:
+    """Sort with youngest year first (Year 1 ... Year 11), unknown years last."""
+    year_value = str(result.get('year', '')).strip().lower()
+    match = re.search(r"\b(\d{1,2})\b", year_value)
+    if not match:
+        return (1, 999)
+    return (0, int(match.group(1)))
 
 
 def initialize_search_engine(
@@ -156,7 +166,10 @@ def render_search_ui(
             """,
             unsafe_allow_html=True,
         )
-        display_results = st.session_state.flipper_search_results[:5]
+        display_results = sorted(
+            st.session_state.flipper_search_results,
+            key=_year_sort_key,
+        )[:5]
         
         for idx, result in enumerate(display_results):
             # Result card
@@ -192,8 +205,6 @@ def render_search_ui(
                     metadata_parts.append(year)
                 if result.get('age'):
                     metadata_parts.append(f"Age {result['age']}")
-                if result.get('difficulty'):
-                    metadata_parts.append(f"({result['difficulty']})")
                 
                 if metadata_parts:
                     st.markdown(

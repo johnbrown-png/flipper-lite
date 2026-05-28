@@ -1191,6 +1191,8 @@ def main():
         function applyCompactStepNavButtons() {
             const targets = [
                 'Back to search',
+                '◀  Previous Step',
+                'Next Step  ▶',
                 '◀  Previous Small Step',
                 'Next Small Step  ▶'
             ];

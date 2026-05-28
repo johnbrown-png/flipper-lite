@@ -311,13 +311,14 @@ def format_duration(duration_str):
         return str(duration_str)
 
 
-def create_circular_progress_svg(score_pct, size=80):
+def create_circular_progress_svg(score_pct, size=80, text_scale=1.0):
     """
     Create an SVG circular progress indicator.
     
     Args:
         score_pct: Score as percentage (0-100)
         size: Diameter of the circle in pixels
+        text_scale: Multiplier for score text size in the center
     
     Returns:
         HTML string with SVG element
@@ -367,7 +368,7 @@ def create_circular_progress_svg(score_pct, size=80):
             y="{size/2}"
             text-anchor="middle"
             dominant-baseline="middle"
-            font-size="20"
+            font-size="{20 * text_scale}"
             font-weight="bold"
             fill="{color}"
             style="transform: rotate(90deg); transform-origin: {size/2}px {size/2}px;"
@@ -486,9 +487,7 @@ def render_result_card(result, compact=False):
             
             # Display circular gauge with label - centered
             st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)
-            st.markdown(create_circular_progress_svg(combined_pct, size=56 if compact else 80), unsafe_allow_html=True)
-            combined_label_size = "0.56rem" if compact else "0.75rem"
-            st.markdown(f"<div style='font-size:{combined_label_size}; color:#666; margin-top:4px;'>Combined</div>", unsafe_allow_html=True)
+            st.markdown(create_circular_progress_svg(combined_pct, size=56 if compact else 80, text_scale=0.75), unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
         with col_content:

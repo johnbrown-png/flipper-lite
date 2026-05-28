@@ -1071,18 +1071,12 @@ def main():
         from flipper_search.streamlit_ui import render_search_ui
 
         st.markdown("---")
-        with st.expander("What can we help with today?", expanded=False):
-            st.markdown("""
-            Describe what support is needed in natural language.
-            Examples: "adding fractions with different denominators", "gradient of a straight line", "collecting like terms".
-            """)
-
-            embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
-            search_result = render_search_ui(
-                curriculum_csv_path=str(curriculum_path),
-                embeddings_path=str(embeddings_path),
-                use_semantic=True,
-            )
+        embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
+        search_result = render_search_ui(
+            curriculum_csv_path=str(curriculum_path),
+            embeddings_path=str(embeddings_path),
+            use_semantic=True,
+        )
 
             if search_result:
                 action, result_dict = search_result

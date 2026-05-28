@@ -335,7 +335,7 @@ class CurriculumAssistant:
                 with h2:
                     st.markdown("**Age**")
                 with h4:
-                    st.markdown("****")
+                    st.markdown("")
                 for idx, row in matches.iterrows():
                     topic_val = row['topic']
                     age_val = row['age']

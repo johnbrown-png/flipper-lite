@@ -22,7 +22,7 @@ import math
 from shared.curriculum_schema import normalize_precomputed_df
 
 # Mothballed feature toggle: keep code path for future re-enable.
-ENABLE_FLIPPER_SEARCH = False
+ENABLE_FLIPPER_SEARCH = True
 
 # Configure page
 st.set_page_config(

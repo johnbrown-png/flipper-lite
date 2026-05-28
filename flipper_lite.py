@@ -999,7 +999,7 @@ def main():
                         padding: 0.35rem 0.6rem;
                         margin: 0.2rem 0 0.45rem 0;
                         color: #18324f;
-                        font-size: 0.8rem;
+                        font-size: 0.91rem;
                         line-height: 1.3;
                         white-space: normal;
                         overflow-wrap: anywhere;

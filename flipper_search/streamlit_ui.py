@@ -142,8 +142,9 @@ def render_search_ui(
     # Display results
     if st.session_state.flipper_search_results:
         st.markdown("---")
+        display_results = st.session_state.flipper_search_results[:5]
         
-        for idx, result in enumerate(st.session_state.flipper_search_results):
+        for idx, result in enumerate(display_results):
             # Result card
             col_select, col_content = st.columns([0.8, 4])
             

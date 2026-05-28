@@ -93,7 +93,7 @@ def render_search_ui(
             margin-bottom: 0.5rem;
             font-weight: 400;
         ">
-            Search for a maths concept
+            or...search for a maths topic
         </p>
         """,
         unsafe_allow_html=True,

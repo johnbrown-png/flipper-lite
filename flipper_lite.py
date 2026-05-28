@@ -548,49 +548,41 @@ def main():
     
     if results_focus_mode:
         st.markdown(
-            """
+            f"""
             <style>
-            .block-container {
-                padding-top: 0.5rem !important;
-            }
+            .block-container {{
+                padding-top: 0 !important;
+                padding-left: 0 !important;
+            }}
+            .results-brand-floating {{
+                position: fixed;
+                top: 6px;
+                left: 10px;
+                margin: 0;
+                z-index: 10000;
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.68rem;
+                font-weight: 600;
+                line-height: 1;
+                letter-spacing: -0.01em;
+                background: {HEADER_GRADIENT};
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-shadow: 0 0 0 rgba(30, 58, 95, 0.02);
+                pointer-events: none;
+            }}
             </style>
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+            <div class="results-brand-floating">Flipper School</div>
             """,
             unsafe_allow_html=True,
         )
+    else:
+        # Custom Styled Header
+        col1, col2 = st.columns([0.95, 0.05])
 
-    # Custom Styled Header
-    col1, col2 = st.columns([0.09, 0.91] if results_focus_mode else [0.95, 0.05])
-    
-    with col1:
-        if results_focus_mode:
-            st.markdown(
-                f"""
-                <div style="
-                    background: {HEADER_GRADIENT};
-                    width: 43px;
-                    height: 43px;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 3px 7px rgba(0,0,0,0.14);
-                    margin-bottom: 0.2rem;
-                ">
-                    <div style="
-                        font-family: 'Poppins', sans-serif;
-                        color: #ffffff;
-                        font-size: 0.34rem;
-                        font-weight: 600;
-                        line-height: 1.05;
-                        letter-spacing: 0;
-                        text-align: center;
-                        padding: 0 2px;
-                    ">Flipper School</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        else:
+        with col1:
             st.markdown(f"""
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
         <div style="
@@ -640,9 +632,8 @@ def main():
                 Pick the learners age and topic to play AI curated education videos for each Small Step in the White Rose Maths curriculum
             </p>
             """, unsafe_allow_html=True)
-    
-    with col2:
-        if not results_focus_mode:
+
+        with col2:
             with st.popover("ℹ️", use_container_width=True):
                 st.markdown("### Flipper School - Cur*AI*ted Education Videos")
                 

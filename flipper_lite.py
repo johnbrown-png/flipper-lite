@@ -552,16 +552,15 @@ def main():
             <style>
             .block-container {{
                 padding-top: 0 !important;
-                padding-left: 0 !important;
             }}
             .results-brand-floating {{
                 position: fixed;
-                top: 6px;
-                left: 10px;
+                top: 0;
+                left: 0;
                 margin: 0;
                 z-index: 10000;
                 font-family: 'Poppins', sans-serif;
-                font-size: 0.68rem;
+                font-size: 2.04rem;
                 font-weight: 600;
                 line-height: 1;
                 letter-spacing: -0.01em;
@@ -715,10 +714,11 @@ def main():
     # ==========================================
     # RESULTS SECTION (Always visible above the fold)
     # ==========================================
-    st.markdown(
-        "<hr style='margin: 0.05rem 0 0.05rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.25);'>",
-        unsafe_allow_html=True,
-    )
+    if not results_focus_mode:
+        st.markdown(
+            "<hr style='margin: 0.05rem 0 0.05rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.25);'>",
+            unsafe_allow_html=True,
+        )
     
     # ==========================================
     # INLINE VIDEO PANEL (shown when a video is selected)
@@ -806,7 +806,8 @@ def main():
                 if breadcrumb_parts:
                     breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
                     breadcrumb_margin = "0.35rem" if results_focus_mode else "1rem"
-                    st.markdown(f"<p style='font-size: 0.84rem; margin-bottom: {breadcrumb_margin};'>{breadcrumb_text}</p>", unsafe_allow_html=True)
+                    breadcrumb_top_margin = "0" if results_focus_mode else "0.5rem"
+                    st.markdown(f"<p style='font-size: 0.84rem; margin-top: {breadcrumb_top_margin}; margin-bottom: {breadcrumb_margin};'>{breadcrumb_text}</p>", unsafe_allow_html=True)
 
                 small_step_desc = str(ctx.get('small_step_desc') or '').strip()
                 if small_step_desc:

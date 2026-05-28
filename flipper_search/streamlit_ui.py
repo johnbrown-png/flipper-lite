@@ -146,14 +146,14 @@ def render_search_ui(
         
         for idx, result in enumerate(display_results):
             # Result card
-            col_select, col_content = st.columns([0.8, 4])
+            col_select, col_content = st.columns([0.34, 4.66])
             
             with col_select:
                 # Select button
                 if st.button(
-                    "→ Select",
+                    "Go!",
                     key=f'flipper_search_select_{idx}',
-                    use_container_width=True,
+                    use_container_width=False,
                 ):
                     st.session_state.flipper_search_pending = result
                     st.rerun()
@@ -164,10 +164,13 @@ def render_search_ui(
                 topic = result.get('topic', '')
                 year = result.get('year', '')
                 
-                title_text = f"**{title}**"
+                title_text = f"<strong>{title}</strong>"
                 if topic:
                     title_text += f" — {topic}"
-                st.markdown(title_text)
+                st.markdown(
+                    f"<div style='margin:0 0 0.06rem 0; padding:0; line-height:1.14; font-size:0.96rem;'>{title_text}</div>",
+                    unsafe_allow_html=True,
+                )
                 
                 # Metadata
                 metadata_parts = []
@@ -179,12 +182,18 @@ def render_search_ui(
                     metadata_parts.append(f"({result['difficulty']})")
                 
                 if metadata_parts:
-                    st.caption(" | ".join(metadata_parts))
+                    st.markdown(
+                        f"<div style='margin:0 0 0.08rem 0; padding:0; font-size:0.78rem; color:#627486; line-height:1.1;'>{' | '.join(metadata_parts)}</div>",
+                        unsafe_allow_html=True,
+                    )
                 
                 # ss_desc preview
                 ss_desc = result.get('ss_desc', '')
                 if ss_desc:
-                    st.markdown(f"<div style='font-size:0.9rem; color:#555; padding:0.5rem; background:#f0f5f9; border-left:3px solid #4a90c8; border-radius:4px; margin-top:0.3rem;'>{ss_desc}</div>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<div style='font-size:0.86rem; color:#4f5f6f; padding:0.28rem 0.38rem; background:#f0f5f9; border-left:3px solid #4a90c8; border-radius:4px; margin:0.08rem 0 0.1rem 0; line-height:1.2;'>{ss_desc}</div>",
+                        unsafe_allow_html=True,
+                    )
                 
                 # Match scores
                 score_parts = []
@@ -196,9 +205,12 @@ def render_search_ui(
                     score_parts.append(f"**Match: {result['combined_score']:.1%}**")
                 
                 if score_parts:
-                    st.caption(" | ".join(score_parts))
+                    st.markdown(
+                        f"<div style='margin:0; padding:0; font-size:0.76rem; color:#5f7082; line-height:1.1;'>{' | '.join(score_parts)}</div>",
+                        unsafe_allow_html=True,
+                    )
             
-            st.markdown("---")
+            st.markdown("<hr style='margin:0.2rem 0 0.22rem 0; border:0; border-top:1px solid rgba(44,95,141,0.16);'>", unsafe_allow_html=True)
     
     elif st.session_state.flipper_search_query and not st.session_state.flipper_search_results:
         st.warning("No results found. Try different search terms.")

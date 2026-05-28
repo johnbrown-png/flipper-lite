@@ -555,12 +555,12 @@ def main():
             }}
             .results-brand-floating {{
                 position: fixed;
-                top: 8px;
-                left: 12px;
+                top: 14px;
+                left: 18px;
                 margin: 0;
                 z-index: 10000;
                 font-family: 'Poppins', sans-serif;
-                font-size: 1.53rem;
+                font-size: 1.68rem;
                 font-weight: 600;
                 line-height: 1;
                 letter-spacing: -0.01em;
@@ -778,10 +778,17 @@ def main():
     elif st.session_state.display_status == 'complete':
         # Results state - show video cards
         if st.session_state.display_results:
+            ctx = st.session_state.get('curriculum_context')
+            prev_step = None
+            next_step = None
+            show_step_nav = False
+
+            if curriculum_assistant and curriculum_assistant.df is not None and ctx and ctx.get('small_step_num_in_topic') is not None:
+                prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
+                show_step_nav = bool(prev_step or next_step)
+
             # Display breadcrumb heading if curriculum context is available
-            if 'curriculum_context' in st.session_state and st.session_state.curriculum_context:
-                ctx = st.session_state.curriculum_context
-                
+            if ctx:
                 # Build breadcrumb with labeled sections
                 breadcrumb_parts = []
                 
@@ -805,9 +812,68 @@ def main():
                 # Display breadcrumb with smaller font and separators
                 if breadcrumb_parts:
                     breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
-                    breadcrumb_margin = "0.35rem" if results_focus_mode else "1rem"
-                    breadcrumb_top_margin = "0" if results_focus_mode else "0.5rem"
-                    st.markdown(f"<p style='font-size: 0.84rem; margin-top: {breadcrumb_top_margin}; margin-bottom: {breadcrumb_margin};'>{breadcrumb_text}</p>", unsafe_allow_html=True)
+                    breadcrumb_text_plain = " | ".join(breadcrumb_parts)
+
+                    if results_focus_mode and show_step_nav:
+                        bc_col, nav_home_col, nav_back_col, nav_next_col = st.columns([8.0, 1.3, 1.35, 1.35])
+                        with bc_col:
+                            st.markdown(
+                                f"""
+                                <div style='font-size:0.84rem; margin:0 0 0.35rem 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;' title='{breadcrumb_text_plain}'>
+                                    {breadcrumb_text}
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
+                        with nav_home_col:
+                            if st.button(
+                                "Back to search",
+                                key="step_nav_home",
+                                use_container_width=True,
+                                help="Return to search with no filters",
+                            ):
+                                st.session_state.display_status = 'idle'
+                                st.session_state.display_results = []
+                                st.session_state.display_step_name = ""
+                                st.session_state.curriculum_context = None
+                                st.session_state.current_video = None
+                                st.session_state.current_video_index = 0
+
+                                st.session_state.curr_year = 'Age ?'
+                                st.session_state.year_select_topic_search = 'Age ?'
+                                st.session_state.curr_difficulty = 'All'
+                                st.session_state.difficulty_select_topic_search = 'All'
+                                st.session_state.curr_topic = 'Topic ?'
+                                st.session_state.topic_select_topic_search = 'Topic ?'
+                                st.session_state.topic_prefix_search = ''
+                                st.session_state.pending_topic_open = None
+                                st.session_state.pending_open_difficulty = 'Foundation'
+                                st.session_state.clear_topic_prefix_on_open = False
+                                st.session_state.pending_step_nav = None
+                                st.rerun()
+                        with nav_back_col:
+                            if prev_step and st.button(
+                                "◀  Previous Small Step",
+                                key="step_nav_back",
+                                use_container_width=True,
+                                help=f"Previous: {prev_step['small_step']}",
+                            ):
+                                st.session_state.pending_step_nav = prev_step
+                                st.rerun()
+                        with nav_next_col:
+                            if next_step and st.button(
+                                "Next Small Step  ▶",
+                                key="step_nav_next",
+                                type="primary",
+                                use_container_width=True,
+                                help=f"Next: {next_step['small_step']}",
+                            ):
+                                st.session_state.pending_step_nav = next_step
+                                st.rerun()
+                    else:
+                        breadcrumb_margin = "0.35rem" if results_focus_mode else "1rem"
+                        breadcrumb_top_margin = "0" if results_focus_mode else "0.5rem"
+                        st.markdown(f"<p style='font-size: 0.84rem; margin-top: {breadcrumb_top_margin}; margin-bottom: {breadcrumb_margin};'>{breadcrumb_text}</p>", unsafe_allow_html=True)
 
                 small_step_desc = str(ctx.get('small_step_desc') or '').strip()
                 if small_step_desc:
@@ -870,57 +936,53 @@ def main():
                         )
             
             # ---- Next Small Step / Back one navigation ----
-            if curriculum_assistant and curriculum_assistant.df is not None:
-                ctx = st.session_state.get('curriculum_context')
-                if ctx and ctx.get('small_step_num_in_topic') is not None:
-                    prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
-                    if prev_step or next_step:
-                        _nav_spacer_l, nav_col_home, nav_col_back, nav_col_next, _nav_spacer_r = st.columns([2, 1, 1, 1, 2])
-                        with nav_col_home:
-                            if st.button(
-                                "Back to search",
-                                key="step_nav_home",
-                                use_container_width=True,
-                                help="Return to search with no filters",
-                            ):
-                                st.session_state.display_status = 'idle'
-                                st.session_state.display_results = []
-                                st.session_state.display_step_name = ""
-                                st.session_state.curriculum_context = None
-                                st.session_state.current_video = None
-                                st.session_state.current_video_index = 0
+            if show_step_nav and not results_focus_mode:
+                _nav_spacer_l, nav_col_home, nav_col_back, nav_col_next, _nav_spacer_r = st.columns([2, 1, 1, 1, 2])
+                with nav_col_home:
+                    if st.button(
+                        "Back to search",
+                        key="step_nav_home",
+                        use_container_width=True,
+                        help="Return to search with no filters",
+                    ):
+                        st.session_state.display_status = 'idle'
+                        st.session_state.display_results = []
+                        st.session_state.display_step_name = ""
+                        st.session_state.curriculum_context = None
+                        st.session_state.current_video = None
+                        st.session_state.current_video_index = 0
 
-                                st.session_state.curr_year = 'Age ?'
-                                st.session_state.year_select_topic_search = 'Age ?'
-                                st.session_state.curr_difficulty = 'All'
-                                st.session_state.difficulty_select_topic_search = 'All'
-                                st.session_state.curr_topic = 'Topic ?'
-                                st.session_state.topic_select_topic_search = 'Topic ?'
-                                st.session_state.topic_prefix_search = ''
-                                st.session_state.pending_topic_open = None
-                                st.session_state.pending_open_difficulty = 'Foundation'
-                                st.session_state.clear_topic_prefix_on_open = False
-                                st.session_state.pending_step_nav = None
-                                st.rerun()
-                        with nav_col_back:
-                            if prev_step and st.button(
-                                "◀  Previous Small Step",
-                                key="step_nav_back",
-                                use_container_width=True,
-                                help=f"Previous: {prev_step['small_step']}",
-                            ):
-                                st.session_state.pending_step_nav = prev_step
-                                st.rerun()
-                        with nav_col_next:
-                            if next_step and st.button(
-                                "Next Small Step  ▶",
-                                key="step_nav_next",
-                                type="primary",
-                                use_container_width=True,
-                                help=f"Next: {next_step['small_step']}",
-                            ):
-                                st.session_state.pending_step_nav = next_step
-                                st.rerun()
+                        st.session_state.curr_year = 'Age ?'
+                        st.session_state.year_select_topic_search = 'Age ?'
+                        st.session_state.curr_difficulty = 'All'
+                        st.session_state.difficulty_select_topic_search = 'All'
+                        st.session_state.curr_topic = 'Topic ?'
+                        st.session_state.topic_select_topic_search = 'Topic ?'
+                        st.session_state.topic_prefix_search = ''
+                        st.session_state.pending_topic_open = None
+                        st.session_state.pending_open_difficulty = 'Foundation'
+                        st.session_state.clear_topic_prefix_on_open = False
+                        st.session_state.pending_step_nav = None
+                        st.rerun()
+                with nav_col_back:
+                    if prev_step and st.button(
+                        "◀  Previous Small Step",
+                        key="step_nav_back",
+                        use_container_width=True,
+                        help=f"Previous: {prev_step['small_step']}",
+                    ):
+                        st.session_state.pending_step_nav = prev_step
+                        st.rerun()
+                with nav_col_next:
+                    if next_step and st.button(
+                        "Next Small Step  ▶",
+                        key="step_nav_next",
+                        type="primary",
+                        use_container_width=True,
+                        help=f"Next: {next_step['small_step']}",
+                    ):
+                        st.session_state.pending_step_nav = next_step
+                        st.rerun()
 
             for result in st.session_state.display_results:
                 render_result_card(result, compact=results_focus_mode)

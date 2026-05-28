@@ -1048,7 +1048,9 @@ def main():
                 font-size: 1.2rem;
                 color: #2c5f8d;
                 text-align: left;
-                margin: 0.5rem 0 -0.5rem 0;
+                margin: 0;
+                padding: 0;
+                line-height: 1;
                 font-weight: 400;
             ">
                 Pick by Small Step

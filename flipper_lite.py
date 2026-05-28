@@ -864,7 +864,6 @@ def main():
                             if next_step and st.button(
                                 "Next Step  ▶",
                                 key="step_nav_next",
-                                type="primary",
                                 use_container_width=True,
                                 help=f"Next: {next_step['small_step']}",
                             ):
@@ -977,7 +976,6 @@ def main():
                     if next_step and st.button(
                         "Next Small Step  ▶",
                         key="step_nav_next",
-                        type="primary",
                         use_container_width=True,
                         help=f"Next: {next_step['small_step']}",
                     ):

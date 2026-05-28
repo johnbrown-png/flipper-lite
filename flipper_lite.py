@@ -481,8 +481,6 @@ def render_result_card(result, compact=False):
         
         with col_gauge:
             # Circular progress indicator for combined score
-            semantic_pct = _score_to_percent(result.get('semantic_score', 0))
-            instruction_pct = _score_to_percent(result.get('instruction_score', 0))
             combined_pct = _score_to_percent(result.get('combined_score', 0))
             
             # Display circular gauge with label - centered
@@ -511,13 +509,20 @@ def render_result_card(result, compact=False):
                 meta_margin = "0.2rem" if compact else "0.5rem"
                 st.markdown(f"<div style='font-size:{meta_font}; color:#2c5f8d; margin-bottom:{meta_margin}'>{display_line}</div>", unsafe_allow_html=True)
 
-            # Display individual score details as text
-            st.caption(f"🔍 Semantic: {semantic_pct}% | 📚 Instruction: {instruction_pct}%")
-            
             # Display instruction justification if available
             justification = result.get('instruction_justification', '')
-            if (not compact) and justification and str(justification).strip():
-                st.markdown(f"<div style='font-size:0.9rem; color:#555; margin-top:0.5rem; font-style:italic; padding:0.5rem; background:#f8f9fa; border-left:3px solid #4a90c8; border-radius:4px;'>💡 {justification}</div>", unsafe_allow_html=True)
+            if justification and str(justification).strip():
+                if compact:
+                    st.markdown(
+                        f"""
+                        <div style='font-size:0.74rem; color:#4b5f73; margin-top:0.12rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;' title='{justification}'>
+                            LLM: {justification}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.markdown(f"<div style='font-size:0.9rem; color:#555; margin-top:0.5rem; font-style:italic; padding:0.5rem; background:#f8f9fa; border-left:3px solid #4a90c8; border-radius:4px;'>💡 {justification}</div>", unsafe_allow_html=True)
 
         if compact:
             st.markdown("<hr style='margin: 0.35rem 0 0.35rem 0; border:0; border-top:1px solid rgba(44, 95, 141, 0.18);'>", unsafe_allow_html=True)

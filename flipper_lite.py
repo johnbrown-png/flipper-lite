@@ -1001,9 +1001,8 @@ def main():
                         color: #18324f;
                         font-size: 0.8rem;
                         line-height: 1.3;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
+                        white-space: normal;
+                        overflow-wrap: anywhere;
                     " title="{compact_small_step_desc}">
                         <strong>Selected small step:</strong> {compact_small_step_desc}
                     </div>

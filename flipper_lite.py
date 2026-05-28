@@ -1047,9 +1047,8 @@ def main():
                 font-family: 'Poppins', sans-serif;
                 font-size: 1.2rem;
                 color: #2c5f8d;
-                text-align: center;
-                margin-top: 1rem;
-                margin-bottom: 0.25rem;
+                text-align: left;
+                margin: 0.5rem 0 -0.5rem 0;
                 font-weight: 400;
             ">
                 Pick by Small Step

@@ -132,7 +132,7 @@ def render_search_ui(
     # Execute search when the user presses Enter in the text box.
     if st.session_state.get('flipper_search_submitted') and search_query.strip():
         with st.spinner("Searching curriculum..."):
-            results = engine.search(search_query, top_k=10)
+            results = engine.search(search_query, top_k=5)
             st.session_state.flipper_search_results = results
             st.session_state.flipper_search_query = search_query
     
@@ -142,7 +142,6 @@ def render_search_ui(
     # Display results
     if st.session_state.flipper_search_results:
         st.markdown("---")
-        st.markdown(f"**Found {len(st.session_state.flipper_search_results)} results:**")
         
         for idx, result in enumerate(st.session_state.flipper_search_results):
             # Result card

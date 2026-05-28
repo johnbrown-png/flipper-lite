@@ -1112,14 +1112,63 @@ def main():
             action, result_dict = search_result
             if action == 'small_step_search' and result_dict:
                 st.session_state.display_status = 'loading'
-                st.session_state.display_step_name = result_dict.get('small_step_name', result_dict.get('small_step', ''))
-                st.session_state.curriculum_context = {
-                    'age': result_dict.get('age', ''),
-                    'term': result_dict.get('term', ''),
-                    'difficulty': result_dict.get('difficulty', ''),
-                    'topic': result_dict.get('topic', ''),
-                    'small_step': result_dict.get('small_step_name', ''),
-                }
+                selected_step_name = result_dict.get('small_step_name', result_dict.get('small_step', ''))
+                st.session_state.display_step_name = selected_step_name
+
+                # Build full curriculum context so adjacent-step nav works for Flipper Search picks.
+                full_ctx = None
+                if curriculum_assistant and curriculum_assistant.df is not None:
+                    df = curriculum_assistant.df
+                    row_match = pd.DataFrame()
+                    selected_sid = str(result_dict.get('small_step_id', '')).strip()
+
+                    if selected_sid and 'small_step_id' in df.columns:
+                        row_match = df[df['small_step_id'].astype(str).str.strip() == selected_sid]
+
+                    if row_match.empty:
+                        fallback_mask = (
+                            (df['year'].astype(str).str.strip() == str(result_dict.get('year', '')).strip())
+                            & (df['term'].astype(str).str.strip() == str(result_dict.get('term', '')).strip())
+                            & (df['topic'].astype(str).str.strip() == str(result_dict.get('topic', '')).strip())
+                            & (df['small_step_name'].astype(str).str.strip() == str(selected_step_name).strip())
+                        )
+                        diff_val = str(result_dict.get('difficulty', '')).strip()
+                        if diff_val:
+                            fallback_mask &= (df['difficulty'].astype(str).str.strip() == diff_val)
+                        row_match = df[fallback_mask]
+
+                    if not row_match.empty:
+                        row = row_match.iloc[0]
+                        full_ctx = {
+                            'action': 'small_step_search',
+                            'year': row.get('year', result_dict.get('year', '')),
+                            'term': row.get('term', result_dict.get('term', '')),
+                            'difficulty': row.get('difficulty', result_dict.get('difficulty', '')),
+                            'topic': row.get('topic', result_dict.get('topic', '')),
+                            'small_step': row.get('small_step_name', selected_step_name),
+                            'small_step_desc': row.get('ss_desc', ''),
+                            'small_step_full_desc': row.get('ss_wr_desc', ''),
+                            'small_step_id': row.get('small_step_id', result_dict.get('small_step_id', '')),
+                            'small_step_num': int(row.get('small_step_num', 0)) if pd.notna(row.get('small_step_num', None)) else 0,
+                            'small_step_num_in_topic': int(row.get('small_step_num_in_topic', -1)) if pd.notna(row.get('small_step_num_in_topic', None)) else -1,
+                            'age': row.get('age', result_dict.get('age', '')),
+                            'display_text': selected_step_name,
+                        }
+
+                if full_ctx is None:
+                    # Fallback context (breadcrumbs still work even if adjacent-step nav cannot be derived).
+                    full_ctx = {
+                        'age': result_dict.get('age', ''),
+                        'year': result_dict.get('year', ''),
+                        'term': result_dict.get('term', ''),
+                        'difficulty': result_dict.get('difficulty', ''),
+                        'topic': result_dict.get('topic', ''),
+                        'small_step': selected_step_name,
+                        'small_step_desc': result_dict.get('ss_desc', ''),
+                        'small_step_id': result_dict.get('small_step_id', ''),
+                    }
+
+                st.session_state.curriculum_context = full_ctx
 
                 results = lookup_videos_for_step(
                     recommendations_df,

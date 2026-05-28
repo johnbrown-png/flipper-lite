@@ -441,9 +441,9 @@ def render_result_card(result, compact=False):
     with st.container():
         # Compact mode keeps all three cards visible in one viewport.
         if compact:
-            col_thumb, col_gauge, col_content = st.columns([0.95, 0.4, 3.65])
+            col_thumb, _g_spacer_l, col_gauge, _g_spacer_r, col_content = st.columns([0.95, 0.12, 0.4, 0.12, 3.53])
         else:
-            col_thumb, col_gauge, col_content = st.columns([1.2, 0.5, 3.3])
+            col_thumb, _g_spacer_l, col_gauge, _g_spacer_r, col_content = st.columns([1.2, 0.16, 0.5, 0.16, 3.14])
 
         with col_thumb:
             # Clickable thumbnail with visible play button overlay

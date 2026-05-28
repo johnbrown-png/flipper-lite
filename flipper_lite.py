@@ -833,9 +833,6 @@ def main():
                 if ctx.get('topic'):
                     breadcrumb_parts.append(f"Topic: {ctx['topic']}")
                 
-                if ctx.get('small_step'):
-                    breadcrumb_parts.append(f"Small Step: {ctx['small_step']}")
-                
                 # Display breadcrumb with smaller font and separators
                 if breadcrumb_parts:
                     breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)

@@ -142,11 +142,25 @@ def render_search_ui(
     # Display results
     if st.session_state.flipper_search_results:
         st.markdown("---")
+        st.markdown(
+            """
+            <style>
+            div[data-testid="stButton"] > button {
+                min-height: 1.5rem;
+                height: 1.5rem;
+                padding: 0.05rem 0.5rem;
+                font-size: 0.74rem;
+                line-height: 1.0;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         display_results = st.session_state.flipper_search_results[:5]
         
         for idx, result in enumerate(display_results):
             # Result card
-            col_select, col_content = st.columns([0.34, 4.66])
+            col_select, col_content = st.columns([0.28, 4.72])
             
             with col_select:
                 # Select button
@@ -168,7 +182,7 @@ def render_search_ui(
                 if topic:
                     title_text += f" — {topic}"
                 st.markdown(
-                    f"<div style='margin:0 0 0.06rem 0; padding:0; line-height:1.14; font-size:0.96rem;'>{title_text}</div>",
+                    f"<div style='margin:0 0 0.04rem 0; padding:0; line-height:1.1; font-size:0.94rem;'>{title_text}</div>",
                     unsafe_allow_html=True,
                 )
                 
@@ -183,7 +197,7 @@ def render_search_ui(
                 
                 if metadata_parts:
                     st.markdown(
-                        f"<div style='margin:0 0 0.08rem 0; padding:0; font-size:0.78rem; color:#627486; line-height:1.1;'>{' | '.join(metadata_parts)}</div>",
+                        f"<div style='margin:0 0 0.06rem 0; padding:0; font-size:0.76rem; color:#627486; line-height:1.06;'>{' | '.join(metadata_parts)}</div>",
                         unsafe_allow_html=True,
                     )
                 
@@ -191,14 +205,12 @@ def render_search_ui(
                 ss_desc = result.get('ss_desc', '')
                 if ss_desc:
                     st.markdown(
-                        f"<div style='font-size:0.86rem; color:#4f5f6f; padding:0.28rem 0.38rem; background:#f0f5f9; border-left:3px solid #4a90c8; border-radius:4px; margin:0.08rem 0 0.1rem 0; line-height:1.2;'>{ss_desc}</div>",
+                        f"<div style='font-size:0.84rem; color:#4f5f6f; padding:0.22rem 0.34rem; background:#f0f5f9; border-left:3px solid #4a90c8; border-radius:4px; margin:0.05rem 0 0.06rem 0; line-height:1.16;'>{ss_desc}</div>",
                         unsafe_allow_html=True,
                     )
                 
                 # Match scores
                 score_parts = []
-                if 'lexical_score' in result:
-                    score_parts.append(f"Lexical: {result['lexical_score']:.1%}")
                 if 'semantic_score' in result:
                     score_parts.append(f"Semantic: {result['semantic_score']:.1%}")
                 if 'combined_score' in result:
@@ -206,11 +218,11 @@ def render_search_ui(
                 
                 if score_parts:
                     st.markdown(
-                        f"<div style='margin:0; padding:0; font-size:0.76rem; color:#5f7082; line-height:1.1;'>{' | '.join(score_parts)}</div>",
+                        f"<div style='margin:0; padding:0; font-size:0.74rem; color:#5f7082; line-height:1.06;'>{' | '.join(score_parts)}</div>",
                         unsafe_allow_html=True,
                     )
             
-            st.markdown("<hr style='margin:0.2rem 0 0.22rem 0; border:0; border-top:1px solid rgba(44,95,141,0.16);'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin:0.14rem 0 0.16rem 0; border:0; border-top:1px solid rgba(44,95,141,0.16);'>", unsafe_allow_html=True)
     
     elif st.session_state.flipper_search_query and not st.session_state.flipper_search_results:
         st.warning("No results found. Try different search terms.")

@@ -89,6 +89,8 @@ def render_search_ui(
         st.session_state.flipper_search_submitted = False
     if 'flipper_search_scroll_to_top' not in st.session_state:
         st.session_state.flipper_search_scroll_to_top = False
+    if 'flipper_search_scroll_to_results' not in st.session_state:
+        st.session_state.flipper_search_scroll_to_results = False
 
     # One-time scroll jump requested by Go! button selection.
     if st.session_state.get('flipper_search_scroll_to_top'):
@@ -163,12 +165,28 @@ def render_search_ui(
             results = engine.search(search_query, top_k=5)
             st.session_state.flipper_search_results = results
             st.session_state.flipper_search_query = search_query
+            st.session_state.flipper_search_scroll_to_results = True
     
     if st.session_state.get('flipper_search_submitted'):
         st.session_state.flipper_search_submitted = False
     
     # Display results
     if st.session_state.flipper_search_results:
+        st.markdown('<div id="flipper-search-results-top"></div>', unsafe_allow_html=True)
+        if st.session_state.get('flipper_search_scroll_to_results'):
+            components.html(
+                """
+                <script>
+                const rootWin = window.parent;
+                const target = rootWin.document.getElementById('flipper-search-results-top');
+                if (target && typeof target.scrollIntoView === 'function') {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                </script>
+                """,
+                height=0,
+            )
+            st.session_state.flipper_search_scroll_to_results = False
         st.markdown("---")
         st.markdown(
             """
@@ -255,6 +273,7 @@ def render_search_ui(
             st.markdown("<hr style='margin:0.14rem 0 0.16rem 0; border:0; border-top:1px solid rgba(44,95,141,0.16);'>", unsafe_allow_html=True)
     
     elif st.session_state.flipper_search_query and not st.session_state.flipper_search_results:
+        st.session_state.flipper_search_scroll_to_results = False
         st.warning("No results found. Try different search terms.")
     
     return None

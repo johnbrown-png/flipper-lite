@@ -485,10 +485,15 @@ def render_result_card(result, compact=False):
         with col_gauge:
             # Circular progress indicator for combined score
             combined_pct = _score_to_percent(result.get('combined_score', 0))
+            infographic_scale = 1.25
+            gauge_size = int(round((56 if compact else 80) * infographic_scale))
             
             # Display circular gauge with label - centered
             st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)
-            st.markdown(create_circular_progress_svg(combined_pct, size=56 if compact else 80, text_scale=0.75), unsafe_allow_html=True)
+            st.markdown(
+                create_circular_progress_svg(combined_pct, size=gauge_size, text_scale=0.75 * infographic_scale),
+                unsafe_allow_html=True,
+            )
             st.markdown("</div>", unsafe_allow_html=True)
 
         with col_content:

@@ -69,7 +69,7 @@ def render_search_ui(
     Returns:
         Tuple of (action, result_dict) if user selects a result, else None
         - action: 'small_step_search'
-        - result_dict: Full curriculum data for selected small step
+        - result_dict: Selected step payload that follows docs/SMALL_STEP_PAYLOAD_CONTRACT.md
     """
     
     # Initialize engine

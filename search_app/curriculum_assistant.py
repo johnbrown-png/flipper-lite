@@ -154,6 +154,7 @@ class CurriculumAssistant:
         """Return (prev_step_dict, next_step_dict) for the step described in ctx.
 
         Both dicts are ready to be written into st.session_state.pending_insertion.
+        Contract: docs/SMALL_STEP_PAYLOAD_CONTRACT.md
         Returns (None, None) if the curriculum is not loaded or context is missing.
         Wraps cyclically: next of last step is first; prev of first is last.
         """
@@ -500,6 +501,7 @@ class CurriculumAssistant:
                                     difficulty_val = row.get('difficulty', '')
                                     if pd.isna(difficulty_val):
                                         difficulty_val = ''
+                                    # Keep payload fields aligned with docs/SMALL_STEP_PAYLOAD_CONTRACT.md.
                                     st.session_state.pending_insertion = {
                                         'action': 'small_step_search',
                                         'year': row['year'],

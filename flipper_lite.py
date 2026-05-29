@@ -1124,7 +1124,8 @@ def main():
                 selected_step_name = result_dict.get('small_step_name', result_dict.get('small_step', ''))
                 st.session_state.display_step_name = selected_step_name
 
-                # Build full curriculum context so adjacent-step nav works for Flipper Search picks.
+                # Build full curriculum context (docs/SMALL_STEP_PAYLOAD_CONTRACT.md)
+                # so adjacent-step nav works for Match card selections.
                 full_ctx = None
                 if curriculum_assistant and curriculum_assistant.df is not None:
                     df = curriculum_assistant.df

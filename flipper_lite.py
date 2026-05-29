@@ -730,6 +730,8 @@ def main():
         st.session_state.curriculum_context = None
     if 'current_video_index' not in st.session_state:
         st.session_state.current_video_index = 0
+    if 'flipper_lite_scroll_to_video_cards' not in st.session_state:
+        st.session_state.flipper_lite_scroll_to_video_cards = False
     
     # ==========================================
     # RESULTS SECTION (Always visible above the fold)
@@ -786,6 +788,8 @@ def main():
                     st.rerun()
         st.markdown("---")
 
+    st.markdown('<div id="flipper-video-results-top"></div>', unsafe_allow_html=True)
+
     if st.session_state.display_status == 'idle':
         # Empty state - no message
         pass
@@ -798,6 +802,20 @@ def main():
     elif st.session_state.display_status == 'complete':
         # Results state - show video cards
         if st.session_state.display_results:
+            if st.session_state.get('flipper_lite_scroll_to_video_cards'):
+                components.html(
+                    """
+                    <script>
+                    const rootWin = window.parent;
+                    const target = rootWin.document.getElementById('flipper-video-results-top');
+                    if (target && typeof target.scrollIntoView === 'function') {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    </script>
+                    """,
+                    height=0,
+                )
+                st.session_state.flipper_lite_scroll_to_video_cards = False
             ctx = st.session_state.get('curriculum_context')
             prev_step = None
             next_step = None

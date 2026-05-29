@@ -87,30 +87,8 @@ def render_search_ui(
         st.session_state.flipper_search_pending = None
     if 'flipper_search_submitted' not in st.session_state:
         st.session_state.flipper_search_submitted = False
-    if 'flipper_search_scroll_to_top' not in st.session_state:
-        st.session_state.flipper_search_scroll_to_top = False
     if 'flipper_search_scroll_to_results' not in st.session_state:
         st.session_state.flipper_search_scroll_to_results = False
-    if 'flipper_search_pending_after_scroll' not in st.session_state:
-        st.session_state.flipper_search_pending_after_scroll = False
-
-    # One-time scroll jump requested by Go! button selection.
-    if st.session_state.get('flipper_search_scroll_to_top'):
-        components.html(
-            """
-            <script>
-            const rootWin = window.parent;
-            if (rootWin && typeof rootWin.scrollTo === 'function') {
-                rootWin.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-            </script>
-            """,
-            height=0,
-        )
-        st.session_state.flipper_search_scroll_to_top = False
-        if st.session_state.get('flipper_search_pending_after_scroll'):
-            st.session_state.flipper_search_pending_after_scroll = False
-            st.rerun()
     
     # Check for pending selection
     if st.session_state.flipper_search_pending:
@@ -224,9 +202,8 @@ def render_search_ui(
                     use_container_width=False,
                 ):
                     st.session_state.flipper_search_scroll_to_results = False
-                    st.session_state.flipper_search_scroll_to_top = True
+                    st.session_state.flipper_lite_scroll_to_video_cards = True
                     st.session_state.flipper_search_pending = result
-                    st.session_state.flipper_search_pending_after_scroll = True
                     st.rerun()
             
             with col_content:

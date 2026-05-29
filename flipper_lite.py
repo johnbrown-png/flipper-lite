@@ -668,7 +668,7 @@ def main():
                 st.markdown("#### Why flipped/ flipped classroom:")
                 st.markdown("""
                 Flipper School was named after flipped classrooms the idea of reversing the learning of introductory concepts 
-                back onto the learner. This frees up instructional time to be more efficient, allowing it to focus on what its best for,
+                back onto the learner. This harnesses evolving use of new mediums for aquiring knowledge and frees up instructional time to be more efficient, allowing it to focus on what its best for,
                 embedding, exploration, elaboration and mastery.                                  .
                 """)
                 

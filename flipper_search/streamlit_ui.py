@@ -205,7 +205,9 @@ def render_search_ui(
                 ):
                     st.session_state.flipper_search_scroll_to_results = False
                     st.session_state.flipper_lite_scroll_to_video_cards = True
-                    st.session_state.flipper_search_pending = result
+                    tagged_result = dict(result)
+                    tagged_result['selection_source'] = 'match'
+                    st.session_state.flipper_search_pending = tagged_result
                     st.rerun()
             
             with col_content:
@@ -317,7 +319,9 @@ def render_search_ui_compact(
                 key=f"compact_select_{result.get('small_step_id')}",
                 use_container_width=True,
             ):
-                st.session_state.flipper_search_compact_pending = result
+                tagged_result = dict(result)
+                tagged_result['selection_source'] = 'match'
+                st.session_state.flipper_search_compact_pending = tagged_result
                 st.rerun()
     
     return None

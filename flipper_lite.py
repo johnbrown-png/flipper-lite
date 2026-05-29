@@ -28,6 +28,9 @@ ENABLE_TOPIC_TABLE_SEARCH = False
 # Natural-language Flipper Search (search_engine.py / streamlit_ui.py): enabled by default.
 ENABLE_FLIPPER_SEARCH = True
 
+# Temporary diagnostics for payload and navigation eligibility.
+ENABLE_SELECTION_DEBUG_PANEL = True
+
 # Configure page
 st.set_page_config(
     page_title="Flipper Lite - Video Browser",
@@ -291,6 +294,167 @@ def _score_to_percent(value):
     raw = _to_float(value, default=0.0)
     pct = raw * 100.0 if raw <= 1.0 else raw
     return int(max(0.0, min(100.0, pct)))
+
+
+def _resolve_small_step_context(selection_payload, curriculum_assistant):
+    """Build a contract-aligned curriculum context from any step selection payload."""
+    source = selection_payload or {}
+    selection_source = str(source.get('selection_source', '')).strip() or 'unknown'
+
+    selected_step_name = str(
+        source.get('small_step')
+        or source.get('small_step_name')
+        or source.get('display_text')
+        or ''
+    ).strip()
+
+    full_ctx = None
+    if curriculum_assistant and curriculum_assistant.df is not None:
+        df = curriculum_assistant.df
+        row_match = pd.DataFrame()
+        selected_sid = str(source.get('small_step_id', '')).strip()
+
+        if selected_sid and 'small_step_id' in df.columns:
+            row_match = df[df['small_step_id'].astype(str).str.strip() == selected_sid]
+
+        if row_match.empty:
+            candidate_step_name = str(source.get('small_step_name') or source.get('small_step') or '').strip()
+            fallback_mask = (
+                (df['year'].astype(str).str.strip() == str(source.get('year', '')).strip())
+                & (df['term'].astype(str).str.strip() == str(source.get('term', '')).strip())
+                & (df['topic'].astype(str).str.strip() == str(source.get('topic', '')).strip())
+                & (df['small_step_name'].astype(str).str.strip() == candidate_step_name)
+            )
+            diff_val = str(source.get('difficulty', '')).strip()
+            if diff_val:
+                fallback_mask &= (df['difficulty'].astype(str).str.strip() == diff_val)
+            row_match = df[fallback_mask]
+
+        if not row_match.empty:
+            row = row_match.iloc[0]
+            full_ctx = {
+                'action': 'small_step_search',
+                'selection_source': selection_source,
+                'year': row.get('year', source.get('year', '')),
+                'term': row.get('term', source.get('term', '')),
+                'difficulty': row.get('difficulty', source.get('difficulty', '')),
+                'topic': row.get('topic', source.get('topic', '')),
+                'small_step': row.get('small_step_name', selected_step_name),
+                'small_step_desc': row.get('ss_desc', source.get('small_step_desc', source.get('ss_desc', ''))),
+                'small_step_full_desc': row.get('ss_wr_desc', source.get('small_step_full_desc', source.get('ss_wr_desc', ''))),
+                'small_step_id': row.get('small_step_id', source.get('small_step_id', '')),
+                'small_step_num': int(row.get('small_step_num', 0)) if pd.notna(row.get('small_step_num', None)) else 0,
+                'small_step_num_in_topic': int(row.get('small_step_num_in_topic', -1)) if pd.notna(row.get('small_step_num_in_topic', None)) else -1,
+                'age': row.get('age', source.get('age', '')),
+                'display_text': selected_step_name,
+            }
+
+    if full_ctx is None:
+        # Fallback keeps video lookup and breadcrumbs working even if nav fields cannot be derived.
+        full_ctx = {
+            'action': 'small_step_search',
+            'selection_source': selection_source,
+            'age': source.get('age', ''),
+            'year': source.get('year', ''),
+            'term': source.get('term', ''),
+            'difficulty': source.get('difficulty', ''),
+            'topic': source.get('topic', ''),
+            'small_step': selected_step_name,
+            'small_step_desc': source.get('small_step_desc', source.get('ss_desc', '')),
+            'small_step_full_desc': source.get('small_step_full_desc', source.get('ss_wr_desc', '')),
+            'small_step_id': source.get('small_step_id', ''),
+            'display_text': selected_step_name,
+        }
+
+    return full_ctx, selected_step_name
+
+
+def render_selection_debug_panel(curriculum_assistant):
+    """Temporary panel to inspect payload shape and nav eligibility conditions."""
+    if not ENABLE_SELECTION_DEBUG_PANEL:
+        return
+
+    raw_ctx = st.session_state.get('curriculum_context')
+    ctx = raw_ctx if isinstance(raw_ctx, dict) else {}
+    payload_keys = sorted(ctx.keys())
+
+    assistant_ready = bool(curriculum_assistant and curriculum_assistant.df is not None)
+    has_context = bool(ctx)
+    has_age = bool(str(ctx.get('age', '')).strip())
+    has_topic = bool(str(ctx.get('topic', '')).strip())
+    has_small_step_id = bool(str(ctx.get('small_step_id', '')).strip())
+    has_small_step_num_in_topic = ctx.get('small_step_num_in_topic') is not None
+    has_display_results = bool(st.session_state.get('display_results'))
+    display_is_complete = st.session_state.get('display_status') == 'complete'
+
+    can_attempt_adjacent = assistant_ready and has_context and has_small_step_num_in_topic
+    prev_step = None
+    next_step = None
+    if can_attempt_adjacent:
+        try:
+            prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
+        except Exception:
+            prev_step, next_step = None, None
+
+    adjacent_resolved = bool(prev_step or next_step)
+    show_step_nav_now = bool(display_is_complete and has_display_results and adjacent_resolved)
+
+    with st.expander("Temporary Selection Debug", expanded=False):
+        st.caption("Live payload keys and step-navigation eligibility")
+        st.write(f"selection_source: {ctx.get('selection_source', 'unknown')}")
+        st.json(
+            {
+                'payload_keys': payload_keys,
+                'nav_eligibility': {
+                    'assistant_ready': assistant_ready,
+                    'has_context': has_context,
+                    'has_age': has_age,
+                    'has_topic': has_topic,
+                    'has_small_step_id': has_small_step_id,
+                    'has_small_step_num_in_topic': has_small_step_num_in_topic,
+                    'display_is_complete': display_is_complete,
+                    'has_display_results': has_display_results,
+                    'can_attempt_adjacent': can_attempt_adjacent,
+                    'adjacent_resolved': adjacent_resolved,
+                    'has_prev_step': bool(prev_step),
+                    'has_next_step': bool(next_step),
+                    'show_step_nav_now': show_step_nav_now,
+                },
+            }
+        )
+
+
+def apply_small_step_selection(selection_payload, recommendations_df, curriculum_assistant):
+    """Single selection handler for Selector cards and Match cards."""
+    if not selection_payload:
+        return
+
+    st.session_state.display_status = 'loading'
+    st.session_state.flipper_lite_scroll_to_video_cards = True
+
+    full_ctx, selected_step_name = _resolve_small_step_context(selection_payload, curriculum_assistant)
+    st.session_state.curriculum_context = full_ctx
+    st.session_state.display_step_name = selected_step_name
+
+    # Keep selector UI and inline player state coherent after any selection source.
+    st.session_state.curr_topic = full_ctx.get('topic', st.session_state.get('curr_topic', 'Topic ?'))
+    st.session_state.topic_select_topic_search = st.session_state.curr_topic
+    st.session_state.current_video = None
+    st.session_state.current_video_index = 0
+
+    results = lookup_videos_for_step(
+        recommendations_df,
+        year=full_ctx.get('year', ''),
+        term=full_ctx.get('term', ''),
+        difficulty=full_ctx.get('difficulty', ''),
+        topic=full_ctx.get('topic', ''),
+        small_step=full_ctx.get('small_step', ''),
+        small_step_id=full_ctx.get('small_step_id', ''),
+    )
+
+    st.session_state.display_results = results
+    st.session_state.display_status = 'complete'
+    st.rerun()
 
 
 def format_duration(duration_str):
@@ -1054,27 +1218,15 @@ def main():
                 )
         else:
             st.warning("No videos found for this step. Try a different curriculum step.")
+
+    render_selection_debug_panel(curriculum_assistant)
     
     # ==========================================
     # STEP NAVIGATION (pending_step_nav from Next/Back buttons)
     # ==========================================
     if st.session_state.get('pending_step_nav'):
         nav = st.session_state.pop('pending_step_nav')
-        st.session_state.curriculum_context = nav
-        st.session_state.display_step_name = nav.get('small_step', '')
-        # Update topic dropdown to keep UI consistent
-        st.session_state.curr_topic = nav.get('topic', st.session_state.get('curr_topic', 'Topic ?'))
-        st.session_state.topic_select_topic_search = st.session_state.curr_topic
-        st.session_state.current_video = None
-        st.session_state.current_video_index = 0
-        results = lookup_videos_for_step(
-            recommendations_df,
-            nav.get('year'), nav.get('term'), nav.get('difficulty', ''),
-            nav.get('topic'), nav.get('small_step'), nav.get('small_step_id', '')
-        )
-        st.session_state.display_results = results
-        st.session_state.display_status = 'complete'
-        st.rerun()
+        apply_small_step_selection(nav, recommendations_df, curriculum_assistant)
 
     # ==========================================
     # CURRICULUM ASSISTANT (Below results)
@@ -1083,25 +1235,7 @@ def main():
         # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
         action, text = curriculum_assistant.render(show_topic_table_search=ENABLE_TOPIC_TABLE_SEARCH)
         if action == 'small_step_search' and text:
-            # Handle small step selection with CSV lookup
-            st.session_state.display_status = 'loading'
-            st.session_state.display_step_name = text.get('small_step', text['display_text'])
-            st.session_state.flipper_lite_scroll_to_video_cards = True
-            # Store curriculum context for breadcrumb display
-            st.session_state.curriculum_context = text
-            # Extract curriculum context
-            year = text.get('year')
-            term = text.get('term')
-            difficulty = text.get('difficulty', '')
-            topic = text.get('topic')
-            small_step = text.get('small_step')
-            small_step_id = text.get('small_step_id', '')
-            # Lookup videos from precomputed CSV (includes channel & duration)
-            results = lookup_videos_for_step(recommendations_df, year, term, difficulty, topic, small_step, small_step_id)
-            # Store results and update status
-            st.session_state.display_results = results
-            st.session_state.display_status = 'complete'
-            st.rerun()
+            apply_small_step_selection(text, recommendations_df, curriculum_assistant)
 
     # ==========================================
     # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)
@@ -1120,78 +1254,7 @@ def main():
         if search_result:
             action, result_dict = search_result
             if action == 'small_step_search' and result_dict:
-                st.session_state.display_status = 'loading'
-                selected_step_name = result_dict.get('small_step_name', result_dict.get('small_step', ''))
-                st.session_state.display_step_name = selected_step_name
-
-                # Build full curriculum context (docs/SMALL_STEP_PAYLOAD_CONTRACT.md)
-                # so adjacent-step nav works for Match card selections.
-                full_ctx = None
-                if curriculum_assistant and curriculum_assistant.df is not None:
-                    df = curriculum_assistant.df
-                    row_match = pd.DataFrame()
-                    selected_sid = str(result_dict.get('small_step_id', '')).strip()
-
-                    if selected_sid and 'small_step_id' in df.columns:
-                        row_match = df[df['small_step_id'].astype(str).str.strip() == selected_sid]
-
-                    if row_match.empty:
-                        fallback_mask = (
-                            (df['year'].astype(str).str.strip() == str(result_dict.get('year', '')).strip())
-                            & (df['term'].astype(str).str.strip() == str(result_dict.get('term', '')).strip())
-                            & (df['topic'].astype(str).str.strip() == str(result_dict.get('topic', '')).strip())
-                            & (df['small_step_name'].astype(str).str.strip() == str(selected_step_name).strip())
-                        )
-                        diff_val = str(result_dict.get('difficulty', '')).strip()
-                        if diff_val:
-                            fallback_mask &= (df['difficulty'].astype(str).str.strip() == diff_val)
-                        row_match = df[fallback_mask]
-
-                    if not row_match.empty:
-                        row = row_match.iloc[0]
-                        full_ctx = {
-                            'action': 'small_step_search',
-                            'year': row.get('year', result_dict.get('year', '')),
-                            'term': row.get('term', result_dict.get('term', '')),
-                            'difficulty': row.get('difficulty', result_dict.get('difficulty', '')),
-                            'topic': row.get('topic', result_dict.get('topic', '')),
-                            'small_step': row.get('small_step_name', selected_step_name),
-                            'small_step_desc': row.get('ss_desc', ''),
-                            'small_step_full_desc': row.get('ss_wr_desc', ''),
-                            'small_step_id': row.get('small_step_id', result_dict.get('small_step_id', '')),
-                            'small_step_num': int(row.get('small_step_num', 0)) if pd.notna(row.get('small_step_num', None)) else 0,
-                            'small_step_num_in_topic': int(row.get('small_step_num_in_topic', -1)) if pd.notna(row.get('small_step_num_in_topic', None)) else -1,
-                            'age': row.get('age', result_dict.get('age', '')),
-                            'display_text': selected_step_name,
-                        }
-
-                if full_ctx is None:
-                    # Fallback context (breadcrumbs still work even if adjacent-step nav cannot be derived).
-                    full_ctx = {
-                        'age': result_dict.get('age', ''),
-                        'year': result_dict.get('year', ''),
-                        'term': result_dict.get('term', ''),
-                        'difficulty': result_dict.get('difficulty', ''),
-                        'topic': result_dict.get('topic', ''),
-                        'small_step': selected_step_name,
-                        'small_step_desc': result_dict.get('ss_desc', ''),
-                        'small_step_id': result_dict.get('small_step_id', ''),
-                    }
-
-                st.session_state.curriculum_context = full_ctx
-
-                results = lookup_videos_for_step(
-                    recommendations_df,
-                    year=result_dict.get('year', ''),
-                    term=result_dict.get('term', ''),
-                    difficulty=result_dict.get('difficulty', ''),
-                    topic=result_dict.get('topic', ''),
-                    small_step=result_dict.get('small_step_name', ''),
-                    small_step_id=result_dict.get('small_step_id', ''),
-                )
-                st.session_state.display_results = results
-                st.session_state.display_status = 'complete'
-                st.rerun()
+                apply_small_step_selection(result_dict, recommendations_df, curriculum_assistant)
     
     # Sidebar with info
     with st.sidebar:

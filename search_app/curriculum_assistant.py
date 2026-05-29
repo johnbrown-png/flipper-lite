@@ -200,6 +200,7 @@ class CurriculumAssistant:
                     diff_val = ''
                 return {
                     'action': 'small_step_search',
+                    'selection_source': 'nav',
                     'year': row['year'],
                     'term': row['term'],
                     'difficulty': diff_val,
@@ -504,6 +505,7 @@ class CurriculumAssistant:
                                     # Keep payload fields aligned with docs/SMALL_STEP_PAYLOAD_CONTRACT.md.
                                     st.session_state.pending_insertion = {
                                         'action': 'small_step_search',
+                                        'selection_source': 'selector',
                                         'year': row['year'],
                                         'term': row['term'],
                                         'difficulty': difficulty_val,

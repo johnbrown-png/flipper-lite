@@ -1084,6 +1084,7 @@ def main():
             # Handle small step selection with CSV lookup
             st.session_state.display_status = 'loading'
             st.session_state.display_step_name = text.get('small_step', text['display_text'])
+            st.session_state.flipper_lite_scroll_to_video_cards = True
             # Store curriculum context for breadcrumb display
             st.session_state.curriculum_context = text
             # Extract curriculum context

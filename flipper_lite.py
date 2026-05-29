@@ -20,6 +20,7 @@ import pandas as pd
 import math
 
 from shared.curriculum_schema import normalize_precomputed_df
+from shared.ui_terminology import VIDEO_CARDS_LABEL
 
 # Mothballed topic-table search (prefix text box + table): hidden by default.
 ENABLE_TOPIC_TABLE_SEARCH = False
@@ -431,7 +432,7 @@ def render_video_player(video_data):
 
 
 def render_result_card(result, compact=False):
-    """Render a single video result card."""
+    """Render a single Video card."""
     
     # Get video ID, topic, and small_step for tracking
     video_id = result['video_id']
@@ -805,8 +806,9 @@ def main():
             st.empty()
     
     elif st.session_state.display_status == 'complete':
-        # Results state - show video cards
+        # Results state - show Video cards
         if st.session_state.display_results:
+            st.caption(VIDEO_CARDS_LABEL)
             if st.session_state.get('flipper_lite_scroll_to_video_cards'):
                 components.html(
                     """

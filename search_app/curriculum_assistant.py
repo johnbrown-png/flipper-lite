@@ -9,6 +9,7 @@ import streamlit as st
 from pathlib import Path
 
 from shared.curriculum_schema import curriculum_to_long_df
+from shared.ui_terminology import SELECTOR_CARDS_LABEL
 
 
 class CurriculumAssistant:
@@ -391,6 +392,7 @@ class CurriculumAssistant:
             """,
             unsafe_allow_html=True,
         )
+        st.caption(SELECTOR_CARDS_LABEL)
 
         # --- Final: Age -> Topic -> Small Steps UI ---
         # Age dropdown

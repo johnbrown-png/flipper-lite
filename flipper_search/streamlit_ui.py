@@ -17,6 +17,7 @@ import re
 from .curriculum_index import CurriculumIndex
 from .search_engine import SearchEngine
 from .epoch_definitions import EPOCHS, get_epoch_display_name
+from shared.ui_terminology import MATCH_CARDS_LABEL
 
 
 def _year_sort_key(result: dict) -> tuple:
@@ -153,7 +154,7 @@ def render_search_ui(
     if st.session_state.get('flipper_search_submitted'):
         st.session_state.flipper_search_submitted = False
     
-    # Display results
+        # Display Match cards
     if st.session_state.flipper_search_results:
         st.markdown('<div id="flipper-search-results-top"></div>', unsafe_allow_html=True)
         if st.session_state.get('flipper_search_scroll_to_results'):
@@ -171,6 +172,7 @@ def render_search_ui(
             )
             st.session_state.flipper_search_scroll_to_results = False
         st.markdown("---")
+        st.caption(MATCH_CARDS_LABEL)
         st.markdown(
             """
             <style>
@@ -191,7 +193,7 @@ def render_search_ui(
         )[:5]
         
         for idx, result in enumerate(display_results):
-            # Result card
+            # Match card
             col_select, col_content = st.columns([0.28, 4.72])
             
             with col_select:

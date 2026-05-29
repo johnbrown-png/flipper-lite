@@ -648,7 +648,7 @@ def main():
                 margin-bottom: 0rem;
                 font-weight: 400;
             ">
-                High quality Maths explainers for each step in the White Rose Maths curriculum
+                High quality Maths videos for each step in White Rose
             </p>
             """, unsafe_allow_html=True)
 

@@ -373,6 +373,24 @@ class CurriculumAssistant:
             # Ensure hidden topic-table search state does not leak into the visible dropdown flow.
             st.session_state.pending_topic_open = None
 
+        st.markdown(
+            """
+            <p style="
+                font-family: 'Poppins', sans-serif;
+                font-size: 1.2rem;
+                color: #2c5f8d;
+                text-align: left;
+                margin-top: 0.25rem;
+                margin-bottom: 0.15rem;
+                padding: 0;
+                line-height: 1;
+                font-weight: 400;
+            ">
+                Pick by Small Step
+            </p>
+            """,
+            unsafe_allow_html=True,
+        )
 
         # --- Final: Age -> Topic -> Small Steps UI ---
         # Age dropdown

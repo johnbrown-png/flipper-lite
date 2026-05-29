@@ -1055,24 +1055,6 @@ def main():
     # CURRICULUM ASSISTANT (Below results)
     # ==========================================
     if curriculum_assistant:
-        st.markdown(
-            """
-            <p style="
-                font-family: 'Poppins', sans-serif;
-                font-size: 1.2rem;
-                color: #2c5f8d;
-                text-align: left;
-                margin-top: 0.5rem;
-                margin-bottom: 0.5rem;
-                padding: 0;
-                line-height: 1;
-                font-weight: 400;
-            ">
-                Pick by Small Step
-            </p>
-            """,
-            unsafe_allow_html=True,
-        )
         # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
         action, text = curriculum_assistant.render(show_topic_table_search=ENABLE_TOPIC_TABLE_SEARCH)
         if action == 'small_step_search' and text:

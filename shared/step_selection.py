@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 
-ENABLE_SELECTION_DEBUG_PANEL = True
+ENABLE_SELECTION_DEBUG_PANEL = False
 
 
 def resolve_small_step_context(selection_payload, curriculum_assistant):

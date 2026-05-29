@@ -172,7 +172,6 @@ def render_search_ui(
             )
             st.session_state.flipper_search_scroll_to_results = False
         st.markdown("---")
-        st.caption(MATCH_CARDS_LABEL)
         st.markdown(
             """
             <style>

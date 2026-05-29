@@ -437,6 +437,22 @@ def apply_small_step_selection(selection_payload, recommendations_df, curriculum
     st.session_state.display_step_name = selected_step_name
 
     # Keep selector UI and inline player state coherent after any selection source.
+    selected_age = str(full_ctx.get('age', '')).strip()
+    selected_diff = str(full_ctx.get('difficulty', '')).strip()
+
+    if selected_age:
+        st.session_state.curr_year = selected_age
+        st.session_state.year_select_topic_search = selected_age
+
+    if selected_age in ['14-15', '15-16']:
+        if selected_diff not in ['Foundation', 'Higher']:
+            selected_diff = 'All'
+        st.session_state.curr_difficulty = selected_diff
+        st.session_state.difficulty_select_topic_search = selected_diff
+    else:
+        st.session_state.curr_difficulty = 'All'
+        st.session_state.difficulty_select_topic_search = 'All'
+
     st.session_state.curr_topic = full_ctx.get('topic', st.session_state.get('curr_topic', 'Topic ?'))
     st.session_state.topic_select_topic_search = st.session_state.curr_topic
     st.session_state.current_video = None

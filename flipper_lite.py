@@ -439,22 +439,27 @@ def apply_small_step_selection(selection_payload, recommendations_df, curriculum
     # Keep selector UI and inline player state coherent after any selection source.
     selected_age = str(full_ctx.get('age', '')).strip()
     selected_diff = str(full_ctx.get('difficulty', '')).strip()
+    selected_topic = full_ctx.get('topic', st.session_state.get('curr_topic', 'Topic ?'))
+
+    # Do not write widget-bound keys here because this function can run after those
+    # widgets are instantiated in the current rerun. Queue key sync for next rerun.
+    st.session_state.pending_selector_sync = {
+        'age': selected_age,
+        'difficulty': selected_diff,
+        'topic': selected_topic,
+    }
 
     if selected_age:
         st.session_state.curr_year = selected_age
-        st.session_state.year_select_topic_search = selected_age
 
     if selected_age in ['14-15', '15-16']:
         if selected_diff not in ['Foundation', 'Higher']:
             selected_diff = 'All'
         st.session_state.curr_difficulty = selected_diff
-        st.session_state.difficulty_select_topic_search = selected_diff
     else:
         st.session_state.curr_difficulty = 'All'
-        st.session_state.difficulty_select_topic_search = 'All'
 
-    st.session_state.curr_topic = full_ctx.get('topic', st.session_state.get('curr_topic', 'Topic ?'))
-    st.session_state.topic_select_topic_search = st.session_state.curr_topic
+    st.session_state.curr_topic = selected_topic
     st.session_state.current_video = None
     st.session_state.current_video_index = 0
 
@@ -918,6 +923,32 @@ def main():
         st.session_state.current_video_index = 0
     if 'flipper_lite_scroll_to_video_cards' not in st.session_state:
         st.session_state.flipper_lite_scroll_to_video_cards = False
+    if 'pending_selector_sync' not in st.session_state:
+        st.session_state.pending_selector_sync = None
+
+    # Apply deferred selector-widget key sync before CurriculumAssistant widgets render.
+    pending_selector_sync = st.session_state.get('pending_selector_sync')
+    if isinstance(pending_selector_sync, dict):
+        sync_age = str(pending_selector_sync.get('age', '')).strip()
+        sync_diff = str(pending_selector_sync.get('difficulty', '')).strip()
+        sync_topic = str(pending_selector_sync.get('topic', '')).strip() or 'Topic ?'
+
+        if sync_age:
+            st.session_state.curr_year = sync_age
+            st.session_state.year_select_topic_search = sync_age
+
+        if sync_age in ['14-15', '15-16']:
+            if sync_diff not in ['Foundation', 'Higher']:
+                sync_diff = 'All'
+            st.session_state.curr_difficulty = sync_diff
+            st.session_state.difficulty_select_topic_search = sync_diff
+        else:
+            st.session_state.curr_difficulty = 'All'
+            st.session_state.difficulty_select_topic_search = 'All'
+
+        st.session_state.curr_topic = sync_topic
+        st.session_state.topic_select_topic_search = sync_topic
+        st.session_state.pending_selector_sync = None
     
     # ==========================================
     # RESULTS SECTION (Always visible above the fold)

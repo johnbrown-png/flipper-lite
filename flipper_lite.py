@@ -824,7 +824,6 @@ def main():
     elif st.session_state.display_status == 'complete':
         # Results state - show Video cards
         if st.session_state.display_results:
-            st.caption(VIDEO_CARDS_LABEL)
             if st.session_state.get('flipper_lite_scroll_to_video_cards'):
                 components.html(
                     """

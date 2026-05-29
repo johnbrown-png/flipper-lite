@@ -568,7 +568,7 @@ def main():
                 padding-top: 0 !important;
             }}
             .results-brand-inline {{
-                margin: 0;
+                margin: -0.2rem 0 0;
                 font-family: 'Poppins', sans-serif;
                 font-weight: 600;
                 line-height: 1;
@@ -584,10 +584,10 @@ def main():
                 text-shadow: 0 0 0 rgba(30, 58, 95, 0.02);
             }}
             .results-brand-main {{
-                font-size: 1.68rem;
+                font-size: 1.93rem;
             }}
             .results-brand-sub {{
-                font-size: 0.945rem;
+                font-size: 1.09rem;
                 margin-left: 0.1rem;
             }}
             .results-brand-ai {{

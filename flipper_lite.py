@@ -36,6 +36,9 @@ ENABLE_TOPIC_TABLE_SEARCH = False
 # Natural-language Flipper Search (search_engine.py / streamlit_ui.py): enabled by default.
 ENABLE_FLIPPER_SEARCH = True
 
+# Toggle temporary payload/nav diagnostics panel.
+ENABLE_SELECTION_DEBUG_PANEL = False
+
 # Configure page
 st.set_page_config(
     page_title="Flipper Lite - Video Browser",
@@ -1068,7 +1071,7 @@ def main():
         else:
             st.warning("No videos found for this step. Try a different curriculum step.")
 
-    render_selection_debug_panel(curriculum_assistant)
+    render_selection_debug_panel(curriculum_assistant, enabled=ENABLE_SELECTION_DEBUG_PANEL)
     
     # ==========================================
     # STEP NAVIGATION (pending_step_nav from Next/Back buttons)

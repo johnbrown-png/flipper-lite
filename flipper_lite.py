@@ -643,7 +643,7 @@ def main():
                 font-family: 'Poppins', sans-serif;
                 font-size: 1.2rem;
                 color: #2c5f8d;
-                text-align: left;
+                text-align: centre;
                 margin-top: 1rem;
                 margin-bottom: 0rem;
                 font-weight: 400;
@@ -1062,7 +1062,8 @@ def main():
                 font-size: 1.2rem;
                 color: #2c5f8d;
                 text-align: left;
-                margin: 0;
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
                 padding: 0;
                 line-height: 1;
                 font-weight: 400;

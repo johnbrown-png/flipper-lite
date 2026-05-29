@@ -91,6 +91,8 @@ def render_search_ui(
         st.session_state.flipper_search_scroll_to_top = False
     if 'flipper_search_scroll_to_results' not in st.session_state:
         st.session_state.flipper_search_scroll_to_results = False
+    if 'flipper_search_pending_after_scroll' not in st.session_state:
+        st.session_state.flipper_search_pending_after_scroll = False
 
     # One-time scroll jump requested by Go! button selection.
     if st.session_state.get('flipper_search_scroll_to_top'):
@@ -106,6 +108,9 @@ def render_search_ui(
             height=0,
         )
         st.session_state.flipper_search_scroll_to_top = False
+        if st.session_state.get('flipper_search_pending_after_scroll'):
+            st.session_state.flipper_search_pending_after_scroll = False
+            st.rerun()
     
     # Check for pending selection
     if st.session_state.flipper_search_pending:
@@ -218,8 +223,10 @@ def render_search_ui(
                     key=f'flipper_search_select_{idx}',
                     use_container_width=False,
                 ):
+                    st.session_state.flipper_search_scroll_to_results = False
                     st.session_state.flipper_search_scroll_to_top = True
                     st.session_state.flipper_search_pending = result
+                    st.session_state.flipper_search_pending_after_scroll = True
                     st.rerun()
             
             with col_content:

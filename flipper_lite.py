@@ -643,12 +643,12 @@ def main():
                 font-family: 'Poppins', sans-serif;
                 font-size: 1.2rem;
                 color: #2c5f8d;
-                text-align: center;
+                text-align: left;
                 margin-top: 1rem;
                 margin-bottom: 0rem;
                 font-weight: 400;
             ">
-                Play AI curated education videos for each Small Step in the White Rose Maths curriculum
+                High quality Maths explainers for each step in the White Rose Maths curriculum
             </p>
             """, unsafe_allow_html=True)
 

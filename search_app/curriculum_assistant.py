@@ -394,7 +394,6 @@ class CurriculumAssistant:
             """,
             unsafe_allow_html=True,
         )
-        st.caption(SELECTOR_CARDS_LABEL)
 
         # --- Final: Age -> Topic -> Small Steps UI ---
         # Age dropdown

@@ -9,6 +9,7 @@ Provides:
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 from pathlib import Path
 from typing import Optional, Tuple
 import re
@@ -86,6 +87,23 @@ def render_search_ui(
         st.session_state.flipper_search_pending = None
     if 'flipper_search_submitted' not in st.session_state:
         st.session_state.flipper_search_submitted = False
+    if 'flipper_search_scroll_to_top' not in st.session_state:
+        st.session_state.flipper_search_scroll_to_top = False
+
+    # One-time scroll jump requested by Go! button selection.
+    if st.session_state.get('flipper_search_scroll_to_top'):
+        components.html(
+            """
+            <script>
+            const rootWin = window.parent;
+            if (rootWin && typeof rootWin.scrollTo === 'function') {
+                rootWin.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            </script>
+            """,
+            height=0,
+        )
+        st.session_state.flipper_search_scroll_to_top = False
     
     # Check for pending selection
     if st.session_state.flipper_search_pending:
@@ -182,6 +200,7 @@ def render_search_ui(
                     key=f'flipper_search_select_{idx}',
                     use_container_width=False,
                 ):
+                    st.session_state.flipper_search_scroll_to_top = True
                     st.session_state.flipper_search_pending = result
                     st.rerun()
             

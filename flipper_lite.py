@@ -782,7 +782,7 @@ def main():
         meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
         st.markdown(
             f"""
-            <div style="background:#1e3a5f; border-radius:10px; padding:0.75rem 0.75rem 0.5rem 0.75rem; margin-bottom:0.75rem;">
+            <div id="flipper-video-player" style="background:#1e3a5f; border-radius:10px; padding:0.75rem 0.75rem 0.5rem 0.75rem; margin-bottom:0.75rem;">
                 <div style="color:#f0f4f8; font-size:1rem; font-weight:600; margin-bottom:0.5rem;">
                     &#9654; Now Playing: {title}{meta_html}
                 </div>
@@ -816,7 +816,12 @@ def main():
             components.html(
                 """
                 <script>
-                window.parent.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(function() {
+                    const target = window.parent.document.getElementById('flipper-video-player');
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 150);
                 </script>
                 """,
                 height=0,

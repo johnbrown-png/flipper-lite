@@ -492,6 +492,7 @@ def render_result_card(result, compact=False):
                     idx = 0
                 st.session_state.current_video_index = idx
                 st.session_state.current_video = result
+                st.session_state.flipper_lite_scroll_to_player = True
                 st.rerun()
         
         with col_gauge:
@@ -749,6 +750,8 @@ def main():
         st.session_state.current_video_index = 0
     if 'flipper_lite_scroll_to_video_cards' not in st.session_state:
         st.session_state.flipper_lite_scroll_to_video_cards = False
+    if 'flipper_lite_scroll_to_player' not in st.session_state:
+        st.session_state.flipper_lite_scroll_to_player = False
     if 'pending_selector_sync' not in st.session_state:
         st.session_state.pending_selector_sync = None
 
@@ -809,6 +812,16 @@ def main():
                     st.session_state.current_video = results_for_cycling[next_idx]
                     st.rerun()
         st.markdown("---")
+        if st.session_state.get('flipper_lite_scroll_to_player'):
+            components.html(
+                """
+                <script>
+                window.parent.scrollTo({ top: 0, behavior: 'smooth' });
+                </script>
+                """,
+                height=0,
+            )
+            st.session_state.flipper_lite_scroll_to_player = False
 
     st.markdown('<div id="flipper-video-results-top"></div>', unsafe_allow_html=True)
 

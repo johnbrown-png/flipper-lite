@@ -69,3 +69,47 @@ Educational use. Videos remain property of their respective creators.
 ## 👨‍💻 About
 
 Created to make finding quality maths teaching videos effortless. Built as **Tier 1** of a two-tier architecture - simple, fast, and free forever.
+
+## 📈 Analytics and Traffic Attribution
+
+TikTok click counts and Streamlit app metrics often differ. Common causes:
+- Link preview bots and quick bounces count as clicks in ad platforms
+- User leaves before Streamlit fully initializes
+- Multiple clicks from one person in TikTok count differently from app sessions
+
+This project now includes lightweight event tracking in both `flipper.py` and `flipper_lite.py`.
+
+### What is tracked
+
+- `page_view` (once per session)
+- `search_submitted` and `search_results_rendered` (Flipper)
+- `step_selection_applied` and step navigation events (Flipper Lite)
+- `video_opened` / `video_link_clicked`
+- Basic attribution params from URL (`utm_*`, `ttclid`, `gclid`, `fbclid`)
+
+### Where events go
+
+- Local JSONL log: `data/analytics/events.jsonl`
+- Optional webhook destination via environment variable:
+
+```bash
+FLIPPER_ANALYTICS_WEBHOOK_URL=https://your-endpoint.example/collect
+```
+
+If the webhook is set, each event is POSTed as JSON.
+On Streamlit Community Cloud, you can also set the same key in app secrets.
+
+### TikTok link format (recommended)
+
+Use tagged URLs in TikTok so app-side attribution can be joined with ad-platform data:
+
+```text
+https://www.flipper.school/?utm_source=tiktok&utm_medium=paid_social&utm_campaign=summer_test
+```
+
+You can also include TikTok click id if available:
+
+```text
+https://www.flipper.school/?utm_source=tiktok&utm_medium=paid_social&utm_campaign=summer_test&ttclid=__CLICK_ID__
+```
+

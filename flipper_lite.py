@@ -20,6 +20,7 @@ import pandas as pd
 import math
 
 from shared.curriculum_schema import normalize_precomputed_df
+from shared.analytics import init_analytics, track_event
 from shared.step_selection import (
     apply_pending_selector_sync,
     apply_small_step_selection,
@@ -402,6 +403,7 @@ def render_video_player(video_data):
     
     # Back button above video display for quick navigation
     if st.button("← Back to Search Results", key="back_to_search_top", type="primary"):
+        track_event("video_panel_closed", {"video_id": video_id, "location": "top_button"})
         st.session_state.viewing_video = False
         st.session_state.current_video = None
         st.rerun()
@@ -435,6 +437,7 @@ def render_video_player(video_data):
     
     # Back button for navigation - 20px below video
     if st.button("← Back to Search Results", key="back_to_search_bottom", type="primary"):
+        track_event("video_panel_closed", {"video_id": video_id, "location": "bottom_button"})
         st.session_state.viewing_video = False
         st.session_state.current_video = None
         st.rerun()
@@ -485,6 +488,15 @@ def render_result_card(result, compact=False):
                 use_container_width=True,
                 type="primary"
             ):
+                track_event(
+                    "video_opened",
+                    {
+                        "video_id": video_id,
+                        "topic": topic,
+                        "small_step": small_step,
+                        "compact_results_mode": bool(compact),
+                    },
+                )
                 results_list = st.session_state.get('display_results', [])
                 try:
                     idx = next(i for i, r in enumerate(results_list) if r.get('video_id') == result.get('video_id'))
@@ -559,6 +571,9 @@ def main():
         st.session_state.viewing_video = False
     if 'current_video' not in st.session_state:
         st.session_state.current_video = None
+
+    init_analytics("flipper_lite")
+    track_event("page_view", {"page": "home"}, once_key="page_view")
 
     results_focus_mode = (
         st.session_state.get('display_status') == 'complete'
@@ -800,6 +815,7 @@ def main():
         _btn_spacer_l, btn_col_close, btn_col_next, _btn_spacer_r = st.columns([3, 1, 1, 3])
         with btn_col_close:
             if st.button("✕  Close video", key="close_inline_video", type="secondary", use_container_width=True):
+                track_event("video_panel_closed", {"video_id": video_id, "location": "inline_close_button"})
                 st.session_state.current_video = None
                 st.session_state.current_video_index = 0
                 st.rerun()
@@ -808,8 +824,17 @@ def main():
             if len(results_for_cycling) > 1:
                 if st.button("▶▶  Next Video", key="next_video_btn", type="primary", use_container_width=True):
                     next_idx = (st.session_state.current_video_index + 1) % len(results_for_cycling)
+                    next_video = results_for_cycling[next_idx]
+                    track_event(
+                        "video_next_clicked",
+                        {
+                            "from_video_id": video_id,
+                            "to_video_id": next_video.get("video_id"),
+                            "results_count": len(results_for_cycling),
+                        },
+                    )
                     st.session_state.current_video_index = next_idx
-                    st.session_state.current_video = results_for_cycling[next_idx]
+                    st.session_state.current_video = next_video
                     st.rerun()
         st.markdown("---")
         if st.session_state.get('flipper_lite_scroll_to_player'):
@@ -892,6 +917,7 @@ def main():
                                 use_container_width=True,
                                 help="Return to search with no filters",
                             ):
+                                track_event("results_reset", {"source": "top_nav_home"})
                                 st.session_state.display_status = 'idle'
                                 st.session_state.display_results = []
                                 st.session_state.display_step_name = ""
@@ -918,6 +944,14 @@ def main():
                                 use_container_width=True,
                                 help=f"Previous: {prev_step['small_step']}",
                             ):
+                                track_event(
+                                    "step_navigation",
+                                    {
+                                        "source": "top_nav_previous",
+                                        "target_small_step": prev_step.get("small_step", ""),
+                                        "target_step_id": prev_step.get("small_step_id", ""),
+                                    },
+                                )
                                 st.session_state.pending_step_nav = prev_step
                                 st.rerun()
                         with nav_next_col:
@@ -927,6 +961,14 @@ def main():
                                 use_container_width=True,
                                 help=f"Next: {next_step['small_step']}",
                             ):
+                                track_event(
+                                    "step_navigation",
+                                    {
+                                        "source": "top_nav_next",
+                                        "target_small_step": next_step.get("small_step", ""),
+                                        "target_step_id": next_step.get("small_step_id", ""),
+                                    },
+                                )
                                 st.session_state.pending_step_nav = next_step
                                 st.rerun()
 
@@ -1028,6 +1070,7 @@ def main():
                         use_container_width=True,
                         help="Return to search with no filters",
                     ):
+                        track_event("results_reset", {"source": "bottom_nav_home"})
                         st.session_state.display_status = 'idle'
                         st.session_state.display_results = []
                         st.session_state.display_step_name = ""
@@ -1054,6 +1097,14 @@ def main():
                         use_container_width=True,
                         help=f"Previous: {prev_step['small_step']}",
                     ):
+                        track_event(
+                            "step_navigation",
+                            {
+                                "source": "bottom_nav_previous",
+                                "target_small_step": prev_step.get("small_step", ""),
+                                "target_step_id": prev_step.get("small_step_id", ""),
+                            },
+                        )
                         st.session_state.pending_step_nav = prev_step
                         st.rerun()
                 with nav_col_next:
@@ -1063,6 +1114,14 @@ def main():
                         use_container_width=True,
                         help=f"Next: {next_step['small_step']}",
                     ):
+                        track_event(
+                            "step_navigation",
+                            {
+                                "source": "bottom_nav_next",
+                                "target_small_step": next_step.get("small_step", ""),
+                                "target_step_id": next_step.get("small_step_id", ""),
+                            },
+                        )
                         st.session_state.pending_step_nav = next_step
                         st.rerun()
 
@@ -1099,6 +1158,16 @@ def main():
     # ==========================================
     if st.session_state.get('pending_step_nav'):
         nav = st.session_state.pop('pending_step_nav')
+        track_event(
+            "step_selection_applied",
+            {
+                "source": "pending_navigation",
+                "small_step": nav.get("small_step", ""),
+                "small_step_id": nav.get("small_step_id", ""),
+                "topic": nav.get("topic", ""),
+                "age": nav.get("age", ""),
+            },
+        )
         apply_small_step_selection(nav, recommendations_df, curriculum_assistant, lookup_videos_for_step)
 
     # ==========================================
@@ -1108,6 +1177,16 @@ def main():
         # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
         action, text = curriculum_assistant.render(show_topic_table_search=ENABLE_TOPIC_TABLE_SEARCH)
         if action == 'small_step_search' and text:
+            track_event(
+                "step_selection_applied",
+                {
+                    "source": "curriculum_assistant",
+                    "small_step": text.get("small_step", ""),
+                    "small_step_id": text.get("small_step_id", ""),
+                    "topic": text.get("topic", ""),
+                    "age": text.get("age", ""),
+                },
+            )
             apply_small_step_selection(text, recommendations_df, curriculum_assistant, lookup_videos_for_step)
 
     # ==========================================
@@ -1127,6 +1206,16 @@ def main():
         if search_result:
             action, result_dict = search_result
             if action == 'small_step_search' and result_dict:
+                track_event(
+                    "step_selection_applied",
+                    {
+                        "source": "flipper_search",
+                        "small_step": result_dict.get("small_step", ""),
+                        "small_step_id": result_dict.get("small_step_id", ""),
+                        "topic": result_dict.get("topic", ""),
+                        "age": result_dict.get("age", ""),
+                    },
+                )
                 apply_small_step_selection(result_dict, recommendations_df, curriculum_assistant, lookup_videos_for_step)
     
     # Sidebar with info

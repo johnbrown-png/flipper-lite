@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import uuid
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -42,6 +43,18 @@ def get_analytics_webhook_url() -> str:
         return env_value
     try:
         secret_value = str(st.secrets.get("FLIPPER_ANALYTICS_WEBHOOK_URL", "")).strip()
+        return secret_value
+    except Exception:
+        return ""
+
+
+def get_analytics_webhook_token() -> str:
+    """Read optional webhook auth token from env var or Streamlit secrets."""
+    env_value = os.getenv("FLIPPER_ANALYTICS_WEBHOOK_TOKEN", "").strip()
+    if env_value:
+        return env_value
+    try:
+        secret_value = str(st.secrets.get("FLIPPER_ANALYTICS_WEBHOOK_TOKEN", "")).strip()
         return secret_value
     except Exception:
         return ""
@@ -110,11 +123,15 @@ def _send_webhook_event(payload: dict[str, Any]) -> None:
     webhook_url = get_analytics_webhook_url()
     if not webhook_url:
         return
+    webhook_token = get_analytics_webhook_token()
+    headers = {"Content-Type": "application/json"}
+    if webhook_token:
+        headers["X-Analytics-Token"] = webhook_token
     try:
         req = request.Request(
             webhook_url,
             data=json.dumps(payload, ensure_ascii=True).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             method="POST",
         )
         with request.urlopen(req, timeout=3):
@@ -151,6 +168,10 @@ def track_event(event_name: str, properties: dict[str, Any] | None = None, once_
         "user_agent": headers.get("user-agent", ""),
         "properties": properties or {},
     }
+
+    payload["event_id"] = hashlib.sha1(
+        json.dumps(payload, sort_keys=True, ensure_ascii=True).encode("utf-8")
+    ).hexdigest()
 
     if once_key:
         once_keys.add(once_key)

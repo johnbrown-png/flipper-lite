@@ -90,14 +90,63 @@ This project now includes lightweight event tracking in both `flipper.py` and `f
 ### Where events go
 
 - Local JSONL log: `data/analytics/events.jsonl`
-- Optional webhook destination via environment variable:
+- Optional webhook destination via environment variable or secrets:
 
 ```bash
 FLIPPER_ANALYTICS_WEBHOOK_URL=https://your-endpoint.example/collect
+FLIPPER_ANALYTICS_WEBHOOK_TOKEN=replace_with_shared_token
 ```
 
 If the webhook is set, each event is POSTed as JSON.
 On Streamlit Community Cloud, you can also set the same key in app secrets.
+
+### Durable historical storage (implemented)
+
+Use the webhook receiver to store events in SQLite:
+
+```bash
+python analytics_webhook_server.py --host 0.0.0.0 --port 8787 --token your_shared_token
+```
+
+Webhook receiver endpoint:
+- `POST /collect` (stores event)
+- `GET /health` (health check)
+
+SQLite output:
+- `data/analytics/events.db`
+
+Then point the app to your receiver:
+
+```bash
+FLIPPER_ANALYTICS_WEBHOOK_URL=http://your-server:8787/collect
+FLIPPER_ANALYTICS_WEBHOOK_TOKEN=your_shared_token
+```
+
+### Private analytics dashboard (implemented)
+
+Run the dashboard:
+
+```bash
+streamlit run analytics_dashboard.py
+```
+
+or on Windows:
+
+```bash
+launch_analytics_dashboard.bat
+```
+
+Set dashboard access password:
+
+```bash
+ANALYTICS_DASHBOARD_PASSWORD=your_private_password
+```
+
+Dashboard behavior:
+- Requires password before showing any data
+- Reads `data/analytics/events.db` when available (preferred)
+- Falls back to `data/analytics/events.jsonl` if DB is missing
+- Includes KPI cards, daily trend, event funnel, source table, TikTok campaign table, top video table, CSV export
 
 ### TikTok link format (recommended)
 

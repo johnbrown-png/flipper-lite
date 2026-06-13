@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import json
 import sqlite3
+from datetime import timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -162,21 +163,59 @@ def _render_dashboard(df: pd.DataFrame, source_backend: str) -> None:
 
     min_date = df["date"].min()
     max_date = df["date"].max()
+    today = pd.Timestamp.utcnow().date()
+    calendar_min = min(min_date, today - timedelta(days=30))
+    calendar_max = max(max_date, today)
+    default_end = calendar_max
+    default_start = max(calendar_min, default_end - timedelta(days=6))
 
     col_left, col_right = st.columns([2, 1])
     with col_left:
-        date_range = st.date_input("Date range", value=(min_date, max_date), min_value=min_date, max_value=max_date)
+        date_range = st.date_input(
+            "Date range",
+            value=(default_start, default_end),
+            min_value=calendar_min,
+            max_value=calendar_max,
+        )
     with col_right:
         source_filter = st.multiselect("Source", options=sorted(df["source"].unique()), default=sorted(df["source"].unique()))
 
-    if isinstance(date_range, tuple) and len(date_range) == 2:
-        start_date, end_date = date_range
+    # Streamlit date_input can return scalar date, list/tuple, or nested tuple/list.
+    raw_range = date_range
+    if isinstance(raw_range, (list, tuple)) and len(raw_range) == 1 and isinstance(raw_range[0], (list, tuple)):
+        raw_range = raw_range[0]
+
+    if isinstance(raw_range, (list, tuple)):
+        if len(raw_range) >= 2:
+            start_date, end_date = raw_range[0], raw_range[1]
+        elif len(raw_range) == 1:
+            start_date = end_date = raw_range[0]
+        else:
+            start_date, end_date = min_date, max_date
     else:
-        start_date = end_date = date_range
+        start_date = end_date = raw_range
+
+    def _coerce_date(value, fallback):
+        if isinstance(value, (list, tuple)):
+            value = value[0] if value else fallback
+        coerced = pd.to_datetime(value, errors="coerce")
+        if pd.isna(coerced):
+            return fallback
+        return coerced.date()
+
+    start_date = _coerce_date(start_date, min_date)
+    end_date = _coerce_date(end_date, max_date)
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
 
     filtered = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
     if source_filter:
         filtered = filtered[filtered["source"].isin(source_filter)]
+
+    if filtered.empty:
+        st.info(
+            f"No events in selected range. Data currently available from {min_date} to {max_date}."
+        )
 
     total_events = int(len(filtered))
     unique_sessions = int(filtered["session_id"].nunique())

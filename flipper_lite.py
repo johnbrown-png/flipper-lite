@@ -476,7 +476,11 @@ def render_result_card(result, compact=False, mobile_viewer_mode=False):
             unique_key = f"{video_id}_{topic}_{small_step}".replace(' ', '_').replace('"', '').replace("'", '')
             
             # Thumbnail with hover effect and button
-            thumb_style = "width: 100%; max-height: 120px; object-fit: cover; border-radius: 8px; display: block;" if compact else "width: 100%; border-radius: 8px; display: block;"
+            if mobile_viewer_mode:
+                # Preserve native YouTube thumbnail aspect ratio on mobile.
+                thumb_style = "width: 100%; height: auto; border-radius: 8px; display: block;"
+            else:
+                thumb_style = "width: 100%; max-height: 120px; object-fit: cover; border-radius: 8px; display: block;" if compact else "width: 100%; border-radius: 8px; display: block;"
             st.markdown(f"""
                 <div style='position: relative; width: 100%;' class='video-thumbnail-container'>
                     <img src='https://img.youtube.com/vi/{video_id}/mqdefault.jpg' 
@@ -531,14 +535,15 @@ def render_result_card(result, compact=False, mobile_viewer_mode=False):
                 st.markdown("</div>", unsafe_allow_html=True)
 
         with col_content:
-            # Video title at the top (larger font)
-            title_style = (
-                "font-size:0.95rem; font-weight:600; margin-bottom:0.18rem; "
-                "line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;"
-                if compact else
-                "font-size:1.1rem; font-weight:600; margin-bottom:0.3rem"
-            )
-            st.markdown(f"<div style='{title_style}'>{result['title']}</div>", unsafe_allow_html=True)
+            if not mobile_viewer_mode:
+                # Video title at the top (larger font)
+                title_style = (
+                    "font-size:0.95rem; font-weight:600; margin-bottom:0.18rem; "
+                    "line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;"
+                    if compact else
+                    "font-size:1.1rem; font-weight:600; margin-bottom:0.3rem"
+                )
+                st.markdown(f"<div style='{title_style}'>{result['title']}</div>", unsafe_allow_html=True)
 
             # Channel and duration below title, after a space
             channel = result.get('channel', '')
@@ -546,9 +551,14 @@ def render_result_card(result, compact=False, mobile_viewer_mode=False):
             channel_display = channel.replace('_', ' ') if channel else ''
             duration_display = format_duration(duration) if duration else ''
             if channel_display or duration_display:
-                display_line = f"{channel_display} | {duration_display}" if channel_display and duration_display else channel_display or duration_display
-                meta_font = "0.82rem" if compact else "0.95rem"
-                meta_margin = "0.2rem" if compact else "0.5rem"
+                if mobile_viewer_mode:
+                    display_line = duration_display or channel_display
+                    meta_font = "0.74rem"
+                    meta_margin = "0.08rem"
+                else:
+                    display_line = f"{channel_display} | {duration_display}" if channel_display and duration_display else channel_display or duration_display
+                    meta_font = "0.82rem" if compact else "0.95rem"
+                    meta_margin = "0.2rem" if compact else "0.5rem"
                 st.markdown(f"<div style='font-size:{meta_font}; color:#2c5f8d; margin-bottom:{meta_margin}'>{display_line}</div>", unsafe_allow_html=True)
 
             # Display instruction justification if available (hidden in mobile viewer mode)

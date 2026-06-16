@@ -584,7 +584,23 @@ def main():
     init_analytics("flipper_lite")
     track_event("page_view", {"page": "home"}, once_key="page_view")
 
-    mobile_viewer_mode = str(st.query_params.get("viewer", "")).strip().lower() == "mobile"
+    viewer_override = st.query_params.get("viewer", "")
+    if isinstance(viewer_override, list):
+        viewer_override = viewer_override[0] if viewer_override else ""
+    viewer_override = str(viewer_override).strip().lower()
+
+    request_headers = getattr(getattr(st, "context", None), "headers", {}) or {}
+    user_agent = str(request_headers.get("user-agent", "")).lower()
+    mobile_tokens = ("iphone", "android", "mobile", "windows phone", "opera mini")
+    mobile_user_agent = any(token in user_agent for token in mobile_tokens)
+
+    if viewer_override == "mobile":
+        mobile_viewer_mode = True
+    elif viewer_override in {"web", "desktop"}:
+        mobile_viewer_mode = False
+    else:
+        # Default behavior: automatically simplify UI on phones.
+        mobile_viewer_mode = mobile_user_agent
 
     if mobile_viewer_mode:
         st.markdown(

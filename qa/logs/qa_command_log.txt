@@ -442013,3 +442013,6 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-05-20T21:42:27] MANUAL OVERRIDE applied for Year 11_15-16_Autumn_Foundation_Area and volume_1_Isometric drawings
 [2026-05-21T09:36:35] QA REFERENCE PUBLISHED rows=5038 steps=631 wildcards=35 manual=602 skipped=35
 [2026-05-25T13:59:27] QA REFERENCE PUBLISHED rows=5038 steps=631 wildcards=35 manual=602 skipped=35
+[2026-06-16T13:09:42] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Ratio_10_Recipes
+[2026-06-16T13:12:28] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Ratio (1)_5_Simplify ratios
+[2026-06-16T13:13:15] QA REFERENCE PUBLISHED rows=5038 steps=632 wildcards=35 manual=603 skipped=35

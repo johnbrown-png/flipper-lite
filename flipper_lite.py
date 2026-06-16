@@ -445,7 +445,7 @@ def render_video_player(video_data):
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_result_card(result, compact=False):
+def render_result_card(result, compact=False, mobile_viewer_mode=False):
     """Render a single Video card."""
     
     # Get video ID, topic, and small_step for tracking
@@ -457,11 +457,19 @@ def render_result_card(result, compact=False):
     dom_id = f"video-card-{video_id}-{topic}-{small_step}".replace(' ', '_').replace('"', '').replace("'", '')
 
     with st.container():
-        # Compact mode keeps all three cards visible in one viewport.
-        if compact:
-            col_thumb, _g_spacer_l, col_gauge, _g_spacer_r, col_content = st.columns([0.95, 0.12, 0.4, 0.12, 3.53])
+        show_score_infographic = not mobile_viewer_mode
+        if show_score_infographic:
+            # Compact mode keeps all three cards visible in one viewport.
+            if compact:
+                col_thumb, _g_spacer_l, col_gauge, _g_spacer_r, col_content = st.columns([0.95, 0.12, 0.4, 0.12, 3.53])
+            else:
+                col_thumb, _g_spacer_l, col_gauge, _g_spacer_r, col_content = st.columns([1.2, 0.16, 0.5, 0.16, 3.14])
         else:
-            col_thumb, _g_spacer_l, col_gauge, _g_spacer_r, col_content = st.columns([1.2, 0.16, 0.5, 0.16, 3.14])
+            # Mobile viewer mode: thumbnail + content only.
+            if compact:
+                col_thumb, _card_spacer, col_content = st.columns([1.05, 0.14, 3.81])
+            else:
+                col_thumb, _card_spacer, col_content = st.columns([1.22, 0.16, 3.62])
 
         with col_thumb:
             # Clickable thumbnail with visible play button overlay
@@ -507,19 +515,20 @@ def render_result_card(result, compact=False):
                 st.session_state.flipper_lite_scroll_to_player = True
                 st.rerun()
         
-        with col_gauge:
-            # Circular progress indicator for combined score
-            combined_pct = _score_to_percent(result.get('combined_score', 0))
-            infographic_scale = 1.25
-            gauge_size = int(round((56 if compact else 80) * infographic_scale))
-            
-            # Display circular gauge with label - centered
-            st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)
-            st.markdown(
-                create_circular_progress_svg(combined_pct, size=gauge_size, text_scale=0.75 * infographic_scale),
-                unsafe_allow_html=True,
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
+        if show_score_infographic:
+            with col_gauge:
+                # Circular progress indicator for combined score
+                combined_pct = _score_to_percent(result.get('combined_score', 0))
+                infographic_scale = 1.25
+                gauge_size = int(round((56 if compact else 80) * infographic_scale))
+                
+                # Display circular gauge with label - centered
+                st.markdown("<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px;'>", unsafe_allow_html=True)
+                st.markdown(
+                    create_circular_progress_svg(combined_pct, size=gauge_size, text_scale=0.75 * infographic_scale),
+                    unsafe_allow_html=True,
+                )
+                st.markdown("</div>", unsafe_allow_html=True)
 
         with col_content:
             # Video title at the top (larger font)
@@ -542,9 +551,9 @@ def render_result_card(result, compact=False):
                 meta_margin = "0.2rem" if compact else "0.5rem"
                 st.markdown(f"<div style='font-size:{meta_font}; color:#2c5f8d; margin-bottom:{meta_margin}'>{display_line}</div>", unsafe_allow_html=True)
 
-            # Display instruction justification if available
+            # Display instruction justification if available (hidden in mobile viewer mode)
             justification = result.get('instruction_justification', '')
-            if justification and str(justification).strip():
+            if (not mobile_viewer_mode) and justification and str(justification).strip():
                 if compact:
                     st.markdown(
                         f"""
@@ -574,6 +583,29 @@ def main():
 
     init_analytics("flipper_lite")
     track_event("page_view", {"page": "home"}, once_key="page_view")
+
+    mobile_viewer_mode = str(st.query_params.get("viewer", "")).strip().lower() == "mobile"
+
+    if mobile_viewer_mode:
+        st.markdown(
+            """
+            <div style="
+                margin: 0.2rem 0 0.8rem 0;
+                padding: 0.45rem 0.75rem;
+                border-radius: 999px;
+                display: inline-block;
+                font-size: 0.86rem;
+                font-weight: 600;
+                letter-spacing: 0.02em;
+                color: #1e3a5f;
+                background: linear-gradient(90deg, rgba(74, 144, 200, 0.24), rgba(44, 95, 141, 0.17));
+                border: 1px solid rgba(44, 95, 141, 0.28);
+            ">
+                Mobile Viewer
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     results_focus_mode = (
         st.session_state.get('display_status') == 'complete'
@@ -1126,7 +1158,11 @@ def main():
                         st.rerun()
 
             for result in st.session_state.display_results:
-                render_result_card(result, compact=results_focus_mode)
+                render_result_card(
+                    result,
+                    compact=results_focus_mode,
+                    mobile_viewer_mode=mobile_viewer_mode,
+                )
 
             if results_focus_mode and compact_small_step_desc:
                 st.markdown(
@@ -1229,18 +1265,20 @@ def main():
         1. Navigate the dropdowns to select your curriculum step
         2. The system instantly displays precomputed video recommendations
         3. Videos are ranked by relevance and instructional quality
-        
-        **Understanding Scores:**
-        - 🔍 **Semantic**: How well video content matches the curriculum step
-        - 📚 **Instruction**: Quality of teaching and explanation
-        - ⭐ **Combined**: Overall ranking score
-        
-        **Score Ranges:**
-        - 🟢 80-100%: Excellent match
-        - 🟡 60-80%: Good match
-        - 🟠 40-60%: Fair match
-        - 🔴 0-40%: Weak match
         """)
+        if not mobile_viewer_mode:
+            st.markdown("""
+            **Understanding Scores:**
+            - 🔍 **Semantic**: How well video content matches the curriculum step
+            - 📚 **Instruction**: Quality of teaching and explanation
+            - ⭐ **Combined**: Overall ranking score
+
+            **Score Ranges:**
+            - 🟢 80-100%: Excellent match
+            - 🟡 60-80%: Good match
+            - 🟠 40-60%: Fair match
+            - 🔴 0-40%: Weak match
+            """)
         
         st.markdown("---")
         st.markdown("### ⚙️ Technical Details")

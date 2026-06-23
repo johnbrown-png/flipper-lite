@@ -442021,3 +442021,7 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-06-22T14:21:06] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Algebraic manipulation_8_Expand single brackets and simplify
 [2026-06-22T14:21:37] QA REFERENCE PUBLISHED rows=5038 steps=633 wildcards=35 manual=604 skipped=35
 [2026-06-23T12:43:34] QA REFERENCE PUBLISHED rows=5038 steps=633 wildcards=35 manual=604 skipped=35
+[2026-06-23T16:23:39] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Algebraic manipulation_5_Substitution with directed number
+[2026-06-23T16:24:07] QA REFERENCE PUBLISHED rows=5038 steps=634 wildcards=35 manual=605 skipped=35
+[2026-06-23T17:38:00] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Algebraic manipulation_9_Expand double brackets E
+[2026-06-23T17:38:24] QA REFERENCE PUBLISHED rows=5038 steps=635 wildcards=35 manual=606 skipped=35

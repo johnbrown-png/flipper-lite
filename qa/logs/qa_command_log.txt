@@ -442017,3 +442017,7 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-06-16T13:12:28] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Ratio (1)_5_Simplify ratios
 [2026-06-16T13:13:15] QA REFERENCE PUBLISHED rows=5038 steps=632 wildcards=35 manual=603 skipped=35
 [2026-06-17T12:28:24] QA REFERENCE PUBLISHED rows=5038 steps=632 wildcards=35 manual=603 skipped=35
+[2026-06-22T14:20:06] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Algebraic manipulation_8_Expand single brackets and simplify
+[2026-06-22T14:21:06] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Algebraic manipulation_8_Expand single brackets and simplify
+[2026-06-22T14:21:37] QA REFERENCE PUBLISHED rows=5038 steps=633 wildcards=35 manual=604 skipped=35
+[2026-06-23T12:43:34] QA REFERENCE PUBLISHED rows=5038 steps=633 wildcards=35 manual=604 skipped=35

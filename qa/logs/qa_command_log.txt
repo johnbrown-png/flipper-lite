@@ -442029,3 +442029,6 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-06-24T16:48:59] QA REFERENCE PUBLISHED rows=5038 steps=636 wildcards=35 manual=607 skipped=35
 [2026-06-24T18:24:33] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Algebraic manipulation_6_Factorise quadratic expressions
 [2026-06-24T18:24:59] QA REFERENCE PUBLISHED rows=5038 steps=637 wildcards=35 manual=608 skipped=35
+[2026-06-25T09:48:54] QA REFERENCE PUBLISHED rows=5038 steps=637 wildcards=35 manual=608 skipped=35
+[2026-06-25T09:58:10] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Algebraic manipulation_6_Factorise quadratic expressions
+[2026-06-25T09:58:29] QA REFERENCE PUBLISHED rows=5038 steps=637 wildcards=35 manual=608 skipped=35

@@ -237,26 +237,48 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step, small_
         List of video dictionaries
     """
     try:
-        if small_step_id and 'small_step_id' in df.columns:
-            matches = df[df['small_step_id'] == small_step_id].copy()
-        elif not difficulty:
-            mask = (
-                (df['year'] == year) &
-                (df['term'] == term) &
-                (df['difficulty'].isna() | (df['difficulty'] == '')) &
-                (df['topic'] == topic) &
-                (df['small_step'] == small_step)
-            )
-            matches = df[mask].copy()
+        year_text = str(year).strip()
+        term_text = str(term).strip()
+        difficulty_text = str(difficulty).strip()
+        topic_text = str(topic).strip()
+        step_text = str(small_step).strip()
+        step_id_text = str(small_step_id).strip()
+
+        def _norm_col(col_name):
+            if col_name not in df.columns:
+                return pd.Series(["" for _ in range(len(df))], index=df.index)
+            return df[col_name].fillna("").astype(str).str.strip()
+
+        year_col = _norm_col('year')
+        term_col = _norm_col('term')
+        difficulty_col = _norm_col('difficulty')
+        topic_col = _norm_col('topic')
+        small_step_col = _norm_col('small_step')
+        small_step_name_col = _norm_col('small_step_name')
+        base_mask = (year_col == year_text) & (term_col == term_text)
+
+        if difficulty_text:
+            base_mask &= (difficulty_col == difficulty_text)
         else:
-            mask = (
-                (df['year'] == year) &
-                (df['term'] == term) &
-                (df['difficulty'] == difficulty) &
-                (df['topic'] == topic) &
-                (df['small_step'] == small_step)
-            )
-            matches = df[mask].copy()
+            base_mask &= (difficulty_col == "")
+
+        step_mask = (small_step_col == step_text) | (small_step_name_col == step_text)
+
+        matches = pd.DataFrame()
+        if step_id_text and 'small_step_id' in df.columns:
+            step_id_col = _norm_col('small_step_id')
+            matches = df[step_id_col == step_id_text].copy()
+
+        if matches.empty:
+            # Preferred fallback: same curriculum branch plus exact topic and step text.
+            strict_mask = base_mask & (topic_col == topic_text) & step_mask
+            matches = df[strict_mask].copy()
+
+        if matches.empty:
+            # Compatibility fallback for stale recommendation topic labels after curriculum migrations.
+            compat_mask = base_mask & step_mask
+            matches = df[compat_mask].copy()
+
         if matches.empty:
             return []
         # Each row is a single recommendation (not pipe-separated)

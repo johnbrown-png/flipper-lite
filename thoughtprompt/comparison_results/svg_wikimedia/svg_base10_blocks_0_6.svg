@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <g>
+    <text x="20" y="30" font-family="Arial, sans-serif" font-size="24" fill="#000000">Representing 6</text>
+    <path d="M80,275 L105,275 L105,300 L80,300 L80,275 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M105,275 L117.5,262.5 L117.5,287.5 L105,300 L105,275 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M80,275 L92.5,262.5 L117.5,262.5 L105,275 L80,275 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M115,275 L140,275 L140,300 L115,300 L115,275 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M140,275 L152.5,262.5 L152.5,287.5 L140,300 L140,275 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M115,275 L127.5,262.5 L152.5,262.5 L140,275 L115,275 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M150,275 L175,275 L175,300 L150,300 L150,275 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M175,275 L187.5,262.5 L187.5,287.5 L175,300 L175,275 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M150,275 L162.5,262.5 L187.5,262.5 L175,275 L150,275 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M185,275 L210,275 L210,300 L185,300 L185,275 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M210,275 L222.5,262.5 L222.5,287.5 L210,300 L210,275 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M185,275 L197.5,262.5 L222.5,262.5 L210,275 L185,275 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M220,275 L245,275 L245,300 L220,300 L220,275 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M245,275 L257.5,262.5 L257.5,287.5 L245,300 L245,275 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M220,275 L232.5,262.5 L257.5,262.5 L245,275 L220,275 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M80,240 L105,240 L105,265 L80,265 L80,240 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M105,240 L117.5,227.5 L117.5,252.5 L105,265 L105,240 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M80,240 L92.5,227.5 L117.5,227.5 L105,240 L80,240 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <text x="137" y="350" font-family="Arial, sans-serif" font-size="18" fill="#000000">6 ones</text>
+  </g>
+</svg>

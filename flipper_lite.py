@@ -18,6 +18,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
 import math
+import json
+from datetime import datetime
 
 from shared.curriculum_schema import normalize_precomputed_df
 from shared.analytics import init_analytics, track_event
@@ -27,6 +29,14 @@ from shared.step_selection import (
     render_selection_debug_panel,
 )
 from shared.ui_terminology import VIDEO_CARDS_LABEL
+
+# Import thought prompt visual generator
+try:
+    from thoughtprompt.visual_generator import MathVisualGenerator
+    THOUGHT_PROMPTS_ENABLED = True
+except ImportError:
+    THOUGHT_PROMPTS_ENABLED = False
+    MathVisualGenerator = None
 
 # Selection payload normalization, routing, deferred widget sync, and debug-panel
 # eligibility checks are centralized in shared/step_selection.py.
@@ -221,6 +231,23 @@ def load_video_inventory():
     return None
 
 
+@st.cache_data(ttl=300)
+def load_thought_prompts():
+    """Load thought prompts from pilot CSV"""
+    if not THOUGHT_PROMPTS_ENABLED:
+        return None
+    
+    try:
+        prompts_path = project_root / 'thoughtprompt' / 'pilot_output' / 'thought_prompts_pilot.csv'
+        if not prompts_path.exists():
+            return None
+        df = pd.read_csv(prompts_path)
+        return df
+    except Exception as e:
+        st.error(f"Error loading thought prompts: {e}")
+        return None
+
+
 def lookup_videos_for_step(df, year, term, difficulty, topic, small_step, small_step_id=""):
     """
     Lookup videos from precomputed recommendations
@@ -296,7 +323,9 @@ def lookup_videos_for_step(df, year, term, difficulty, topic, small_step, small_
                 'duration': row.get('duration_formatted', row.get('duration', '')),
                 'topic': row.get('topic', topic),
                 'small_step': row.get('small_step', small_step),
-                'small_step_id': row.get('small_step_id', small_step_id)
+                'small_step_id': row.get('small_step_id', small_step_id),
+                'small_step_num': row.get('small_step_num', None),
+                'small_step_num_global': row.get('small_step_num_global', None)
             }
             results.append(result)
         return results
@@ -414,6 +443,371 @@ def create_circular_progress_svg(score_pct, size=80, text_scale=1.0):
     </svg>
     """
     return svg
+
+
+def get_prompts_for_small_step(prompts_df, small_step_num):
+    """Get all prompts for a specific small step, sorted by variant"""
+    if prompts_df is None or small_step_num is None:
+        return []
+    
+    matches = prompts_df[prompts_df['small_step_num'] == small_step_num]
+    if matches.empty:
+        return []
+    
+    # Sort by variant (1, 2, 3)
+    return matches.sort_values('variant').to_dict('records')
+
+
+def render_thought_prompt(prompt, visual_generator):
+    """Render a single thought prompt with its visual"""
+    st.markdown(f"### 🎯 {prompt['prompt_text']}")
+    
+    # Generate visual
+    try:
+        params = json.loads(prompt['visual_params'])
+        visual_type = prompt['visual_type']
+        
+        if visual_type == 'base10_blocks':
+            if 'thousands' in params:
+                st.info("⏭ This prompt requires 4-digit base-10 blocks (coming soon)")
+                return None
+            img = visual_generator.generate_base10_blocks(**params)
+        elif visual_type == 'part_whole_model':
+            if 'alternative' in params:
+                st.info("⏭ This prompt requires dual part-whole model (coming soon)")
+                return None
+            img = visual_generator.generate_part_whole_model(**params)
+        elif visual_type == 'number_line':
+            img = visual_generator.generate_number_line(**params)
+        elif visual_type == 'bar_model':
+            img = visual_generator.generate_bar_model(**params)
+        else:
+            st.error(f"Unknown visual type: {visual_type}")
+            return None
+        
+        # Display visual
+        st.image(img, use_container_width=True)
+        
+        return img
+    
+    except Exception as e:
+        st.error(f"Error generating visual: {e}")
+        return None
+
+
+def render_thought_prompt_page():
+    """Render the thought prompt interaction page"""
+    if not THOUGHT_PROMPTS_ENABLED:
+        st.warning("Thought prompts not available (visual generator not found)")
+        return
+    
+    # Get current video context
+    current_video = st.session_state.get('current_video')
+    if not current_video:
+        st.warning("No video selected. Please select a video first.")
+        return
+    
+    # Extract small_step_num from current video - try multiple sources
+    small_step_num = None
+    
+    # Method 1: Use global small_step_num (preferred for thought prompts)
+    if 'small_step_num_global' in current_video:
+        try:
+            small_step_num = int(float(current_video['small_step_num_global']))
+        except (ValueError, TypeError):
+            pass
+    
+    # Method 2: Try direct small_step_num field (local topic number)
+    if small_step_num is None and 'small_step_num' in current_video:
+        try:
+            small_step_num = int(float(current_video['small_step_num']))
+        except (ValueError, TypeError):
+            pass
+    
+    # Method 3: Parse from small_step_id if format is "ss_XXX"
+    if small_step_num is None:
+        small_step_id = current_video.get('small_step_id', '')
+        if small_step_id and 'ss_' in small_step_id:
+            try:
+                small_step_num = int(small_step_id.replace('ss_', '').split('_')[0])
+            except (ValueError, AttributeError):
+                pass
+    
+    # If we still don't have a small_step_num, show helpful error
+    if small_step_num is None:
+        st.info("Thought prompts not available for this video (could not determine small step number)")
+        with st.expander("Debug Info"):
+            st.write("Video data:", current_video)
+        return
+    
+    # Load prompts
+    prompts_df = load_thought_prompts()
+    if prompts_df is None:
+        st.info("No thought prompts available yet")
+        return
+    
+    prompts = get_prompts_for_small_step(prompts_df, small_step_num)
+    if not prompts:
+        st.info(f"No thought prompts available for small step {small_step_num} yet")
+        return
+    
+    # Initialize thought prompt session state
+    if 'tp_current_variant' not in st.session_state:
+        st.session_state.tp_current_variant = 1
+    if 'tp_responses' not in st.session_state:
+        st.session_state.tp_responses = []
+    if 'tp_active_small_step' not in st.session_state:
+        st.session_state.tp_active_small_step = None
+    
+    # Check if we're starting a new small step
+    if st.session_state.tp_active_small_step != small_step_num:
+        st.session_state.tp_active_small_step = small_step_num
+        st.session_state.tp_current_variant = 1
+    
+    # Back button
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("← Back to Video", key="back_to_video", type="secondary"):
+            st.session_state.showing_thought_prompt = False
+            st.rerun()
+    
+    with col2:
+        st.markdown(f"**Small Step**: {prompts[0]['small_step_name']}")
+    
+    st.markdown("---")
+    
+    # Get current prompt based on variant
+    current_variant = st.session_state.tp_current_variant
+    if current_variant > len(prompts):
+        # All prompts attempted
+        st.error("❌ You've tried all three prompts. This topic might need some review!")
+        if st.button("Try Again from Start", key="retry_prompts"):
+            st.session_state.tp_current_variant = 1
+            st.rerun()
+        if st.button("← Back to Video", key="back_to_video_bottom", type="primary"):
+            st.session_state.showing_thought_prompt = False
+            st.rerun()
+        return
+    
+    current_prompt = prompts[current_variant - 1]
+    
+    # Show difficulty indicator
+    difficulty = current_prompt['difficulty']
+    diff_colors = {'easy': '🟢', 'medium': '🟡', 'hard': '🔴'}
+    diff_emoji = diff_colors.get(difficulty, '⚪')
+    st.markdown(f"{diff_emoji} **Difficulty**: {difficulty.title()} | **Attempt**: {current_variant}/3")
+    st.markdown("---")
+    
+    # Initialize visual generator
+    visual_generator = MathVisualGenerator()
+    
+    # Render the prompt
+    img = render_thought_prompt(current_prompt, visual_generator)
+    
+    if img is None:
+        # Visual couldn't be generated
+        if st.button("Skip to Next Variant", key="skip_variant"):
+            st.session_state.tp_current_variant += 1
+            st.rerun()
+        return
+    
+    st.markdown("---")
+    
+    # Answer input based on answer_type
+    answer_type = current_prompt['answer_type']
+    correct_answer = str(current_prompt['correct_answer']).strip()
+    
+    if answer_type == 'multiple_choice':
+        try:
+            options = json.loads(current_prompt['options'])
+            user_answer = st.radio("Select your answer:", options, key=f"answer_mc_{current_variant}")
+        except (json.JSONDecodeError, TypeError):
+            st.error("Invalid multiple choice options")
+            return
+    else:
+        user_answer = st.text_input("Your answer:", key=f"answer_text_{current_variant}")
+    
+    # Submit button
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        submit_clicked = st.button("✓ Check Answer", key=f"submit_{current_variant}", type="primary")
+    
+    if submit_clicked:
+        if not user_answer:
+            st.warning("Please enter an answer first")
+            return
+        
+        # Normalize answers for comparison
+        user_answer_norm = str(user_answer).strip().lower()
+        correct_answer_norm = correct_answer.lower()
+        
+        # Check if correct
+        is_correct = user_answer_norm == correct_answer_norm
+        
+        # Record response
+        response_record = {
+            'timestamp': datetime.now().isoformat(),
+            'small_step_num': small_step_num,
+            'small_step_name': current_prompt['small_step_name'],
+            'video_id': current_video['video_id'],
+            'variant': current_variant,
+            'prompt_text': current_prompt['prompt_text'],
+            'user_answer': user_answer,
+            'correct_answer': correct_answer,
+            'is_correct': is_correct,
+            'difficulty': difficulty
+        }
+        st.session_state.tp_responses.append(response_record)
+        
+        if is_correct:
+            st.success(f"✅ Correct! The answer is {correct_answer}")
+            st.balloons()
+            st.markdown("### Great work! Returning to video...")
+            
+            # Track event
+            track_event("thought_prompt_correct", {
+                "small_step_num": small_step_num,
+                "variant": current_variant,
+                "difficulty": difficulty
+            })
+            
+            # Return to video after a moment
+            import time
+            time.sleep(2)
+            st.session_state.showing_thought_prompt = False
+            st.session_state.tp_current_variant = 1  # Reset for next time
+            st.rerun()
+        else:
+            st.error(f"❌ Not quite. Try again!")
+            
+            # Track event
+            track_event("thought_prompt_incorrect", {
+                "small_step_num": small_step_num,
+                "variant": current_variant,
+                "difficulty": difficulty,
+                "user_answer": user_answer
+            })
+            
+            # Move to next variant
+            if current_variant < 3:
+                st.info(f"Moving to attempt {current_variant + 1} of 3...")
+                import time
+                time.sleep(1.5)
+                st.session_state.tp_current_variant += 1
+                st.rerun()
+            else:
+                st.warning("You've tried all variants. Review the material and try again later!")
+
+
+def render_educator_view():
+    """Render the educator's view showing all learner responses"""
+    st.markdown("## 📊 Educator View - Thought Prompt Responses")
+    
+    if 'tp_responses' not in st.session_state or not st.session_state.tp_responses:
+        st.info("No responses recorded yet. Learners haven't attempted any thought prompts in this session.")
+        return
+    
+    # Group responses by small step
+    responses_df = pd.DataFrame(st.session_state.tp_responses)
+    
+    # Summary stats
+    total_attempts = len(responses_df)
+    correct_attempts = len(responses_df[responses_df['is_correct']])
+    accuracy = (correct_attempts / total_attempts * 100) if total_attempts > 0 else 0
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Attempts", total_attempts)
+    with col2:
+        st.metric("Correct Answers", correct_attempts)
+    with col3:
+        st.metric("Accuracy", f"{accuracy:.1f}%")
+    
+    st.markdown("---")
+    
+    # Group by small step
+    for small_step_num in responses_df['small_step_num'].unique():
+        step_responses = responses_df[responses_df['small_step_num'] == small_step_num]
+        small_step_name = step_responses.iloc[0]['small_step_name']
+        
+        # Check if any correct answers
+        has_correct = step_responses['is_correct'].any()
+        
+        st.markdown(f"### {small_step_name}")
+        
+        if has_correct:
+            # Show correct responses with big green tick
+            correct_responses = step_responses[step_responses['is_correct']]
+            for _, response in correct_responses.iterrows():
+                st.markdown(
+                    f"""
+                    <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
+                                border: 2px solid #28a745; 
+                                border-radius: 10px; 
+                                padding: 15px; 
+                                margin: 10px 0;">
+                        <div style="display: flex; align-items: center;">
+                            <div style="font-size: 48px; margin-right: 20px;">✓</div>
+                            <div>
+                                <div style="font-weight: 600; color: #155724; margin-bottom: 5px;">
+                                    {response['prompt_text']}
+                                </div>
+                                <div style="color: #155724;">
+                                    <strong>Correct Answer:</strong> {response['correct_answer']}
+                                </div>
+                                <div style="color: #6c757d; font-size: 0.9em; margin-top: 5px;">
+                                    Difficulty: {response['difficulty'].title()} | 
+                                    Variant: {response['variant']} | 
+                                    {response['timestamp'][:19]}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        else:
+            # No correct answers - show needs help message
+            st.markdown(
+                f"""
+                <div style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); 
+                            border: 2px solid #dc3545; 
+                            border-radius: 10px; 
+                            padding: 20px; 
+                            margin: 10px 0;
+                            text-align: center;">
+                    <div style="font-size: 24px; color: #721c24; font-weight: 600; margin-bottom: 10px;">
+                        ⚠️ Needs Some Help or To Go Back a Step
+                    </div>
+                    <div style="color: #721c24;">
+                        No correct answers yet. Consider reviewing earlier material or providing additional support.
+                    </div>
+                    <div style="margin-top: 15px; color: #856404; background: #fff3cd; padding: 10px; border-radius: 5px;">
+                        <strong>Attempts made:</strong> {len(step_responses)} | 
+                        <strong>Difficulty range:</strong> {', '.join(step_responses['difficulty'].unique())}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        # Show all attempts in expander
+        with st.expander(f"View all {len(step_responses)} attempts"):
+            for _, response in step_responses.iterrows():
+                status_icon = "✓" if response['is_correct'] else "✗"
+                status_color = "#28a745" if response['is_correct'] else "#dc3545"
+                st.markdown(
+                    f"""
+                    <div style="border-left: 4px solid {status_color}; padding-left: 10px; margin: 5px 0;">
+                        <strong>{status_icon}</strong> {response['prompt_text']}<br/>
+                        <em>User: {response['user_answer']}</em> | Correct: {response['correct_answer']}<br/>
+                        <small>Variant {response['variant']} | {response['timestamp'][:19]}</small>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+        
+        st.markdown("---")
 
 
 def render_video_player(video_data):
@@ -849,666 +1243,698 @@ def main():
         st.session_state.flipper_lite_scroll_to_player = False
     if 'pending_selector_sync' not in st.session_state:
         st.session_state.pending_selector_sync = None
+    
+    # Initialize thought prompt session state
+    if 'showing_thought_prompt' not in st.session_state:
+        st.session_state.showing_thought_prompt = False
+    if 'tp_current_variant' not in st.session_state:
+        st.session_state.tp_current_variant = 1
+    if 'tp_responses' not in st.session_state:
+        st.session_state.tp_responses = []
+    if 'tp_active_small_step' not in st.session_state:
+        st.session_state.tp_active_small_step = None
+    if 'active_tab' not in st.session_state:
+        st.session_state.active_tab = "Learning View"
 
     # Apply deferred selector-widget key sync before selector widgets instantiate.
     apply_pending_selector_sync()
     
     # ==========================================
-    # RESULTS SECTION (Always visible above the fold)
+    # TABS: Learning View & Educator View
     # ==========================================
-    if not results_focus_mode:
-        st.markdown(
-            "<hr style='margin: 0.05rem 0 0.05rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.25);'>",
-            unsafe_allow_html=True,
-        )
+    tab_learning, tab_educator = st.tabs(["📚 Learning View", "👨‍🏫 Educator View"])
     
-    # ==========================================
-    # INLINE VIDEO PANEL (shown when a video is selected)
-    # ==========================================
-    if st.session_state.current_video:
-        vid = st.session_state.current_video
-        video_id = vid['video_id']
-        title = vid['title']
-        channel = vid.get('channel', '').replace('_', ' ')
-        duration = format_duration(vid.get('duration', ''))
-        embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1&autoplay=1"
-        meta_parts = [p for p in [channel, duration] if p]
-        meta_str = " | ".join(meta_parts)
-        meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
-        st.markdown(
-            f"""
-            <div id="flipper-video-player" style="background:#1e3a5f; border-radius:10px; padding:0.75rem 0.75rem 0.5rem 0.75rem; margin-bottom:0.75rem;">
-                <div style="color:#f0f4f8; font-size:1rem; font-weight:600; margin-bottom:0.5rem;">
-                    &#9654; Now Playing: {title}{meta_html}
+    with tab_educator:
+        render_educator_view()
+    
+    with tab_learning:
+        # Check if we should show thought prompt page
+        if st.session_state.get('showing_thought_prompt', False):
+            render_thought_prompt_page()
+            st.stop()  # Stop rendering rest of the page
+        
+        # Normal learning view continues below (rest of the function)
+    
+        # ==========================================
+        # INLINE VIDEO PANEL (shown when a video is selected)
+        # ==========================================
+        if st.session_state.current_video:
+            vid = st.session_state.current_video
+            video_id = vid['video_id']
+            title = vid['title']
+            channel = vid.get('channel', '').replace('_', ' ')
+            duration = format_duration(vid.get('duration', ''))
+            embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1&autoplay=1"
+            meta_parts = [p for p in [channel, duration] if p]
+            meta_str = " | ".join(meta_parts)
+            meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
+            st.markdown(
+                f"""
+                <div id="flipper-video-player" style="background:#1e3a5f; border-radius:10px; padding:0.75rem 0.75rem 0.5rem 0.75rem; margin-bottom:0.75rem;">
+                    <div style="color:#f0f4f8; font-size:1rem; font-weight:600; margin-bottom:0.5rem;">
+                        &#9654; Now Playing: {title}{meta_html}
+                    </div>
+                    <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:6px;">
+                        <iframe src="{embed_url}"
+                            style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
                 </div>
-                <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:6px;">
-                    <iframe src="{embed_url}"
-                        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen>
-                    </iframe>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        _btn_spacer_l, btn_col_close, btn_col_next, _btn_spacer_r = st.columns([3, 1, 1, 3])
-        with btn_col_close:
-            if st.button("✕  Close video", key="close_inline_video", type="secondary", use_container_width=True):
-                track_event("video_panel_closed", {"video_id": video_id, "location": "inline_close_button"})
-                st.session_state.current_video = None
-                st.session_state.current_video_index = 0
-                st.rerun()
-        with btn_col_next:
-            results_for_cycling = st.session_state.get('display_results', [])
-            if len(results_for_cycling) > 1:
-                if st.button("▶▶  Next Video", key="next_video_btn", type="primary", use_container_width=True):
-                    next_idx = (st.session_state.current_video_index + 1) % len(results_for_cycling)
-                    next_video = results_for_cycling[next_idx]
-                    track_event(
-                        "video_next_clicked",
-                        {
-                            "from_video_id": video_id,
-                            "to_video_id": next_video.get("video_id"),
-                            "results_count": len(results_for_cycling),
-                        },
-                    )
-                    st.session_state.current_video_index = next_idx
-                    st.session_state.current_video = next_video
-                    st.rerun()
-        st.markdown("---")
-        if st.session_state.get('flipper_lite_scroll_to_player'):
-            components.html(
-                """
-                <script>
-                setTimeout(function() {
-                    const target = window.parent.document.getElementById('flipper-video-player');
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 150);
-                </script>
                 """,
-                height=0,
+                unsafe_allow_html=True
             )
-            st.session_state.flipper_lite_scroll_to_player = False
-
-    st.markdown('<div id="flipper-video-results-top"></div>', unsafe_allow_html=True)
-
-    if st.session_state.display_status == 'idle':
-        # Empty state - no message
-        pass
-    
-    elif st.session_state.display_status == 'loading':
-        # Loading state - show spinner
-        with st.spinner(""):
-            st.empty()
-    
-    elif st.session_state.display_status == 'complete':
-        # Results state - show Video cards
-        if st.session_state.display_results:
-            if st.session_state.get('flipper_lite_scroll_to_video_cards'):
+            # Video controls with thought prompt button
+            if THOUGHT_PROMPTS_ENABLED:
+                _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.5, 1, 1.2, 1, 2.5])
+            else:
+                _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 0, 1, 3])
+        
+            with btn_col_close:
+                if st.button("✕  Close video", key="close_inline_video", type="secondary", use_container_width=True):
+                    track_event("video_panel_closed", {"video_id": video_id, "location": "inline_close_button"})
+                    st.session_state.current_video = None
+                    st.session_state.current_video_index = 0
+                    st.rerun()
+        
+            with btn_col_prompt:
+                if THOUGHT_PROMPTS_ENABLED:
+                    if st.button("🎯 Try Thought Prompt", key="try_thought_prompt", type="primary", use_container_width=True):
+                        track_event("thought_prompt_opened", {"video_id": video_id})
+                        st.session_state.showing_thought_prompt = True
+                        st.rerun()
+        
+            with btn_col_next:
+                results_for_cycling = st.session_state.get('display_results', [])
+                if len(results_for_cycling) > 1:
+                    if st.button("▶▶  Next Video", key="next_video_btn", type="primary", use_container_width=True):
+                        next_idx = (st.session_state.current_video_index + 1) % len(results_for_cycling)
+                        next_video = results_for_cycling[next_idx]
+                        track_event(
+                            "video_next_clicked",
+                            {
+                                "from_video_id": video_id,
+                                "to_video_id": next_video.get("video_id"),
+                                "results_count": len(results_for_cycling),
+                            },
+                        )
+                        st.session_state.current_video_index = next_idx
+                        st.session_state.current_video = next_video
+                        st.rerun()
+            st.markdown("---")
+            if st.session_state.get('flipper_lite_scroll_to_player'):
                 components.html(
                     """
                     <script>
-                    const rootWin = window.parent;
-                    const target = rootWin.document.getElementById('flipper-video-results-top');
-                    if (target && typeof target.scrollIntoView === 'function') {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
+                    setTimeout(function() {
+                        const target = window.parent.document.getElementById('flipper-video-player');
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 150);
                     </script>
                     """,
                     height=0,
                 )
-                st.session_state.flipper_lite_scroll_to_video_cards = False
-            ctx = st.session_state.get('curriculum_context')
-            prev_step = None
-            next_step = None
-            show_step_nav = False
-            compact_small_step_desc = ""
+                st.session_state.flipper_lite_scroll_to_player = False
 
-            if curriculum_assistant and curriculum_assistant.df is not None and ctx and ctx.get('small_step_num_in_topic') is not None:
-                prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
-                show_step_nav = bool(prev_step or next_step)
+        st.markdown('<div id="flipper-video-results-top"></div>', unsafe_allow_html=True)
 
-            if results_focus_mode and results_header_slot is not None:
-                with results_header_slot:
-                    if show_step_nav:
-                        brand_col, nav_home_col, nav_back_col, nav_next_col = st.columns([7.8, 1.3, 1.35, 1.35])
-                    else:
-                        brand_col = st.columns([1])[0]
+        if st.session_state.display_status == 'idle':
+            # Empty state - no message
+            pass
+    
+        elif st.session_state.display_status == 'loading':
+            # Loading state - show spinner
+            with st.spinner(""):
+                st.empty()
+    
+        elif st.session_state.display_status == 'complete':
+            # Results state - show Video cards
+            if st.session_state.display_results:
+                if st.session_state.get('flipper_lite_scroll_to_video_cards'):
+                    components.html(
+                        """
+                        <script>
+                        const rootWin = window.parent;
+                        const target = rootWin.document.getElementById('flipper-video-results-top');
+                        if (target && typeof target.scrollIntoView === 'function') {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                        </script>
+                        """,
+                        height=0,
+                    )
+                    st.session_state.flipper_lite_scroll_to_video_cards = False
+                ctx = st.session_state.get('curriculum_context')
+                prev_step = None
+                next_step = None
+                show_step_nav = False
+                compact_small_step_desc = ""
 
-                    with brand_col:
+                if curriculum_assistant and curriculum_assistant.df is not None and ctx and ctx.get('small_step_num_in_topic') is not None:
+                    prev_step, next_step = curriculum_assistant.get_adjacent_steps(ctx)
+                    show_step_nav = bool(prev_step or next_step)
+
+                if results_focus_mode and results_header_slot is not None:
+                    with results_header_slot:
+                        if show_step_nav:
+                            brand_col, nav_home_col, nav_back_col, nav_next_col = st.columns([7.8, 1.3, 1.35, 1.35])
+                        else:
+                            brand_col = st.columns([1])[0]
+
+                        with brand_col:
+                            st.markdown(
+                                """
+                                <div class='results-brand-inline'>
+                                    <span class='results-brand-main'>Flipper School</span>
+                                    <span class='results-brand-sub'> - Cur<span class='results-brand-ai'>AI</span>ted Education Videos</span>
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
+
+                        if show_step_nav:
+                            with nav_home_col:
+                                if st.button(
+                                    "Back to search",
+                                    key="step_nav_home_top",
+                                    use_container_width=True,
+                                    help="Return to search with no filters",
+                                ):
+                                    track_event("results_reset", {"source": "top_nav_home"})
+                                    st.session_state.display_status = 'idle'
+                                    st.session_state.display_results = []
+                                    st.session_state.display_step_name = ""
+                                    st.session_state.curriculum_context = None
+                                    st.session_state.current_video = None
+                                    st.session_state.current_video_index = 0
+
+                                    st.session_state.curr_year = 'Age ?'
+                                    st.session_state.year_select_topic_search = 'Age ?'
+                                    st.session_state.curr_difficulty = 'All'
+                                    st.session_state.difficulty_select_topic_search = 'All'
+                                    st.session_state.curr_topic = 'Topic ?'
+                                    st.session_state.topic_select_topic_search = 'Topic ?'
+                                    st.session_state.topic_prefix_search = ''
+                                    st.session_state.pending_topic_open = None
+                                    st.session_state.pending_open_difficulty = 'Foundation'
+                                    st.session_state.clear_topic_prefix_on_open = False
+                                    st.session_state.pending_step_nav = None
+                                    st.rerun()
+                            with nav_back_col:
+                                if prev_step and st.button(
+                                    "◀  Previous Step",
+                                    key="step_nav_back_top",
+                                    use_container_width=True,
+                                    help=f"Previous: {prev_step['small_step']}",
+                                ):
+                                    track_event(
+                                        "step_navigation",
+                                        {
+                                            "source": "top_nav_previous",
+                                            "target_small_step": prev_step.get("small_step", ""),
+                                            "target_step_id": prev_step.get("small_step_id", ""),
+                                        },
+                                    )
+                                    st.session_state.pending_step_nav = prev_step
+                                    st.rerun()
+                            with nav_next_col:
+                                if next_step and st.button(
+                                    "Next Step  ▶",
+                                    key="step_nav_next_top",
+                                    use_container_width=True,
+                                    help=f"Next: {next_step['small_step']}",
+                                ):
+                                    track_event(
+                                        "step_navigation",
+                                        {
+                                            "source": "top_nav_next",
+                                            "target_small_step": next_step.get("small_step", ""),
+                                            "target_step_id": next_step.get("small_step_id", ""),
+                                        },
+                                    )
+                                    st.session_state.pending_step_nav = next_step
+                                    st.rerun()
+
                         st.markdown(
-                            """
-                            <div class='results-brand-inline'>
-                                <span class='results-brand-main'>Flipper School</span>
-                                <span class='results-brand-sub'> - Cur<span class='results-brand-ai'>AI</span>ted Education Videos</span>
-                            </div>
-                            """,
+                            "<hr style='margin: 0.15rem 0 0.3rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.2);'>",
                             unsafe_allow_html=True,
                         )
 
-                    if show_step_nav:
-                        with nav_home_col:
-                            if st.button(
-                                "Back to search",
-                                key="step_nav_home_top",
-                                use_container_width=True,
-                                help="Return to search with no filters",
-                            ):
-                                track_event("results_reset", {"source": "top_nav_home"})
-                                st.session_state.display_status = 'idle'
-                                st.session_state.display_results = []
-                                st.session_state.display_step_name = ""
-                                st.session_state.curriculum_context = None
-                                st.session_state.current_video = None
-                                st.session_state.current_video_index = 0
+                # Display breadcrumb heading if curriculum context is available
+                if ctx:
+                    # Build breadcrumb with labeled sections
+                    breadcrumb_parts = []
+                
+                    if ctx.get('age'):
+                        breadcrumb_parts.append(f"Age: {ctx['age']}")
+                
+                    if ctx.get('term'):
+                        breadcrumb_parts.append(f"Term: {ctx['term']}")
+                
+                    # Add difficulty only if it has a value
+                    difficulty = str(ctx.get('difficulty') or '').strip()
+                    if difficulty:
+                        breadcrumb_parts.append(f"Difficulty: {difficulty}")
+                
+                    if ctx.get('topic'):
+                        breadcrumb_parts.append(f"Topic: {ctx['topic']}")
 
-                                st.session_state.curr_year = 'Age ?'
-                                st.session_state.year_select_topic_search = 'Age ?'
-                                st.session_state.curr_difficulty = 'All'
-                                st.session_state.difficulty_select_topic_search = 'All'
-                                st.session_state.curr_topic = 'Topic ?'
-                                st.session_state.topic_select_topic_search = 'Topic ?'
-                                st.session_state.topic_prefix_search = ''
-                                st.session_state.pending_topic_open = None
-                                st.session_state.pending_open_difficulty = 'Foundation'
-                                st.session_state.clear_topic_prefix_on_open = False
-                                st.session_state.pending_step_nav = None
-                                st.rerun()
-                        with nav_back_col:
-                            if prev_step and st.button(
-                                "◀  Previous Step",
-                                key="step_nav_back_top",
-                                use_container_width=True,
-                                help=f"Previous: {prev_step['small_step']}",
-                            ):
-                                track_event(
-                                    "step_navigation",
-                                    {
-                                        "source": "top_nav_previous",
-                                        "target_small_step": prev_step.get("small_step", ""),
-                                        "target_step_id": prev_step.get("small_step_id", ""),
-                                    },
-                                )
-                                st.session_state.pending_step_nav = prev_step
-                                st.rerun()
-                        with nav_next_col:
-                            if next_step and st.button(
-                                "Next Step  ▶",
-                                key="step_nav_next_top",
-                                use_container_width=True,
-                                help=f"Next: {next_step['small_step']}",
-                            ):
-                                track_event(
-                                    "step_navigation",
-                                    {
-                                        "source": "top_nav_next",
-                                        "target_small_step": next_step.get("small_step", ""),
-                                        "target_step_id": next_step.get("small_step_id", ""),
-                                    },
-                                )
-                                st.session_state.pending_step_nav = next_step
-                                st.rerun()
+                    small_step = str(ctx.get('small_step') or '').strip()
+                    if small_step:
+                        breadcrumb_parts.append(f"Small Step: {small_step}")
+                
+                    # Display breadcrumb with smaller font and separators
+                    if breadcrumb_parts:
+                        breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
+                        breadcrumb_text_plain = " | ".join(breadcrumb_parts)
 
-                    st.markdown(
-                        "<hr style='margin: 0.15rem 0 0.3rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.2);'>",
-                        unsafe_allow_html=True,
+                        if results_focus_mode:
+                            st.markdown(
+                                f"""
+                                <div style='font-size:0.84rem; margin:0 0 0.35rem 0; white-space:normal; overflow-wrap:anywhere;' title='{breadcrumb_text_plain}'>
+                                    {breadcrumb_text}
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
+                        else:
+                            breadcrumb_margin = "0.35rem" if results_focus_mode else "1rem"
+                            breadcrumb_top_margin = "0" if results_focus_mode else "0.5rem"
+                            st.markdown(f"<p style='font-size: 0.84rem; margin-top: {breadcrumb_top_margin}; margin-bottom: {breadcrumb_margin};'>{breadcrumb_text}</p>", unsafe_allow_html=True)
+
+                    small_step_desc = str(ctx.get('small_step_desc') or '').strip()
+                    if small_step_desc:
+                        if results_focus_mode:
+                            compact_small_step_desc = small_step_desc
+                        else:
+                            st.markdown(
+                                f"""
+                                <div style="
+                                    background: linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(234,242,250,0.96) 100%);
+                                    border: 1px solid rgba(74, 144, 200, 0.28);
+                                    border-left: 7px solid #1e3a5f;
+                                    border-radius: 12px;
+                                    padding: 0.85rem 1rem 0.9rem 1rem;
+                                    margin: 0 0 1rem 0;
+                                    box-shadow: 0 6px 18px rgba(30, 58, 95, 0.12);
+                                    color: #18324f;
+                                    font-size: 0.96rem;
+                                    line-height: 1.45;
+                                ">
+                                    <div style="
+                                        display: inline-block;
+                                        background: #1e3a5f;
+                                        color: #ffffff;
+                                        font-size: 0.72rem;
+                                        font-weight: 700;
+                                        letter-spacing: 0.08em;
+                                        text-transform: uppercase;
+                                        padding: 0.22rem 0.55rem;
+                                        border-radius: 999px;
+                                        margin-bottom: 0.45rem;
+                                    ">
+                                        Selected small step
+                                    </div>
+                                    <div style="font-weight: 500;">
+                                    {small_step_desc}
+                                    </div>
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
+            
+                # ---- Next Small Step / Back one navigation ----
+                if show_step_nav and not results_focus_mode:
+                    _nav_spacer_l, nav_col_home, nav_col_back, nav_col_next, _nav_spacer_r = st.columns([2, 1, 1, 1, 2])
+                    with nav_col_home:
+                        if st.button(
+                            "Back to search",
+                            key="step_nav_home",
+                            use_container_width=True,
+                            help="Return to search with no filters",
+                        ):
+                            track_event("results_reset", {"source": "bottom_nav_home"})
+                            st.session_state.display_status = 'idle'
+                            st.session_state.display_results = []
+                            st.session_state.display_step_name = ""
+                            st.session_state.curriculum_context = None
+                            st.session_state.current_video = None
+                            st.session_state.current_video_index = 0
+
+                            st.session_state.curr_year = 'Age ?'
+                            st.session_state.year_select_topic_search = 'Age ?'
+                            st.session_state.curr_difficulty = 'All'
+                            st.session_state.difficulty_select_topic_search = 'All'
+                            st.session_state.curr_topic = 'Topic ?'
+                            st.session_state.topic_select_topic_search = 'Topic ?'
+                            st.session_state.topic_prefix_search = ''
+                            st.session_state.pending_topic_open = None
+                            st.session_state.pending_open_difficulty = 'Foundation'
+                            st.session_state.clear_topic_prefix_on_open = False
+                            st.session_state.pending_step_nav = None
+                            st.rerun()
+                    with nav_col_back:
+                        if prev_step and st.button(
+                            "◀  Previous Small Step",
+                            key="step_nav_back",
+                            use_container_width=True,
+                            help=f"Previous: {prev_step['small_step']}",
+                        ):
+                            track_event(
+                                "step_navigation",
+                                {
+                                    "source": "bottom_nav_previous",
+                                    "target_small_step": prev_step.get("small_step", ""),
+                                    "target_step_id": prev_step.get("small_step_id", ""),
+                                },
+                            )
+                            st.session_state.pending_step_nav = prev_step
+                            st.rerun()
+                    with nav_col_next:
+                        if next_step and st.button(
+                            "Next Small Step  ▶",
+                            key="step_nav_next",
+                            use_container_width=True,
+                            help=f"Next: {next_step['small_step']}",
+                        ):
+                            track_event(
+                                "step_navigation",
+                                {
+                                    "source": "bottom_nav_next",
+                                    "target_small_step": next_step.get("small_step", ""),
+                                    "target_step_id": next_step.get("small_step_id", ""),
+                                },
+                            )
+                            st.session_state.pending_step_nav = next_step
+                            st.rerun()
+
+                for result in st.session_state.display_results:
+                    render_result_card(
+                        result,
+                        compact=results_focus_mode,
+                        mobile_viewer_mode=mobile_viewer_mode,
                     )
 
-            # Display breadcrumb heading if curriculum context is available
-            if ctx:
-                # Build breadcrumb with labeled sections
-                breadcrumb_parts = []
-                
-                if ctx.get('age'):
-                    breadcrumb_parts.append(f"Age: {ctx['age']}")
-                
-                if ctx.get('term'):
-                    breadcrumb_parts.append(f"Term: {ctx['term']}")
-                
-                # Add difficulty only if it has a value
-                difficulty = str(ctx.get('difficulty') or '').strip()
-                if difficulty:
-                    breadcrumb_parts.append(f"Difficulty: {difficulty}")
-                
-                if ctx.get('topic'):
-                    breadcrumb_parts.append(f"Topic: {ctx['topic']}")
+                if results_focus_mode and compact_small_step_desc:
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background: rgba(255,255,255,0.82);
+                            border: 1px solid rgba(74, 144, 200, 0.25);
+                            border-radius: 9px;
+                            padding: 0.35rem 0.6rem;
+                            margin: 0.2rem 0 0.45rem 0;
+                            color: #18324f;
+                            font-size: 0.91rem;
+                            line-height: 1.3;
+                            white-space: normal;
+                            overflow-wrap: anywhere;
+                        " title="{compact_small_step_desc}">
+                            <strong>Selected small step:</strong> {compact_small_step_desc}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.warning("No videos found for this step. Try a different curriculum step.")
 
-                small_step = str(ctx.get('small_step') or '').strip()
-                if small_step:
-                    breadcrumb_parts.append(f"Small Step: {small_step}")
-                
-                # Display breadcrumb with smaller font and separators
-                if breadcrumb_parts:
-                    breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
-                    breadcrumb_text_plain = " | ".join(breadcrumb_parts)
-
-                    if results_focus_mode:
-                        st.markdown(
-                            f"""
-                            <div style='font-size:0.84rem; margin:0 0 0.35rem 0; white-space:normal; overflow-wrap:anywhere;' title='{breadcrumb_text_plain}'>
-                                {breadcrumb_text}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        breadcrumb_margin = "0.35rem" if results_focus_mode else "1rem"
-                        breadcrumb_top_margin = "0" if results_focus_mode else "0.5rem"
-                        st.markdown(f"<p style='font-size: 0.84rem; margin-top: {breadcrumb_top_margin}; margin-bottom: {breadcrumb_margin};'>{breadcrumb_text}</p>", unsafe_allow_html=True)
-
-                small_step_desc = str(ctx.get('small_step_desc') or '').strip()
-                if small_step_desc:
-                    if results_focus_mode:
-                        compact_small_step_desc = small_step_desc
-                    else:
-                        st.markdown(
-                            f"""
-                            <div style="
-                                background: linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(234,242,250,0.96) 100%);
-                                border: 1px solid rgba(74, 144, 200, 0.28);
-                                border-left: 7px solid #1e3a5f;
-                                border-radius: 12px;
-                                padding: 0.85rem 1rem 0.9rem 1rem;
-                                margin: 0 0 1rem 0;
-                                box-shadow: 0 6px 18px rgba(30, 58, 95, 0.12);
-                                color: #18324f;
-                                font-size: 0.96rem;
-                                line-height: 1.45;
-                            ">
-                                <div style="
-                                    display: inline-block;
-                                    background: #1e3a5f;
-                                    color: #ffffff;
-                                    font-size: 0.72rem;
-                                    font-weight: 700;
-                                    letter-spacing: 0.08em;
-                                    text-transform: uppercase;
-                                    padding: 0.22rem 0.55rem;
-                                    border-radius: 999px;
-                                    margin-bottom: 0.45rem;
-                                ">
-                                    Selected small step
-                                </div>
-                                <div style="font-weight: 500;">
-                                {small_step_desc}
-                                </div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-            
-            # ---- Next Small Step / Back one navigation ----
-            if show_step_nav and not results_focus_mode:
-                _nav_spacer_l, nav_col_home, nav_col_back, nav_col_next, _nav_spacer_r = st.columns([2, 1, 1, 1, 2])
-                with nav_col_home:
-                    if st.button(
-                        "Back to search",
-                        key="step_nav_home",
-                        use_container_width=True,
-                        help="Return to search with no filters",
-                    ):
-                        track_event("results_reset", {"source": "bottom_nav_home"})
-                        st.session_state.display_status = 'idle'
-                        st.session_state.display_results = []
-                        st.session_state.display_step_name = ""
-                        st.session_state.curriculum_context = None
-                        st.session_state.current_video = None
-                        st.session_state.current_video_index = 0
-
-                        st.session_state.curr_year = 'Age ?'
-                        st.session_state.year_select_topic_search = 'Age ?'
-                        st.session_state.curr_difficulty = 'All'
-                        st.session_state.difficulty_select_topic_search = 'All'
-                        st.session_state.curr_topic = 'Topic ?'
-                        st.session_state.topic_select_topic_search = 'Topic ?'
-                        st.session_state.topic_prefix_search = ''
-                        st.session_state.pending_topic_open = None
-                        st.session_state.pending_open_difficulty = 'Foundation'
-                        st.session_state.clear_topic_prefix_on_open = False
-                        st.session_state.pending_step_nav = None
-                        st.rerun()
-                with nav_col_back:
-                    if prev_step and st.button(
-                        "◀  Previous Small Step",
-                        key="step_nav_back",
-                        use_container_width=True,
-                        help=f"Previous: {prev_step['small_step']}",
-                    ):
-                        track_event(
-                            "step_navigation",
-                            {
-                                "source": "bottom_nav_previous",
-                                "target_small_step": prev_step.get("small_step", ""),
-                                "target_step_id": prev_step.get("small_step_id", ""),
-                            },
-                        )
-                        st.session_state.pending_step_nav = prev_step
-                        st.rerun()
-                with nav_col_next:
-                    if next_step and st.button(
-                        "Next Small Step  ▶",
-                        key="step_nav_next",
-                        use_container_width=True,
-                        help=f"Next: {next_step['small_step']}",
-                    ):
-                        track_event(
-                            "step_navigation",
-                            {
-                                "source": "bottom_nav_next",
-                                "target_small_step": next_step.get("small_step", ""),
-                                "target_step_id": next_step.get("small_step_id", ""),
-                            },
-                        )
-                        st.session_state.pending_step_nav = next_step
-                        st.rerun()
-
-            for result in st.session_state.display_results:
-                render_result_card(
-                    result,
-                    compact=results_focus_mode,
-                    mobile_viewer_mode=mobile_viewer_mode,
-                )
-
-            if results_focus_mode and compact_small_step_desc:
-                st.markdown(
-                    f"""
-                    <div style="
-                        background: rgba(255,255,255,0.82);
-                        border: 1px solid rgba(74, 144, 200, 0.25);
-                        border-radius: 9px;
-                        padding: 0.35rem 0.6rem;
-                        margin: 0.2rem 0 0.45rem 0;
-                        color: #18324f;
-                        font-size: 0.91rem;
-                        line-height: 1.3;
-                        white-space: normal;
-                        overflow-wrap: anywhere;
-                    " title="{compact_small_step_desc}">
-                        <strong>Selected small step:</strong> {compact_small_step_desc}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.warning("No videos found for this step. Try a different curriculum step.")
-
-    render_selection_debug_panel(curriculum_assistant, enabled=ENABLE_SELECTION_DEBUG_PANEL)
+        render_selection_debug_panel(curriculum_assistant, enabled=ENABLE_SELECTION_DEBUG_PANEL)
     
-    # ==========================================
-    # STEP NAVIGATION (pending_step_nav from Next/Back buttons)
-    # ==========================================
-    if st.session_state.get('pending_step_nav'):
-        nav = st.session_state.pop('pending_step_nav')
-        track_event(
-            "step_selection_applied",
-            {
-                "source": "pending_navigation",
-                "small_step": nav.get("small_step", ""),
-                "small_step_id": nav.get("small_step_id", ""),
-                "topic": nav.get("topic", ""),
-                "age": nav.get("age", ""),
-            },
-        )
-        apply_small_step_selection(nav, recommendations_df, curriculum_assistant, lookup_videos_for_step)
-
-    # ==========================================
-    # CURRICULUM ASSISTANT (Below results)
-    # ==========================================
-    if curriculum_assistant:
-        # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
-        action, text = curriculum_assistant.render(show_topic_table_search=ENABLE_TOPIC_TABLE_SEARCH)
-        if action == 'small_step_search' and text:
+        # ==========================================
+        # STEP NAVIGATION (pending_step_nav from Next/Back buttons)
+        # ==========================================
+        if st.session_state.get('pending_step_nav'):
+            nav = st.session_state.pop('pending_step_nav')
             track_event(
                 "step_selection_applied",
                 {
-                    "source": "curriculum_assistant",
-                    "small_step": text.get("small_step", ""),
-                    "small_step_id": text.get("small_step_id", ""),
-                    "topic": text.get("topic", ""),
-                    "age": text.get("age", ""),
+                    "source": "pending_navigation",
+                    "small_step": nav.get("small_step", ""),
+                    "small_step_id": nav.get("small_step_id", ""),
+                    "topic": nav.get("topic", ""),
+                    "age": nav.get("age", ""),
                 },
             )
-            apply_small_step_selection(text, recommendations_df, curriculum_assistant, lookup_videos_for_step)
+            apply_small_step_selection(nav, recommendations_df, curriculum_assistant, lookup_videos_for_step)
 
-    # ==========================================
-    # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)
-    # ==========================================
-    if ENABLE_FLIPPER_SEARCH and curriculum_path.exists():
-        from flipper_search.streamlit_ui import render_search_ui
-
-        st.markdown("---")
-        embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
-        search_result = render_search_ui(
-            curriculum_csv_path=str(curriculum_path),
-            embeddings_path=str(embeddings_path),
-            use_semantic=True,
-        )
-
-        if search_result:
-            action, result_dict = search_result
-            if action == 'small_step_search' and result_dict:
+        # ==========================================
+        # CURRICULUM ASSISTANT (Below results)
+        # ==========================================
+        if curriculum_assistant:
+            # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
+            action, text = curriculum_assistant.render(show_topic_table_search=ENABLE_TOPIC_TABLE_SEARCH)
+            if action == 'small_step_search' and text:
                 track_event(
                     "step_selection_applied",
                     {
-                        "source": "flipper_search",
-                        "small_step": result_dict.get("small_step", ""),
-                        "small_step_id": result_dict.get("small_step_id", ""),
-                        "topic": result_dict.get("topic", ""),
-                        "age": result_dict.get("age", ""),
+                        "source": "curriculum_assistant",
+                        "small_step": text.get("small_step", ""),
+                        "small_step_id": text.get("small_step_id", ""),
+                        "topic": text.get("topic", ""),
+                        "age": text.get("age", ""),
                     },
                 )
-                apply_small_step_selection(result_dict, recommendations_df, curriculum_assistant, lookup_videos_for_step)
-    
-    # Sidebar with info
-    with st.sidebar:
-        st.markdown("### 📖 About Flipper Lite")
-        st.markdown("""
-        Flipper Lite is a lightweight curriculum video browser that helps teachers 
-        find relevant educational content aligned to the White Rose Mathematics curriculum.
-        
-        **How it works:**
-        1. Navigate the dropdowns to select your curriculum step
-        2. The system instantly displays precomputed video recommendations
-        3. Videos are ranked by relevance and instructional quality
-        """)
-        if not mobile_viewer_mode:
-            st.markdown("""
-            **Understanding Scores:**
-            - 🔍 **Semantic**: How well video content matches the curriculum step
-            - 📚 **Instruction**: Quality of teaching and explanation
-            - ⭐ **Combined**: Overall ranking score
+                apply_small_step_selection(text, recommendations_df, curriculum_assistant, lookup_videos_for_step)
 
-            **Score Ranges:**
-            - 🟢 80-100%: Excellent match
-            - 🟡 60-80%: Good match
-            - 🟠 40-60%: Fair match
-            - 🔴 0-40%: Weak match
+        # ==========================================
+        # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)
+        # ==========================================
+        if ENABLE_FLIPPER_SEARCH and curriculum_path.exists():
+            from flipper_search.streamlit_ui import render_search_ui
+
+            st.markdown("---")
+            embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
+            search_result = render_search_ui(
+                curriculum_csv_path=str(curriculum_path),
+                embeddings_path=str(embeddings_path),
+                use_semantic=True,
+            )
+
+            if search_result:
+                action, result_dict = search_result
+                if action == 'small_step_search' and result_dict:
+                    track_event(
+                        "step_selection_applied",
+                        {
+                            "source": "flipper_search",
+                            "small_step": result_dict.get("small_step", ""),
+                            "small_step_id": result_dict.get("small_step_id", ""),
+                            "topic": result_dict.get("topic", ""),
+                            "age": result_dict.get("age", ""),
+                        },
+                    )
+                    apply_small_step_selection(result_dict, recommendations_df, curriculum_assistant, lookup_videos_for_step)
+    
+        # Sidebar with info
+        with st.sidebar:
+            st.markdown("### 📖 About Flipper Lite")
+            st.markdown("""
+            Flipper Lite is a lightweight curriculum video browser that helps teachers 
+            find relevant educational content aligned to the White Rose Mathematics curriculum.
+        
+            **How it works:**
+            1. Navigate the dropdowns to select your curriculum step
+            2. The system instantly displays precomputed video recommendations
+            3. Videos are ranked by relevance and instructional quality
+            """)
+            if not mobile_viewer_mode:
+                st.markdown("""
+                **Understanding Scores:**
+                - 🔍 **Semantic**: How well video content matches the curriculum step
+                - 📚 **Instruction**: Quality of teaching and explanation
+                - ⭐ **Combined**: Overall ranking score
+
+                **Score Ranges:**
+                - 🟢 80-100%: Excellent match
+                - 🟡 60-80%: Good match
+                - 🟠 40-60%: Fair match
+                - 🔴 0-40%: Weak match
+                """)
+        
+            st.markdown("---")
+            st.markdown("### ⚙️ Technical Details")
+            st.markdown(f"""
+            - **Mode:** Precomputed CSV Lookup
+            - **Scoring:** Offline (no runtime LLM calls)
+            - **Video Count:** {len(recommendations_df)} curriculum items
+            - **Top Videos per Step:** 3
             """)
         
-        st.markdown("---")
-        st.markdown("### ⚙️ Technical Details")
-        st.markdown(f"""
-        - **Mode:** Precomputed CSV Lookup
-        - **Scoring:** Offline (no runtime LLM calls)
-        - **Video Count:** {len(recommendations_df)} curriculum items
-        - **Top Videos per Step:** 3
-        """)
+            # Add reload data button
+            st.markdown("---")
+            if st.button("🔄 Reload Data", use_container_width=True, help="Force refresh precomputed recommendations from CSV (cache updates every 5 mins automatically)"):
+                st.cache_data.clear()
+                st.rerun()
         
-        # Add reload data button
-        st.markdown("---")
-        if st.button("🔄 Reload Data", use_container_width=True, help="Force refresh precomputed recommendations from CSV (cache updates every 5 mins automatically)"):
-            st.cache_data.clear()
-            st.rerun()
+            st.markdown("---")
+            st.markdown("### 💡 About This Version")
+            st.markdown("""
+            **Flipper Lite** is optimized for:
+            - 🚀 Fast loading (no FAISS index)
+            - 📱 Mobile-friendly browsing
+            - 💰 Cost-effective (no runtime API calls)
+            - 🌐 Low-bandwidth environments
         
-        st.markdown("---")
-        st.markdown("### 💡 About This Version")
-        st.markdown("""
-        **Flipper Lite** is optimized for:
-        - 🚀 Fast loading (no FAISS index)
-        - 📱 Mobile-friendly browsing
-        - 💰 Cost-effective (no runtime API calls)
-        - 🌐 Low-bandwidth environments
-        
-        All video recommendations are precomputed offline using semantic search 
-        and AI-powered instruction quality scoring.
-        """)
+            All video recommendations are precomputed offline using semantic search 
+            and AI-powered instruction quality scoring.
+            """)
 
-    # Watch tracking JavaScript - unique per (video_id, topic, small_step)
-    components.html("""
-    <script>
-    (function() {
-        const parentWindow = window.parent;
-        const parentDoc = parentWindow.document;
+        # Watch tracking JavaScript - unique per (video_id, topic, small_step)
+        components.html("""
+        <script>
+        (function() {
+            const parentWindow = window.parent;
+            const parentDoc = parentWindow.document;
 
-        // Get watched videos from localStorage (array of objects)
-        function getWatchedVideos() {
-            try {
-                const watched = localStorage.getItem('flipper_watched_videos');
-                return watched ? JSON.parse(watched) : [];
-            } catch (e) {
-                console.error('Error reading watched videos:', e);
-                return [];
-            }
-        }
-
-        // Save watched videos to localStorage
-        function saveWatchedVideos(videos) {
-            try {
-                localStorage.setItem('flipper_watched_videos', JSON.stringify(videos));
-            } catch (e) {
-                console.error('Error saving watched videos:', e);
-            }
-        }
-
-        // Mark a video as watched for a specific context
-        function markVideoWatched(videoId, topic, smallStep) {
-            const watched = getWatchedVideos();
-            // Check if already present
-            const exists = watched.some(v => v.video_id === videoId && v.topic === topic && v.small_step === smallStep);
-            if (!exists) {
-                watched.push({video_id: videoId, topic: topic, small_step: smallStep});
-                saveWatchedVideos(watched);
-                console.log('Marked as watched:', videoId, topic, smallStep);
-            }
-        }
-
-        // Apply watched styling to videos in parent document
-        function applyWatchedStyling() {
-            const watched = getWatchedVideos();
-            // Remove watched class from all video cards first
-            const allCards = parentDoc.querySelectorAll('.video-card');
-            allCards.forEach(card => card.classList.remove('video-card-watched'));
-            // Add watched class only to matching cards
-            watched.forEach(entry => {
-                const domId = `video-card-${entry.video_id}-${entry.topic}-${entry.small_step}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
-                const card = parentDoc.getElementById(domId);
-                if (card) {
-                    card.classList.add('video-card-watched');
-                }
-            });
-        }
-
-        // Reduce only step-navigation button footprint in results mode.
-        function applyCompactStepNavButtons() {
-            const targets = [
-                'Back to search',
-                '◀  Previous Step',
-                'Next Step  ▶',
-                '◀  Previous Small Step',
-                'Next Small Step  ▶'
-            ];
-            const buttons = parentDoc.querySelectorAll('button');
-            buttons.forEach(btn => {
-                const text = (btn.textContent || '').trim();
-                const isTarget = targets.some(t => text.includes(t));
-                if (isTarget) {
-                    btn.style.fontSize = '0.5em';
-                    btn.style.padding = '0.12rem 0.35rem';
-                    btn.style.minHeight = '1.05rem';
-                    btn.style.lineHeight = '1';
-                }
-            });
-        }
-
-        // Attach click handlers to video links
-        function attachClickHandlers() {
-            const videoLinks = parentDoc.querySelectorAll('a.video-link[data-video-id]');
-            videoLinks.forEach(link => {
-                link.removeEventListener('click', handleVideoClick);
-                link.addEventListener('click', handleVideoClick);
-            });
-        }
-
-        function handleVideoClick(event) {
-            const videoId = this.getAttribute('data-video-id');
-            const topic = this.getAttribute('data-topic') || '';
-            const smallStep = this.getAttribute('data-small-step') || '';
-            if (videoId) {
-                markVideoWatched(videoId, topic, smallStep);
-                // Apply styling immediately
-                const domId = `video-card-${videoId}-${topic}-${smallStep}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
-                const card = parentDoc.getElementById(domId);
-                if (card) {
-                    card.classList.add('video-card-watched');
+            // Get watched videos from localStorage (array of objects)
+            function getWatchedVideos() {
+                try {
+                    const watched = localStorage.getItem('flipper_watched_videos');
+                    return watched ? JSON.parse(watched) : [];
+                } catch (e) {
+                    console.error('Error reading watched videos:', e);
+                    return [];
                 }
             }
-        }
 
-        // Initialize
-        function initialize() {
-            applyWatchedStyling();
-            attachClickHandlers();
-            applyCompactStepNavButtons();
-        }
+            // Save watched videos to localStorage
+            function saveWatchedVideos(videos) {
+                try {
+                    localStorage.setItem('flipper_watched_videos', JSON.stringify(videos));
+                } catch (e) {
+                    console.error('Error saving watched videos:', e);
+                }
+            }
 
-        // Run initialization
-        initialize();
+            // Mark a video as watched for a specific context
+            function markVideoWatched(videoId, topic, smallStep) {
+                const watched = getWatchedVideos();
+                // Check if already present
+                const exists = watched.some(v => v.video_id === videoId && v.topic === topic && v.small_step === smallStep);
+                if (!exists) {
+                    watched.push({video_id: videoId, topic: topic, small_step: smallStep});
+                    saveWatchedVideos(watched);
+                    console.log('Marked as watched:', videoId, topic, smallStep);
+                }
+            }
 
-        // Re-run periodically to catch Streamlit updates
-        setInterval(function() {
-            applyWatchedStyling();
-            attachClickHandlers();
-        }, 500);
-
-        // Watch for DOM changes
-        const observer = new MutationObserver(function(mutations) {
-            let needsUpdate = false;
-            mutations.forEach(mutation => {
-                mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === 1 && 
-                        (node.classList?.contains('video-card') || 
-                         node.querySelector?.('.video-card'))) {
-                        needsUpdate = true;
+            // Apply watched styling to videos in parent document
+            function applyWatchedStyling() {
+                const watched = getWatchedVideos();
+                // Remove watched class from all video cards first
+                const allCards = parentDoc.querySelectorAll('.video-card');
+                allCards.forEach(card => card.classList.remove('video-card-watched'));
+                // Add watched class only to matching cards
+                watched.forEach(entry => {
+                    const domId = `video-card-${entry.video_id}-${entry.topic}-${entry.small_step}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
+                    const card = parentDoc.getElementById(domId);
+                    if (card) {
+                        card.classList.add('video-card-watched');
                     }
                 });
-            });
-            if (needsUpdate) {
-                setTimeout(initialize, 100);
             }
-        });
 
-        observer.observe(parentDoc.body, {
-            childList: true,
-            subtree: true
-        });
+            // Reduce only step-navigation button footprint in results mode.
+            function applyCompactStepNavButtons() {
+                const targets = [
+                    'Back to search',
+                    '◀  Previous Step',
+                    'Next Step  ▶',
+                    '◀  Previous Small Step',
+                    'Next Small Step  ▶'
+                ];
+                const buttons = parentDoc.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    const text = (btn.textContent || '').trim();
+                    const isTarget = targets.some(t => text.includes(t));
+                    if (isTarget) {
+                        btn.style.fontSize = '0.5em';
+                        btn.style.padding = '0.12rem 0.35rem';
+                        btn.style.minHeight = '1.05rem';
+                        btn.style.lineHeight = '1';
+                    }
+                });
+            }
 
-        console.log('Video watch tracker initialized (context-aware)');
-    })();
-    </script>
-    """, height=0)
+            // Attach click handlers to video links
+            function attachClickHandlers() {
+                const videoLinks = parentDoc.querySelectorAll('a.video-link[data-video-id]');
+                videoLinks.forEach(link => {
+                    link.removeEventListener('click', handleVideoClick);
+                    link.addEventListener('click', handleVideoClick);
+                });
+            }
 
-    # Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; padding: 1rem; font-size: 0.75rem; color: #666;">
-        FLIPPER EDUCATION LTD Company number: SC882978<br>
-        Registered in Scotland, Edinburgh<br>
-        John.Brown@flipper.school
-    </div>
-    """, unsafe_allow_html=True)
+            function handleVideoClick(event) {
+                const videoId = this.getAttribute('data-video-id');
+                const topic = this.getAttribute('data-topic') || '';
+                const smallStep = this.getAttribute('data-small-step') || '';
+                if (videoId) {
+                    markVideoWatched(videoId, topic, smallStep);
+                    // Apply styling immediately
+                    const domId = `video-card-${videoId}-${topic}-${smallStep}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
+                    const card = parentDoc.getElementById(domId);
+                    if (card) {
+                        card.classList.add('video-card-watched');
+                    }
+                }
+            }
+
+            // Initialize
+            function initialize() {
+                applyWatchedStyling();
+                attachClickHandlers();
+                applyCompactStepNavButtons();
+            }
+
+            // Run initialization
+            initialize();
+
+            // Re-run periodically to catch Streamlit updates
+            setInterval(function() {
+                applyWatchedStyling();
+                attachClickHandlers();
+            }, 500);
+
+            // Watch for DOM changes
+            const observer = new MutationObserver(function(mutations) {
+                let needsUpdate = false;
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1 && 
+                            (node.classList?.contains('video-card') || 
+                             node.querySelector?.('.video-card'))) {
+                            needsUpdate = true;
+                        }
+                    });
+                });
+                if (needsUpdate) {
+                    setTimeout(initialize, 100);
+                }
+            });
+
+            observer.observe(parentDoc.body, {
+                childList: true,
+                subtree: true
+            });
+
+            console.log('Video watch tracker initialized (context-aware)');
+        })();
+        </script>
+        """, height=0)
+
+        # Footer
+        st.markdown("---")
+        st.markdown("""
+        <div style="text-align: center; padding: 1rem; font-size: 0.75rem; color: #666;">
+            FLIPPER EDUCATION LTD Company number: SC882978<br>
+            Registered in Scotland, Edinburgh<br>
+            John.Brown@flipper.school
+        </div>
+        """, unsafe_allow_html=True)
 
 
 if __name__ == '__main__':

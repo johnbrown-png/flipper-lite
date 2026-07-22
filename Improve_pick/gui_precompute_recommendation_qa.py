@@ -491,6 +491,14 @@ class ImprovePickQAGUI:
         self.dup_flag_btn: ttk.Button | None = None
         self.dup_unflag_btn: ttk.Button | None = None
 
+        # Video availability tracking
+        self.unavailable_videos: dict[str, dict[str, str]] = {}  # {video_id: {status, source_step, source_position}}
+        self.show_unavailable_only_var = tk.BooleanVar(value=False)
+        self.filter_deleted_var = tk.BooleanVar(value=True)
+        self.filter_embedding_var = tk.BooleanVar(value=False)
+        self.availability_summary_var = tk.StringVar(value="")
+        self.all_step_options: list[str] = []  # Unfiltered list of all steps
+
         self.active_job_state = JOB_STATE_IDLE
         self.active_job_name = ""
         self.active_job_thread: threading.Thread | None = None
@@ -587,6 +595,43 @@ class ImprovePickQAGUI:
         )
         self.jump_ignore_default_five_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
+        # Row 2: Unavailable video navigation and filtering
+        self.jump_unavailable_btn = ttk.Button(
+            selector_frame,
+            text="Jump to Next Unavailable Video",
+            command=self._jump_to_next_unavailable,
+        )
+        self.jump_unavailable_btn.grid(row=2, column=0, sticky="w", pady=(4, 0))
+
+        ttk.Label(
+            selector_frame,
+            textvariable=self.availability_summary_var,
+            foreground="#cc0000",  # Red for warnings
+        ).grid(row=2, column=1, columnspan=4, sticky="w", padx=(8, 0), pady=(4, 0))
+
+        # Row 3: Unavailable video filtering controls
+        self.show_unavailable_check = ttk.Checkbutton(
+            selector_frame,
+            text="Show unavailable only",
+            variable=self.show_unavailable_only_var,
+            command=self._on_filter_unavailable_changed,
+        )
+        self.show_unavailable_check.grid(row=3, column=0, sticky="w", pady=(4, 0))
+
+        ttk.Checkbutton(
+            selector_frame,
+            text="Deleted/private",
+            variable=self.filter_deleted_var,
+            command=self._on_filter_unavailable_changed,
+        ).grid(row=3, column=1, sticky="w", padx=(8, 0), pady=(4, 0))
+
+        ttk.Checkbutton(
+            selector_frame,
+            text="Embedding-disabled",
+            variable=self.filter_embedding_var,
+            command=self._on_filter_unavailable_changed,
+        ).grid(row=3, column=2, sticky="w", padx=(8, 0), pady=(4, 0))
+
         if SHOW_SHOW_UNSAVED_ONLY_CONTROL:
             self.show_unsaved_check = ttk.Checkbutton(
                 selector_frame,
@@ -596,15 +641,15 @@ class ImprovePickQAGUI:
             )
             self.show_unsaved_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
-        # Row 4: Dup Review Mode controls
+        # Row 5: Dup Review Mode controls
         self.dup_review_btn = ttk.Button(
             selector_frame,
             text="High-Dup Review: OFF",
             command=self._toggle_dup_review_mode,
         )
-        self.dup_review_btn.grid(row=4, column=0, sticky="w", pady=(4, 0))
+        self.dup_review_btn.grid(row=5, column=0, sticky="w", pady=(4, 0))
 
-        ttk.Label(selector_frame, text="Hotspot top %:").grid(row=4, column=1, sticky="e", padx=(0, 4), pady=(4, 0))
+        ttk.Label(selector_frame, text="Hotspot top %:").grid(row=5, column=1, sticky="e", padx=(0, 4), pady=(4, 0))
         self.dup_threshold_spin = tk.Spinbox(
             selector_frame,
             from_=1,
@@ -613,21 +658,21 @@ class ImprovePickQAGUI:
             textvariable=self.dup_threshold_pct_var,
             increment=1,
         )
-        self.dup_threshold_spin.grid(row=4, column=2, sticky="w", pady=(4, 0))
+        self.dup_threshold_spin.grid(row=5, column=2, sticky="w", pady=(4, 0))
 
         self.dup_jump_btn = ttk.Button(
             selector_frame,
             text="Next High-Dup Step",
             command=self._jump_to_next_dup_hotspot,
         )
-        self.dup_jump_btn.grid(row=4, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.dup_jump_btn.grid(row=5, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
 
         self.dup_flag_btn = ttk.Button(
             selector_frame,
             text="Mark Step Redundant",
             command=self._flag_current_step_redundant,
         )
-        self.dup_flag_btn.grid(row=4, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.dup_flag_btn.grid(row=5, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
         self.dup_unflag_btn = ttk.Button(
             selector_frame,
@@ -635,14 +680,14 @@ class ImprovePickQAGUI:
             command=self._unflag_current_step_redundant,
             state=tk.DISABLED,
         )
-        self.dup_unflag_btn.grid(row=4, column=5, sticky="w", padx=(8, 0), pady=(4, 0))
+        self.dup_unflag_btn.grid(row=5, column=5, sticky="w", padx=(8, 0), pady=(4, 0))
 
-        # Row 5: per-step dup score display
+        # Row 6: per-step dup score display
         ttk.Label(
             selector_frame,
             textvariable=self.dup_score_display_var,
             foreground="#994400",
-        ).grid(row=5, column=0, columnspan=5, sticky="w", pady=(2, 0))
+        ).grid(row=6, column=0, columnspan=5, sticky="w", pady=(2, 0))
 
         text_frame = ttk.LabelFrame(outer, text="Query Text", padding=8)
         text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
@@ -2501,6 +2546,10 @@ class ImprovePickQAGUI:
             # Load promoted steps from canonical overrides
             override_map = load_validated_override_map(CANONICAL_OVERRIDE_PATH)
             self.promoted_step_ids = set(override_map.keys())
+            
+            # Load video availability report
+            self._load_availability_report()
+            
             self._refresh_step_combo_labels()
 
             # Build global step number lookup and compute dup proximity scores
@@ -2568,6 +2617,9 @@ class ImprovePickQAGUI:
     def _on_heavy_assets_error(self, error_message: str) -> None:
         self.status_var.set("Failed to load retrieval assets")
         self.constraints_status_var.set("Constraints gate: retrieval assets failed to load")
+        # Re-enable buttons even on error so user can see the error message when they try to search
+        self.search_btn.config(state=tk.NORMAL)
+        self.constraints_run_btn.config(state=tk.NORMAL)
         if self.active_job_state == JOB_STATE_RUNNING:
             self._set_job_state(JOB_STATE_FAILED, step_text="Retrieval asset reload failed", error_text=error_message)
         messagebox.showerror("Initialization Error", error_message)
@@ -2663,6 +2715,7 @@ class ImprovePickQAGUI:
             self.step_label_to_id[label] = small_step_id
             labels.append(label)
 
+        self.all_step_options = labels  # Store unfiltered list
         self.step_combo["values"] = labels
 
         selected_step_id = preserve_step_id or self._selected_small_step_id()
@@ -2855,6 +2908,195 @@ class ImprovePickQAGUI:
             self._refresh_step_combo_labels(preserve_step_id=next_step_id)
             self._set_selected_step_by_id(next_step_id)
 
+    def _load_availability_report(self) -> None:
+        """Load video availability report from check_video_availability.py output."""
+        availability_path = project_root / "reports" / "unavailable_video_availability_check.csv"
+        self.unavailable_videos = {}
+        
+        if not availability_path.exists():
+            return
+        
+        try:
+            df = pd.read_csv(availability_path)
+            for _, row in df.iterrows():
+                video_id = clean_text(row.get("video_id"))
+                if not video_id:
+                    continue
+                self.unavailable_videos[video_id] = {
+                    "status": clean_text(row.get("status")),
+                    "source_step": clean_text(row.get("source_step")),
+                    "source_position": clean_text(row.get("source_position")),
+                }
+        except Exception as exc:
+            print(f"Warning: Could not load availability report: {exc}")
+
+    def _step_has_unavailable_videos(self, step_id: str) -> tuple[bool, int, int]:
+        """Check if step has unavailable videos.
+        Returns: (has_unavailable, deleted_count, embedding_count)"""
+        deleted_count = 0
+        embedding_count = 0
+        
+        for video_id, info in self.unavailable_videos.items():
+            if info["source_step"] != step_id:
+                continue
+            status = info["status"]
+            if status in ("deleted", "private"):
+                deleted_count += 1
+            elif status == "embedding_disabled":
+                embedding_count += 1
+        
+        has_unavailable = deleted_count > 0 or embedding_count > 0
+        return has_unavailable, deleted_count, embedding_count
+
+    def _jump_to_next_unavailable(self) -> None:
+        """Navigate to next small step with unavailable videos."""
+        if not self.sorted_step_ids:
+            return
+        
+        if not self.unavailable_videos:
+            messagebox.showinfo(
+                "No availability report",
+                "No availability report found. Run check_video_availability.py first."
+            )
+            return
+        
+        # Build list of steps with unavailable videos matching current filters
+        affected_steps = []
+        for step_id in self.sorted_step_ids:
+            has_unavailable, deleted_count, embedding_count = self._step_has_unavailable_videos(step_id)
+            if not has_unavailable:
+                continue
+            
+            # Apply filters
+            include = False
+            if deleted_count > 0 and self.filter_deleted_var.get():
+                include = True
+            if embedding_count > 0 and self.filter_embedding_var.get():
+                include = True
+            
+            if include:
+                affected_steps.append(step_id)
+        
+        if not affected_steps:
+            filter_desc = []
+            if self.filter_deleted_var.get():
+                filter_desc.append("deleted/private")
+            if self.filter_embedding_var.get():
+                filter_desc.append("embedding-disabled")
+            filter_text = " or ".join(filter_desc) if filter_desc else "selected types"
+            
+            messagebox.showinfo(
+                "No unavailable videos",
+                f"No steps found with {filter_text} videos."
+            )
+            return
+        
+        # Find next affected step after current
+        current_step_id = self._selected_small_step_id()
+        if current_step_id in self.sorted_step_ids:
+            current_idx = self.sorted_step_ids.index(current_step_id)
+        else:
+            current_idx = -1
+        
+        next_step_id = ""
+        for offset in range(1, len(self.sorted_step_ids) + 1):
+            candidate_idx = (current_idx + offset) % len(self.sorted_step_ids)
+            candidate_step_id = self.sorted_step_ids[candidate_idx]
+            if candidate_step_id in affected_steps:
+                next_step_id = candidate_step_id
+                break
+        
+        if not next_step_id:
+            next_step_id = affected_steps[0]
+        
+        # Navigate and update summary
+        if not self._set_selected_step_by_id(next_step_id):
+            # If filtered dropdown hides the target, disable filter and try again
+            if self.show_unavailable_only_var.get():
+                self.show_unavailable_only_var.set(False)
+                self._on_filter_unavailable_changed()
+            self._set_selected_step_by_id(next_step_id)
+
+    def _on_filter_unavailable_changed(self) -> None:
+        """Handle changes to unavailable video filter checkboxes."""
+        current_step_id = self._selected_small_step_id()
+        
+        if not self.show_unavailable_only_var.get():
+            # Show all steps
+            self.step_combo["values"] = self.all_step_options
+            self._refresh_step_combo_labels(preserve_step_id=current_step_id)
+            if current_step_id:
+                self._set_selected_step_by_id(current_step_id)
+            return
+        
+        # Build list of affected step IDs based on filters
+        affected_steps = set()
+        for video_id, info in self.unavailable_videos.items():
+            status = info["status"]
+            
+            include = False
+            if status in ("deleted", "private") and self.filter_deleted_var.get():
+                include = True
+            if status == "embedding_disabled" and self.filter_embedding_var.get():
+                include = True
+            
+            if include:
+                affected_steps.add(info["source_step"])
+        
+        # Filter dropdown options to only show affected steps
+        filtered_options = [
+            option for option in self.all_step_options
+            if self._extract_step_id_from_label(option) in affected_steps
+        ]
+        
+        self.step_combo["values"] = filtered_options
+        
+        # Update progress indicator
+        filter_desc = []
+        if self.filter_deleted_var.get():
+            filter_desc.append("deleted")
+        if self.filter_embedding_var.get():
+            filter_desc.append("embedding-disabled")
+        filter_text = "+".join(filter_desc) if filter_desc else "none"
+        
+        total_affected = len(affected_steps)
+        self.progress_var.set(
+            f"{total_affected} steps with unavailable videos ({filter_text})"
+        )
+        
+        # Try to preserve current selection if it's in filtered list
+        if current_step_id and current_step_id in affected_steps:
+            self._set_selected_step_by_id(current_step_id)
+        elif filtered_options:
+            self.step_var.set(filtered_options[0])
+            self._on_step_selected(None)
+
+    def _extract_step_id_from_label(self, label: str) -> str:
+        """Extract step_id from a dropdown label like '✓ Year 4_8-9_Autumn...'"""
+        return self.step_label_to_id.get(label, "")
+
+    def _update_availability_summary_for_step(self, step_id: str) -> None:
+        """Update the availability summary display for current step."""
+        if not step_id or not self.unavailable_videos:
+            self.availability_summary_var.set("")
+            return
+        
+        has_unavailable, deleted_count, embedding_count = self._step_has_unavailable_videos(step_id)
+        
+        if not has_unavailable:
+            self.availability_summary_var.set("")
+            return
+        
+        # Build warning message
+        warnings = []
+        if deleted_count > 0:
+            warnings.append(f"❌ {deleted_count} deleted/private")
+        if embedding_count > 0:
+            warnings.append(f"🚫 {embedding_count} embedding-disabled")
+        
+        summary = " | ".join(warnings)
+        self.availability_summary_var.set(f"⚠️ {summary}")
+
     def _mark_candidate_reviewed(self) -> None:
         small_step_id = self._selected_small_step_id()
         if not small_step_id:
@@ -2955,6 +3197,7 @@ class ImprovePickQAGUI:
         self.constraints_status_var.set("Constraints gate: ready")
         self._schedule_semantic_preview()
         self._update_dup_score_display()
+        self._update_availability_summary_for_step(small_step_id)
         self._populate_dup_neighbours(small_step_id)
 
     def _set_text(self, widget: scrolledtext.ScrolledText, content: str) -> None:
@@ -3712,9 +3955,25 @@ class ImprovePickQAGUI:
                 combined_score = float(result.get("combined_score") or 0.0)
             except (TypeError, ValueError):
                 combined_score = 0.0
-            self.precomputed_title_labels[i].config(text=f"{title} ({video_id})")
-            self.precomputed_channel_labels[i].config(text=channel)
-            self.precomputed_score_labels[i].config(text=f"{combined_score:.4f}")
+            
+            # Check if video is unavailable and add emoji prefix + background color
+            emoji_prefix = ""
+            bg_color = "white"
+            if video_id in self.unavailable_videos:
+                status = self.unavailable_videos[video_id]["status"]
+                if status in ("deleted", "private"):
+                    emoji_prefix = "❌ "
+                    bg_color = "#ffcccc"  # Red background
+                elif status == "embedding_disabled":
+                    emoji_prefix = "🚫 "
+                    bg_color = "#fff9cc"  # Yellow background
+            
+            self.precomputed_title_labels[i].config(
+                text=f"{emoji_prefix}{title} ({video_id})",
+                background=bg_color
+            )
+            self.precomputed_channel_labels[i].config(text=channel, background=bg_color)
+            self.precomputed_score_labels[i].config(text=f"{combined_score:.4f}", background=bg_color)
             self.precomputed_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
             self.precomputed_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
             self.precomputed_rank_vars[i].set(str(i + 1))

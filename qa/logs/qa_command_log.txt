@@ -442036,3 +442036,7 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-06-25T18:27:43] QA REFERENCE PUBLISHED rows=5038 steps=637 wildcards=35 manual=608 skipped=35
 [2026-07-22T10:22:12] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Place value_3_Number line to 1,000
 [2026-07-22T10:24:45] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Place value_3_Number line to 1,000
+[2026-07-22T14:05:15] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Multiplication and division_5_Add equal groups
+[2026-07-22T14:07:59] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_13_Subtract two fractions
+[2026-07-22T14:09:34] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Shape_4_Triangles
+[2026-07-22T14:10:12] QA REFERENCE PUBLISHED rows=5038 steps=638 wildcards=35 manual=609 skipped=35

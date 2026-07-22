@@ -283,7 +283,14 @@ def save_unavailable_report(results: List[Dict[str, str]], output_path: Path) ->
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(unavailable)
     df.to_csv(output_path, index=False)
-    print(f"  ⚠️  Unavailable videos report saved: {output_path} ({len(unavailable)} videos)")
+    
+    # Count embedding-disabled separately
+    embedding_disabled = [r for r in unavailable if r["status"] == "embedding_disabled"]
+    truly_unavailable = len(unavailable) - len(embedding_disabled)
+    
+    print(f"  ⚠️  Problem videos report saved: {output_path}")
+    print(f"      - {truly_unavailable} truly unavailable (deleted/private)")
+    print(f"      - {len(embedding_disabled)} watchable but not embeddable")
 
 
 def save_deletion_candidates(results: List[Dict[str, str]], output_path: Path) -> None:
@@ -313,7 +320,27 @@ def save_deletion_candidates(results: List[Dict[str, str]], output_path: Path) -
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(deletion_records)
     df.to_csv(output_path, index=False)
-    print(f"  🗑️  Deletion candidates saved: {output_path} ({len(deletion_records)} videos)")
+    print(f"  🗑️  Truly unavailable (delete these): {output_path} ({len(deletion_records)} videos)")
+
+
+def save_embedding_disabled_report(results: List[Dict[str, str]], output_path: Path) -> None:
+    """
+    Save report of embedding-disabled videos.
+    These are watchable on YouTube but won't play in Flipper's embedded player.
+    """
+    embedding_disabled = [
+        r for r in results 
+        if r["status"] == "embedding_disabled"
+    ]
+    
+    if not embedding_disabled:
+        print(f"  ℹ️  No embedding-disabled videos found - skipping {output_path.name}")
+        return
+    
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame(embedding_disabled)
+    df.to_csv(output_path, index=False)
+    print(f"  📺 Watchable but not embeddable: {output_path} ({len(embedding_disabled)} videos)")
 
 
 def print_summary(results: List[Dict[str, str]]) -> None:
@@ -353,10 +380,25 @@ def print_summary(results: List[Dict[str, str]]) -> None:
     )
     
     print()
-    if unavailable_count > 0:
-        print(f"⚠️  ACTION REQUIRED: {unavailable_count} videos need attention")
-    else:
-        print("✅ All videos are available!")
+    
+    # Separate truly unavailable from embedding issues
+    truly_unavailable = sum(
+        count for status, count in status_counts.items() 
+        if status in ("deleted", "private", "api_error")
+    )
+    embedding_issues = status_counts.get("embedding_disabled", 0)
+    
+    if truly_unavailable > 0:
+        print(f"❌ CRITICAL: {truly_unavailable} videos are deleted/private - REPLACE THESE")
+    if embedding_issues > 0:
+        print(f"🚫 WARNING: {embedding_issues} videos can't embed (watchable on YouTube, won't play in Flipper)")
+    if unavailable_count == 0:
+        print("✅ All videos are available and embeddable!")
+    
+    print()
+    print("IMPORTANT: 'embedding_disabled' videos ARE viewable on YouTube.com")
+    print("           but WON'T play in Flipper's embedded player.")
+    print("           These require 'Watch on YouTube' fallback or replacement.")
     print("=" * 70)
 
 
@@ -456,6 +498,10 @@ def main():
     # Deletion candidates
     deletion_path = args.output.parent / f"deletion_candidates_{args.output.name}"
     save_deletion_candidates(merged_results, deletion_path)
+    
+    # Embedding-disabled videos (separate report for clarity)
+    embedding_path = args.output.parent / f"embedding_disabled_{args.output.name}"
+    save_embedding_disabled_report(merged_results, embedding_path)
     
     # Print summary
     print_summary(merged_results)

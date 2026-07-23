@@ -468,7 +468,24 @@ def render_thought_prompt(prompt, visual_generator):
         visual_type = prompt['visual_type']
         
         if visual_type == 'base10_blocks':
-            img = visual_generator.generate_base10_blocks(**params)
+            # Route 4-digit base10 prompts to the dedicated generator.
+            if 'thousands' in params or 'hundreds' in params:
+                img = visual_generator.generate_base10_blocks_4digit(
+                    thousands=int(params.get('thousands', 0)),
+                    hundreds=int(params.get('hundreds', 0)),
+                    tens=int(params.get('tens', 0)),
+                    ones=int(params.get('ones', 0)),
+                    label=bool(params.get('label', True)),
+                )
+            elif 'tens' in params and 'ones' in params:
+                img = visual_generator.generate_base10_blocks(
+                    tens=int(params.get('tens', 0)),
+                    ones=int(params.get('ones', 0)),
+                    label=bool(params.get('label', True)),
+                )
+            else:
+                st.info("⏭ This base-10 prompt schema is not supported yet")
+                return None
         elif visual_type == 'part_whole_model':
             if 'alternative' in params:
                 st.info("⏭ This prompt requires dual part-whole model (coming soon)")

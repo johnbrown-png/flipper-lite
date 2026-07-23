@@ -231,7 +231,6 @@ def load_video_inventory():
     return None
 
 
-@st.cache_data(ttl=300)
 def load_thought_prompts():
     """Load thought prompts from pilot CSV"""
     if not THOUGHT_PROMPTS_ENABLED:
@@ -466,6 +465,27 @@ def render_thought_prompt(prompt, visual_generator):
     try:
         params = json.loads(prompt['visual_params'])
         visual_type = prompt['visual_type']
+        small_step_num = None
+        try:
+            small_step_num = int(float(prompt.get('small_step_num')))
+        except (TypeError, ValueError):
+            small_step_num = None
+
+        # Legacy compatibility: older step-373 rows stored 1,000-level prompts as tens+ones only.
+        # Promote those params so they render through the unified 3D hundreds pipeline.
+        if (
+            visual_type == 'base10_blocks'
+            and small_step_num == 373
+            and 'hundreds' not in params
+            and 'thousands' not in params
+            and 'tens' in params
+        ):
+            params = {
+                'hundreds': int(params.get('tens', 0)),
+                'tens': 0,
+                'ones': int(params.get('ones', 0)),
+                'label': bool(params.get('label', True)),
+            }
         
         if visual_type == 'base10_blocks':
             # Route 4-digit base10 prompts to the dedicated generator.

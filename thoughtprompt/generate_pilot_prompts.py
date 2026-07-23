@@ -66,13 +66,13 @@ class ThoughtPromptGenerator:
                 'video_id': video_id,
                 'rank': rank,
                 'variant': 1,
-                'prompt_text': 'How many hundreds, tens and ones are shown?',
+                'prompt_text': 'How many hundreds are shown?',
                 'visual_type': 'base10_blocks',
-                'visual_params': json.dumps({'tens': 4, 'ones': 7, 'label': False}),
-                'answer_type': 'text_match',
-                'correct_answer': '4 tens and 7 ones',
+                'visual_params': json.dumps({'hundreds': 4, 'tens': 7, 'ones': 0, 'label': False}),
+                'answer_type': 'numeric',
+                'correct_answer': '4',
                 'options': None,
-                'difficulty': 'medium'
+                'difficulty': 'easy'
             },
             {
                 'small_step_num': ss_num,
@@ -82,11 +82,11 @@ class ThoughtPromptGenerator:
                 'variant': 2,
                 'prompt_text': 'What number is represented by these blocks?',
                 'visual_type': 'base10_blocks',
-                'visual_params': json.dumps({'tens': 6, 'ones': 3, 'label': False}),
+                'visual_params': json.dumps({'hundreds': 5, 'tens': 8, 'ones': 0, 'label': False}),
                 'answer_type': 'numeric',
-                'correct_answer': '63',
+                'correct_answer': '580',
                 'options': None,
-                'difficulty': 'easy'
+                'difficulty': 'medium'
             },
             {
                 'small_step_num': ss_num,
@@ -94,13 +94,13 @@ class ThoughtPromptGenerator:
                 'video_id': video_id,
                 'rank': rank,
                 'variant': 3,
-                'prompt_text': 'This shows a number with zero ones. What is the number?',
+                'prompt_text': 'What 3-digit number has 9 hundreds and 9 ones?',
                 'visual_type': 'base10_blocks',
-                'visual_params': json.dumps({'tens': 8, 'ones': 0, 'label': False}),
+                'visual_params': json.dumps({'hundreds': 9, 'tens': 0, 'ones': 9, 'label': False}),
                 'answer_type': 'numeric',
-                'correct_answer': '80',
+                'correct_answer': '909',
                 'options': None,
-                'difficulty': 'medium'
+                'difficulty': 'hard'
             }
         ]
     

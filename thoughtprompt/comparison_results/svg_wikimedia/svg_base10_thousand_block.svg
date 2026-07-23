@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <g>
+    <text x="20" y="30" font-family="Arial, sans-serif" font-size="24" fill="#000000">Representing 1000 (one thousand cube)</text>
+    <path d="M120,140 L370,140 L370,390 L120,390 L120,140 Z" fill="#1db954" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M370,140 L451.25,58.75 L451.25,218.75 L370,390 L370,140 Z" fill="#15803d" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M120,140 L291.25,58.75 L451.25,58.75 L370,140 L120,140 Z" fill="#4ade80" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <line x1="145" y1="140" x2="145" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="165" x2="370" y2="165" stroke="#000000" stroke-width="1" />
+    <line x1="170" y1="140" x2="170" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="190" x2="370" y2="190" stroke="#000000" stroke-width="1" />
+    <line x1="195" y1="140" x2="195" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="215" x2="370" y2="215" stroke="#000000" stroke-width="1" />
+    <line x1="220" y1="140" x2="220" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="240" x2="370" y2="240" stroke="#000000" stroke-width="1" />
+    <line x1="245" y1="140" x2="245" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="265" x2="370" y2="265" stroke="#000000" stroke-width="1" />
+    <line x1="270" y1="140" x2="270" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="290" x2="370" y2="290" stroke="#000000" stroke-width="1" />
+    <line x1="295" y1="140" x2="295" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="315" x2="370" y2="315" stroke="#000000" stroke-width="1" />
+    <line x1="320" y1="140" x2="320" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="340" x2="370" y2="340" stroke="#000000" stroke-width="1" />
+    <line x1="345" y1="140" x2="345" y2="390" stroke="#000000" stroke-width="1" />
+    <line x1="120" y1="365" x2="370" y2="365" stroke="#000000" stroke-width="1" />
+    <line x1="145.0" y1="140.0" x2="307.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="137.125" y1="131.875" x2="378.125" y2="131.875" stroke="#000000" stroke-width="1" />
+    <line x1="170.0" y1="140.0" x2="323.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="154.25" y1="123.75" x2="386.25" y2="123.75" stroke="#000000" stroke-width="1" />
+    <line x1="195.0" y1="140.0" x2="339.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="171.375" y1="115.625" x2="394.375" y2="115.625" stroke="#000000" stroke-width="1" />
+    <line x1="220.0" y1="140.0" x2="355.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="188.5" y1="107.5" x2="402.5" y2="107.5" stroke="#000000" stroke-width="1" />
+    <line x1="245.0" y1="140.0" x2="371.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="205.625" y1="99.375" x2="410.625" y2="99.375" stroke="#000000" stroke-width="1" />
+    <line x1="270.0" y1="140.0" x2="387.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="222.75" y1="91.25" x2="418.75" y2="91.25" stroke="#000000" stroke-width="1" />
+    <line x1="295.0" y1="140.0" x2="403.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="239.875" y1="83.125" x2="426.875" y2="83.125" stroke="#000000" stroke-width="1" />
+    <line x1="320.0" y1="140.0" x2="419.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="257.0" y1="75.0" x2="435.0" y2="75.0" stroke="#000000" stroke-width="1" />
+    <line x1="345.0" y1="140.0" x2="435.25" y2="58.75" stroke="#000000" stroke-width="1" />
+    <line x1="274.125" y1="66.875" x2="443.125" y2="66.875" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="165.0" x2="451.25" y2="74.75" stroke="#000000" stroke-width="1" />
+    <line x1="378.125" y1="131.875" x2="378.125" y2="372.875" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="190.0" x2="451.25" y2="90.75" stroke="#000000" stroke-width="1" />
+    <line x1="386.25" y1="123.75" x2="386.25" y2="355.75" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="215.0" x2="451.25" y2="106.75" stroke="#000000" stroke-width="1" />
+    <line x1="394.375" y1="115.625" x2="394.375" y2="338.625" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="240.0" x2="451.25" y2="122.75" stroke="#000000" stroke-width="1" />
+    <line x1="402.5" y1="107.5" x2="402.5" y2="321.5" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="265.0" x2="451.25" y2="138.75" stroke="#000000" stroke-width="1" />
+    <line x1="410.625" y1="99.375" x2="410.625" y2="304.375" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="290.0" x2="451.25" y2="154.75" stroke="#000000" stroke-width="1" />
+    <line x1="418.75" y1="91.25" x2="418.75" y2="287.25" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="315.0" x2="451.25" y2="170.75" stroke="#000000" stroke-width="1" />
+    <line x1="426.875" y1="83.125" x2="426.875" y2="270.125" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="340.0" x2="451.25" y2="186.75" stroke="#000000" stroke-width="1" />
+    <line x1="435.0" y1="75.0" x2="435.0" y2="253.0" stroke="#000000" stroke-width="1" />
+    <line x1="370.0" y1="365.0" x2="451.25" y2="202.75" stroke="#000000" stroke-width="1" />
+    <line x1="443.125" y1="66.875" x2="443.125" y2="235.875" stroke="#000000" stroke-width="1" />
+    <text x="290" y="360" font-family="Arial, sans-serif" font-size="18" fill="#000000">1 thousand</text>
+  </g>
+</svg>

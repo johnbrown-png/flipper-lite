@@ -49,6 +49,236 @@ class MathVisualGenerator:
             self.font_medium = ImageFont.load_default()
             self.font_small = ImageFont.load_default()
     
+    # Isometric 3D drawing helpers
+    def _draw_isometric_cube(self, draw: ImageDraw.Draw, x: int, y: int, 
+                            size: int, color: str, darker_color: str = None,
+                            darkest_color: str = None) -> None:
+        """
+        Draw an isometric cube (unit cube) at position (x, y).
+        
+        The cube is drawn with 3 visible faces:
+        - Top face (lightest)
+        - Right face (medium)
+        - Left face (darkest)
+        
+        Args:
+            draw: ImageDraw object
+            x, y: Top corner position
+            size: Size of the cube
+            color: Base color
+            darker_color: Color for shaded face (auto-generated if None)
+            darkest_color: Color for darkest face (auto-generated if None)
+        """
+        # Auto-generate shading colors if not provided
+        if darker_color is None:
+            # Darken by 20%
+            if color.startswith('#'):
+                r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+                darker_color = f'#{int(r*0.7):02x}{int(g*0.7):02x}{int(b*0.7):02x}'
+            else:
+                darker_color = color
+        
+        if darkest_color is None:
+            # Darken by 40%
+            if color.startswith('#'):
+                r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+                darkest_color = f'#{int(r*0.5):02x}{int(g*0.5):02x}{int(b*0.5):02x}'
+            else:
+                darkest_color = color
+        
+        # Isometric projection constants
+        # For a cube: side faces go at 30° angle, height is proportional
+        iso_width = size
+        iso_height = int(size * 0.5)  # Height of the diamond faces
+        
+        # Top face (parallelogram) - lightest
+        top_points = [
+            (x, y),                                    # Top corner
+            (x + iso_width, y + iso_height),           # Right corner
+            (x + iso_width, y + iso_height + size),    # Bottom-right corner
+            (x, y + size),                             # Left corner
+        ]
+        draw.polygon(top_points, fill=color, outline=self.colors['line'], width=1)
+        
+        # Right face (parallelogram) - medium shade
+        right_points = [
+            (x + iso_width, y + iso_height),           # Top corner
+            (x + iso_width, y + iso_height + size),    # Bottom corner
+            (x + iso_width, y + iso_height + size + iso_height), # Bottom-right
+            (x + iso_width, y + iso_height + iso_height), # Right corner
+        ]
+        draw.polygon(right_points, fill=darker_color, outline=self.colors['line'], width=1)
+        
+        # Left face (parallelogram) - darkest shade
+        left_points = [
+            (x, y),                                    # Top corner
+            (x, y + size),                             # Bottom-left corner
+            (x, y + size + iso_height),               # Bottom corner
+            (x, y + iso_height),                      # Left corner
+        ]
+        draw.polygon(left_points, fill=darkest_color, outline=self.colors['line'], width=1)
+    
+    def _draw_isometric_hundred_flat(self, draw: ImageDraw.Draw, x: int, y: int,
+                                     unit_size: int) -> None:
+        """
+        Draw a hundred-flat (10×10×1 grid) in isometric view.
+        
+        A hundred-flat is a flat square made of 100 unit cubes arranged in a 10×10 grid.
+        
+        Args:
+            draw: ImageDraw object
+            x, y: Top-left corner position
+            unit_size: Size of each unit cube
+        """
+        # Colors for the hundred flat
+        top_color = '#FFD700'      # Gold
+        right_color = '#DAA520'    # Goldenrod (darker)
+        left_color = '#B8860B'     # Dark goldenrod (darkest)
+        
+        # A hundred-flat is 10×10 unit cubes, but drawn as a single flat surface
+        # with grid lines to show the individual units
+        
+        iso_width = unit_size * 10
+        iso_height = int(unit_size * 0.5 * 10)
+        flat_thickness = int(unit_size * 0.1)  # Very thin
+        
+        # Top face - 10×10 grid
+        top_points = [
+            (x, y),
+            (x + iso_width, y + iso_height),
+            (x + iso_width, y + iso_height + iso_width),
+            (x, y + iso_width)
+        ]
+        draw.polygon(top_points, fill=top_color, outline=self.colors['line'], width=2)
+        
+        # Draw grid lines to show 10×10 structure
+        for i in range(1, 10):
+            # Horizontal lines (going right-down)
+            start_x = x + (iso_width // 10) * i
+            start_y = y + (iso_height // 10) * i
+            end_x = x + (iso_width // 10) * i
+            end_y = y + iso_width + (iso_height // 10) * i
+            draw.line([start_x, start_y, end_x, end_y], 
+                     fill=self.colors['line'], width=1)
+            
+            # Vertical lines (going right-up)
+            start_x = x
+            start_y = y + (iso_width // 10) * i
+            end_x = x + iso_width
+            end_y = y + iso_height + (iso_width // 10) * i
+            draw.line([start_x, start_y, end_x, end_y], 
+                     fill=self.colors['line'], width=1)
+        
+        # Right edge (thin depth)
+        right_points = [
+            (x + iso_width, y + iso_height),
+            (x + iso_width, y + iso_height + iso_width),
+            (x + iso_width, y + iso_height + iso_width + flat_thickness),
+            (x + iso_width, y + iso_height + flat_thickness)
+        ]
+        draw.polygon(right_points, fill=right_color, outline=self.colors['line'], width=1)
+        
+        # Left edge (thin depth)
+        left_points = [
+            (x, y),
+            (x, y + iso_width),
+            (x, y + iso_width + flat_thickness),
+            (x, y + flat_thickness)
+        ]
+        draw.polygon(left_points, fill=left_color, outline=self.colors['line'], width=1)
+    
+    def _draw_isometric_thousand_cube(self, draw: ImageDraw.Draw, x: int, y: int,
+                                      unit_size: int) -> None:
+        """
+        Draw a thousand-cube (10×10×10) in isometric view.
+        
+        A thousand-cube is a large cube made of 1000 unit cubes.
+        Shows gridlines to indicate structure.
+        
+        Args:
+            draw: ImageDraw object
+            x, y: Top corner position
+            unit_size: Size of each unit cube
+        """
+        # Colors for the thousand cube
+        top_color = '#87CEEB'      # Sky blue
+        right_color = '#4682B4'    # Steel blue (darker)
+        left_color = '#1E3A8A'     # Dark blue (darkest)
+        
+        # Total size for 10×10×10 structure
+        cube_size = unit_size * 10
+        iso_width = cube_size
+        iso_height = int(cube_size * 0.5)
+        
+        # Top face - shows 10×10 grid
+        top_points = [
+            (x, y),
+            (x + iso_width, y + iso_height),
+            (x + iso_width, y + iso_height + cube_size),
+            (x, y + cube_size)
+        ]
+        draw.polygon(top_points, fill=top_color, outline=self.colors['line'], width=2)
+        
+        # Draw grid on top to show 10×10 structure
+        for i in range(1, 10):
+            # Lines going right-down
+            start_x = x + (iso_width // 10) * i
+            start_y = y + (iso_height // 10) * i
+            end_x = x + (iso_width // 10) * i
+            end_y = y + cube_size + (iso_height // 10) * i
+            draw.line([start_x, start_y, end_x, end_y],
+                     fill=self.colors['line'], width=1)
+            
+            # Lines going right-up
+            start_x = x
+            start_y = y + (cube_size // 10) * i
+            end_x = x + iso_width
+            end_y = y + iso_height + (cube_size // 10) * i
+            draw.line([start_x, start_y, end_x, end_y],
+                     fill=self.colors['line'], width=1)
+        
+        # Right face - shows depth with grid
+        right_points = [
+            (x + iso_width, y + iso_height),
+            (x + iso_width, y + iso_height + cube_size),
+            (x + iso_width, y + iso_height + cube_size + iso_height),
+            (x + iso_width, y + iso_height + iso_height)
+        ]
+        draw.polygon(right_points, fill=right_color, outline=self.colors['line'], width=2)
+        
+        # Grid on right face
+        for i in range(1, 10):
+            # Horizontal lines
+            y_pos = y + iso_height + (cube_size // 10) * i
+            draw.line([x + iso_width, y_pos, x + iso_width, y_pos + iso_height],
+                     fill=self.colors['line'], width=1)
+            
+            # Vertical lines (showing depth)
+            y_pos = y + iso_height + iso_height * (i / 10)
+            draw.line([x + iso_width, y_pos, x + iso_width, y_pos + cube_size],
+                     fill=self.colors['line'], width=1)
+        
+        # Left face - shows depth with grid
+        left_points = [
+            (x, y),
+            (x, y + cube_size),
+            (x, y + cube_size + iso_height),
+            (x, y + iso_height)
+        ]
+        draw.polygon(left_points, fill=left_color, outline=self.colors['line'], width=2)
+        
+        # Grid on left face
+        for i in range(1, 10):
+            # Horizontal lines
+            y_pos = y + (cube_size // 10) * i
+            draw.line([x, y_pos, x, y_pos + iso_height],
+                     fill=self.colors['line'], width=1)
+            
+            # Vertical lines (showing depth)
+            y_pos = y + iso_height * (i / 10)
+            draw.line([x, y_pos, x, y_pos + cube_size],
+                     fill=self.colors['line'], width=1)
+    
     def generate_base10_blocks(self, tens: int, ones: int, 
                                label: bool = True) -> Image.Image:
         """
@@ -176,6 +406,192 @@ class MathVisualGenerator:
                 draw.text((ones_label_x - 40, label_y), 
                          f"{ones} one{'s' if ones != 1 else ''}", 
                          fill=self.colors['text'], font=self.font_small)
+        
+        return img
+    
+    def generate_base10_blocks_4digit(self, thousands: int = 0, hundreds: int = 0,
+                                      tens: int = 0, ones: int = 0,
+                                      label: bool = True) -> Image.Image:
+        """
+        Generate 4-digit base-10 blocks visualization with 3D isometric rendering.
+        
+        Args:
+            thousands: Number of thousand-cubes (0-9)
+            hundreds: Number of hundred-flats (0-9)
+            tens: Number of ten-rods (0-9)
+            ones: Number of unit cubes (0-9)
+            label: Whether to add text labels
+        
+        Returns:
+            PIL Image with isometric 3D representation
+        """
+        # Use larger canvas for 4-digit numbers
+        img_width = 1200
+        img_height = 700
+        img = Image.new('RGB', (img_width, img_height), self.colors['background'])
+        draw = ImageDraw.Draw(img)
+        
+        # Calculate base unit size dynamically based on number of blocks
+        # Smaller size when we have many thousands
+        total_thousands_space = thousands * 10  # Each thousand needs 10 units of space
+        total_hundreds_space = hundreds * 10    # Each hundred needs 10 units of space
+        
+        # Adjust unit size based on content
+        if thousands >= 4 or (thousands > 0 and hundreds >= 5):
+            base_unit = 15  # Smaller for many blocks
+        elif thousands >= 2 or hundreds >= 5:
+            base_unit = 20  # Medium for moderate blocks
+        else:
+            base_unit = 25  # Larger for fewer blocks
+        
+        spacing = max(20, int(base_unit * 0.8))
+        
+        # Margins
+        margin_left = 40
+        margin_top = 60 if label else 30
+        
+        # Title
+        if label:
+            total_value = thousands * 1000 + hundreds * 100 + tens * 10 + ones
+            title = f"Representing {total_value:,}"
+            draw.text((margin_left, 15), title, fill=self.colors['text'],
+                     font=self.font_medium)
+        
+        # Starting position
+        current_x = margin_left
+        current_y = margin_top
+        
+        # Track label positions for later
+        label_positions = []
+        
+        # Calculate block dimensions for layout
+        thousand_block_width = (base_unit * 10) + int(base_unit * 5)  # Width including isometric projection
+        hundred_block_width = (base_unit * 10) + int(base_unit * 5)
+        
+        # Draw thousands (10×10×10 cubes)
+        if thousands > 0:
+            thousands_start_x = current_x
+            for i in range(thousands):
+                # Arrange in 2 rows if more than 3
+                if thousands > 3 and i >= 3:
+                    x = thousands_start_x + (i - 3) * (thousand_block_width + spacing)
+                    y = current_y + (base_unit * 10) + int(base_unit * 5) + spacing + 20
+                else:
+                    x = thousands_start_x + i * (thousand_block_width + spacing)
+                    y = current_y
+                
+                self._draw_isometric_thousand_cube(draw, x, y, base_unit)
+                label_positions.append(('thousands', x, y, base_unit * 10))
+            
+            # Move x position past all thousands
+            if thousands <= 3:
+                current_x = thousands_start_x + thousands * (thousand_block_width + spacing)
+            else:
+                current_x = thousands_start_x + 3 * (thousand_block_width + spacing)
+        
+        # Add extra spacing between place values
+        if thousands > 0:
+            current_x += spacing
+        
+        # Draw hundreds (10×10×1 flats)
+        if hundreds > 0:
+            hundreds_start_x = current_x
+            for i in range(hundreds):
+                # Stack hundreds in 2 rows if more than 4
+                if hundreds > 4 and i >= 4:
+                    x = hundreds_start_x + (i - 4) * (hundred_block_width + spacing)
+                    y = current_y + (base_unit * 10) + spacing + 15
+                else:
+                    x = hundreds_start_x + i * (hundred_block_width + spacing)
+                    y = current_y
+                
+                self._draw_isometric_hundred_flat(draw, x, y, base_unit)
+                label_positions.append(('hundreds', x, y, base_unit * 10))
+            
+            # Move x position past all hundreds
+            if hundreds <= 4:
+                current_x = hundreds_start_x + hundreds * (hundred_block_width + spacing)
+            else:
+                current_x = hundreds_start_x + 4 * (hundred_block_width + spacing)
+        
+        # Add spacing
+        if hundreds > 0:
+            current_x += spacing
+        
+        # Draw tens (simple 2D rectangles, smaller for 4-digit context)
+        if tens > 0:
+            tens_start_x = current_x
+            ten_width = base_unit
+            ten_height = base_unit * 10
+            
+            for i in range(tens):
+                draw.rectangle(
+                    [current_x, current_y,
+                     current_x + ten_width, current_y + ten_height],
+                    fill=self.colors['ten_rod'],
+                    outline=self.colors['line'],
+                    width=2
+                )
+                
+                # Show 10 units with lines
+                for j in range(1, 10):
+                    y = current_y + (j * base_unit)
+                    draw.line(
+                        [current_x, y, current_x + ten_width, y],
+                        fill=self.colors['background'],
+                        width=1
+                    )
+                
+                label_positions.append(('tens', current_x, current_y, ten_height))
+                current_x += ten_width + (spacing // 2)
+        
+        # Add spacing
+        if tens > 0:
+            current_x += spacing
+        
+        # Draw ones (simple 2D squares, smaller for 4-digit context)
+        if ones > 0:
+            ones_start_x = current_x
+            unit_size = base_unit
+            
+            for i in range(ones):
+                # Arrange in 2 rows if more than 5
+                if i < 5:
+                    x = ones_start_x + (i * (unit_size + (spacing // 2)))
+                    y = current_y
+                else:
+                    x = ones_start_x + ((i - 5) * (unit_size + (spacing // 2)))
+                    y = current_y + unit_size + (spacing // 2)
+                
+                draw.rectangle(
+                    [x, y, x + unit_size, y + unit_size],
+                    fill=self.colors['unit_cube'],
+                    outline=self.colors['line'],
+                    width=2
+                )
+                
+                if i == 0:
+                    label_positions.append(('ones', x, y, unit_size))
+        
+        # Add labels at bottom
+        if label:
+            label_y = img_height - 50
+            
+            # Count each type for labels
+            place_counts = {
+                'thousands': thousands,
+                'hundreds': hundreds,
+                'tens': tens,
+                'ones': ones
+            }
+            
+            x_offset = margin_left
+            for place_name, count in place_counts.items():
+                if count > 0:
+                    label_text = f"{count} {place_name}" if count > 1 else f"{count} {place_name[:-1]}"
+                    draw.text((x_offset, label_y), label_text,
+                             fill=self.colors['text'], font=self.font_small)
+                    x_offset += 180
         
         return img
     
@@ -528,11 +944,22 @@ class MathVisualGenerator:
             PIL Image
         """
         if visual_type == 'base10_blocks':
-            return self.generate_base10_blocks(
-                tens=params.get('tens', 0),
-                ones=params.get('ones', 0),
-                label=params.get('label', True)
-            )
+            # Check if this is a 4-digit number (has thousands or hundreds)
+            if 'thousands' in params or 'hundreds' in params:
+                return self.generate_base10_blocks_4digit(
+                    thousands=params.get('thousands', 0),
+                    hundreds=params.get('hundreds', 0),
+                    tens=params.get('tens', 0),
+                    ones=params.get('ones', 0),
+                    label=params.get('label', True)
+                )
+            else:
+                # 2-digit representation (original method)
+                return self.generate_base10_blocks(
+                    tens=params.get('tens', 0),
+                    ones=params.get('ones', 0),
+                    label=params.get('label', True)
+                )
         elif visual_type == 'part_whole_model':
             return self.generate_part_whole_model(
                 total=params.get('total', 0),

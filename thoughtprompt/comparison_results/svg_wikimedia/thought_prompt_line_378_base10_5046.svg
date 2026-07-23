@@ -1,0 +1,396 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3000 900" width="3000" height="900">
+  <g>
+    <text x="30" y="50" font-family="Arial, sans-serif" font-size="38" fill="#000000">Representing 5046</text>
+    <path d="M80.0,230 L330.0,230 L330.0,480 L80.0,480 L80.0,230 Z" fill="#1db954" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M330.0,230 L411.25,148.75 L411.25,308.75 L330.0,480 L330.0,230 Z" fill="#15803d" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M80.0,230 L251.25,148.75 L411.25,148.75 L330.0,230 L80.0,230 Z" fill="#4ade80" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <line x1="105.0" y1="230" x2="105.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="255" x2="330.0" y2="255" stroke="#000000" stroke-width="1" />
+    <line x1="130.0" y1="230" x2="130.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="280" x2="330.0" y2="280" stroke="#000000" stroke-width="1" />
+    <line x1="155.0" y1="230" x2="155.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="305" x2="330.0" y2="305" stroke="#000000" stroke-width="1" />
+    <line x1="180.0" y1="230" x2="180.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="330" x2="330.0" y2="330" stroke="#000000" stroke-width="1" />
+    <line x1="205.0" y1="230" x2="205.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="355" x2="330.0" y2="355" stroke="#000000" stroke-width="1" />
+    <line x1="230.0" y1="230" x2="230.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="380" x2="330.0" y2="380" stroke="#000000" stroke-width="1" />
+    <line x1="255.0" y1="230" x2="255.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="405" x2="330.0" y2="405" stroke="#000000" stroke-width="1" />
+    <line x1="280.0" y1="230" x2="280.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="430" x2="330.0" y2="430" stroke="#000000" stroke-width="1" />
+    <line x1="305.0" y1="230" x2="305.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="80.0" y1="455" x2="330.0" y2="455" stroke="#000000" stroke-width="1" />
+    <line x1="105.0" y1="230.0" x2="267.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="97.125" y1="221.875" x2="338.125" y2="221.875" stroke="#000000" stroke-width="1" />
+    <line x1="130.0" y1="230.0" x2="283.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="114.25" y1="213.75" x2="346.25" y2="213.75" stroke="#000000" stroke-width="1" />
+    <line x1="155.0" y1="230.0" x2="299.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="131.375" y1="205.625" x2="354.375" y2="205.625" stroke="#000000" stroke-width="1" />
+    <line x1="180.0" y1="230.0" x2="315.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="148.5" y1="197.5" x2="362.5" y2="197.5" stroke="#000000" stroke-width="1" />
+    <line x1="205.0" y1="230.0" x2="331.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="165.625" y1="189.375" x2="370.625" y2="189.375" stroke="#000000" stroke-width="1" />
+    <line x1="230.0" y1="230.0" x2="347.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="182.75" y1="181.25" x2="378.75" y2="181.25" stroke="#000000" stroke-width="1" />
+    <line x1="255.0" y1="230.0" x2="363.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="199.875" y1="173.125" x2="386.875" y2="173.125" stroke="#000000" stroke-width="1" />
+    <line x1="280.0" y1="230.0" x2="379.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="217.0" y1="165.0" x2="395.0" y2="165.0" stroke="#000000" stroke-width="1" />
+    <line x1="305.0" y1="230.0" x2="395.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="234.125" y1="156.875" x2="403.125" y2="156.875" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="255.0" x2="411.25" y2="164.75" stroke="#000000" stroke-width="1" />
+    <line x1="338.125" y1="221.875" x2="338.125" y2="462.875" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="280.0" x2="411.25" y2="180.75" stroke="#000000" stroke-width="1" />
+    <line x1="346.25" y1="213.75" x2="346.25" y2="445.75" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="305.0" x2="411.25" y2="196.75" stroke="#000000" stroke-width="1" />
+    <line x1="354.375" y1="205.625" x2="354.375" y2="428.625" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="330.0" x2="411.25" y2="212.75" stroke="#000000" stroke-width="1" />
+    <line x1="362.5" y1="197.5" x2="362.5" y2="411.5" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="355.0" x2="411.25" y2="228.75" stroke="#000000" stroke-width="1" />
+    <line x1="370.625" y1="189.375" x2="370.625" y2="394.375" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="380.0" x2="411.25" y2="244.75" stroke="#000000" stroke-width="1" />
+    <line x1="378.75" y1="181.25" x2="378.75" y2="377.25" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="405.0" x2="411.25" y2="260.75" stroke="#000000" stroke-width="1" />
+    <line x1="386.875" y1="173.125" x2="386.875" y2="360.125" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="430.0" x2="411.25" y2="276.75" stroke="#000000" stroke-width="1" />
+    <line x1="395.0" y1="165.0" x2="395.0" y2="343.0" stroke="#000000" stroke-width="1" />
+    <line x1="330.0" y1="455.0" x2="411.25" y2="292.75" stroke="#000000" stroke-width="1" />
+    <line x1="403.125" y1="156.875" x2="403.125" y2="325.875" stroke="#000000" stroke-width="1" />
+    <path d="M423.75,230 L673.75,230 L673.75,480 L423.75,480 L423.75,230 Z" fill="#1db954" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M673.75,230 L755.0,148.75 L755.0,308.75 L673.75,480 L673.75,230 Z" fill="#15803d" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M423.75,230 L595.0,148.75 L755.0,148.75 L673.75,230 L423.75,230 Z" fill="#4ade80" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <line x1="448.75" y1="230" x2="448.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="255" x2="673.75" y2="255" stroke="#000000" stroke-width="1" />
+    <line x1="473.75" y1="230" x2="473.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="280" x2="673.75" y2="280" stroke="#000000" stroke-width="1" />
+    <line x1="498.75" y1="230" x2="498.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="305" x2="673.75" y2="305" stroke="#000000" stroke-width="1" />
+    <line x1="523.75" y1="230" x2="523.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="330" x2="673.75" y2="330" stroke="#000000" stroke-width="1" />
+    <line x1="548.75" y1="230" x2="548.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="355" x2="673.75" y2="355" stroke="#000000" stroke-width="1" />
+    <line x1="573.75" y1="230" x2="573.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="380" x2="673.75" y2="380" stroke="#000000" stroke-width="1" />
+    <line x1="598.75" y1="230" x2="598.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="405" x2="673.75" y2="405" stroke="#000000" stroke-width="1" />
+    <line x1="623.75" y1="230" x2="623.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="430" x2="673.75" y2="430" stroke="#000000" stroke-width="1" />
+    <line x1="648.75" y1="230" x2="648.75" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="423.75" y1="455" x2="673.75" y2="455" stroke="#000000" stroke-width="1" />
+    <line x1="448.75" y1="230.0" x2="611.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="440.875" y1="221.875" x2="681.875" y2="221.875" stroke="#000000" stroke-width="1" />
+    <line x1="473.75" y1="230.0" x2="627.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="458.0" y1="213.75" x2="690.0" y2="213.75" stroke="#000000" stroke-width="1" />
+    <line x1="498.75" y1="230.0" x2="643.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="475.125" y1="205.625" x2="698.125" y2="205.625" stroke="#000000" stroke-width="1" />
+    <line x1="523.75" y1="230.0" x2="659.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="492.25" y1="197.5" x2="706.25" y2="197.5" stroke="#000000" stroke-width="1" />
+    <line x1="548.75" y1="230.0" x2="675.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="509.375" y1="189.375" x2="714.375" y2="189.375" stroke="#000000" stroke-width="1" />
+    <line x1="573.75" y1="230.0" x2="691.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="526.5" y1="181.25" x2="722.5" y2="181.25" stroke="#000000" stroke-width="1" />
+    <line x1="598.75" y1="230.0" x2="707.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="543.625" y1="173.125" x2="730.625" y2="173.125" stroke="#000000" stroke-width="1" />
+    <line x1="623.75" y1="230.0" x2="723.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="560.75" y1="165.0" x2="738.75" y2="165.0" stroke="#000000" stroke-width="1" />
+    <line x1="648.75" y1="230.0" x2="739.0" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="577.875" y1="156.875" x2="746.875" y2="156.875" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="255.0" x2="755.0" y2="164.75" stroke="#000000" stroke-width="1" />
+    <line x1="681.875" y1="221.875" x2="681.875" y2="462.875" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="280.0" x2="755.0" y2="180.75" stroke="#000000" stroke-width="1" />
+    <line x1="690.0" y1="213.75" x2="690.0" y2="445.75" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="305.0" x2="755.0" y2="196.75" stroke="#000000" stroke-width="1" />
+    <line x1="698.125" y1="205.625" x2="698.125" y2="428.625" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="330.0" x2="755.0" y2="212.75" stroke="#000000" stroke-width="1" />
+    <line x1="706.25" y1="197.5" x2="706.25" y2="411.5" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="355.0" x2="755.0" y2="228.75" stroke="#000000" stroke-width="1" />
+    <line x1="714.375" y1="189.375" x2="714.375" y2="394.375" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="380.0" x2="755.0" y2="244.75" stroke="#000000" stroke-width="1" />
+    <line x1="722.5" y1="181.25" x2="722.5" y2="377.25" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="405.0" x2="755.0" y2="260.75" stroke="#000000" stroke-width="1" />
+    <line x1="730.625" y1="173.125" x2="730.625" y2="360.125" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="430.0" x2="755.0" y2="276.75" stroke="#000000" stroke-width="1" />
+    <line x1="738.75" y1="165.0" x2="738.75" y2="343.0" stroke="#000000" stroke-width="1" />
+    <line x1="673.75" y1="455.0" x2="755.0" y2="292.75" stroke="#000000" stroke-width="1" />
+    <line x1="746.875" y1="156.875" x2="746.875" y2="325.875" stroke="#000000" stroke-width="1" />
+    <path d="M767.5,230 L1017.5,230 L1017.5,480 L767.5,480 L767.5,230 Z" fill="#1db954" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1017.5,230 L1098.75,148.75 L1098.75,308.75 L1017.5,480 L1017.5,230 Z" fill="#15803d" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M767.5,230 L938.75,148.75 L1098.75,148.75 L1017.5,230 L767.5,230 Z" fill="#4ade80" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <line x1="792.5" y1="230" x2="792.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="255" x2="1017.5" y2="255" stroke="#000000" stroke-width="1" />
+    <line x1="817.5" y1="230" x2="817.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="280" x2="1017.5" y2="280" stroke="#000000" stroke-width="1" />
+    <line x1="842.5" y1="230" x2="842.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="305" x2="1017.5" y2="305" stroke="#000000" stroke-width="1" />
+    <line x1="867.5" y1="230" x2="867.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="330" x2="1017.5" y2="330" stroke="#000000" stroke-width="1" />
+    <line x1="892.5" y1="230" x2="892.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="355" x2="1017.5" y2="355" stroke="#000000" stroke-width="1" />
+    <line x1="917.5" y1="230" x2="917.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="380" x2="1017.5" y2="380" stroke="#000000" stroke-width="1" />
+    <line x1="942.5" y1="230" x2="942.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="405" x2="1017.5" y2="405" stroke="#000000" stroke-width="1" />
+    <line x1="967.5" y1="230" x2="967.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="430" x2="1017.5" y2="430" stroke="#000000" stroke-width="1" />
+    <line x1="992.5" y1="230" x2="992.5" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="767.5" y1="455" x2="1017.5" y2="455" stroke="#000000" stroke-width="1" />
+    <line x1="792.5" y1="230.0" x2="954.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="784.625" y1="221.875" x2="1025.625" y2="221.875" stroke="#000000" stroke-width="1" />
+    <line x1="817.5" y1="230.0" x2="970.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="801.75" y1="213.75" x2="1033.75" y2="213.75" stroke="#000000" stroke-width="1" />
+    <line x1="842.5" y1="230.0" x2="986.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="818.875" y1="205.625" x2="1041.875" y2="205.625" stroke="#000000" stroke-width="1" />
+    <line x1="867.5" y1="230.0" x2="1002.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="836.0" y1="197.5" x2="1050.0" y2="197.5" stroke="#000000" stroke-width="1" />
+    <line x1="892.5" y1="230.0" x2="1018.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="853.125" y1="189.375" x2="1058.125" y2="189.375" stroke="#000000" stroke-width="1" />
+    <line x1="917.5" y1="230.0" x2="1034.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="870.25" y1="181.25" x2="1066.25" y2="181.25" stroke="#000000" stroke-width="1" />
+    <line x1="942.5" y1="230.0" x2="1050.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="887.375" y1="173.125" x2="1074.375" y2="173.125" stroke="#000000" stroke-width="1" />
+    <line x1="967.5" y1="230.0" x2="1066.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="904.5" y1="165.0" x2="1082.5" y2="165.0" stroke="#000000" stroke-width="1" />
+    <line x1="992.5" y1="230.0" x2="1082.75" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="921.625" y1="156.875" x2="1090.625" y2="156.875" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="255.0" x2="1098.75" y2="164.75" stroke="#000000" stroke-width="1" />
+    <line x1="1025.625" y1="221.875" x2="1025.625" y2="462.875" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="280.0" x2="1098.75" y2="180.75" stroke="#000000" stroke-width="1" />
+    <line x1="1033.75" y1="213.75" x2="1033.75" y2="445.75" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="305.0" x2="1098.75" y2="196.75" stroke="#000000" stroke-width="1" />
+    <line x1="1041.875" y1="205.625" x2="1041.875" y2="428.625" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="330.0" x2="1098.75" y2="212.75" stroke="#000000" stroke-width="1" />
+    <line x1="1050.0" y1="197.5" x2="1050.0" y2="411.5" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="355.0" x2="1098.75" y2="228.75" stroke="#000000" stroke-width="1" />
+    <line x1="1058.125" y1="189.375" x2="1058.125" y2="394.375" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="380.0" x2="1098.75" y2="244.75" stroke="#000000" stroke-width="1" />
+    <line x1="1066.25" y1="181.25" x2="1066.25" y2="377.25" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="405.0" x2="1098.75" y2="260.75" stroke="#000000" stroke-width="1" />
+    <line x1="1074.375" y1="173.125" x2="1074.375" y2="360.125" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="430.0" x2="1098.75" y2="276.75" stroke="#000000" stroke-width="1" />
+    <line x1="1082.5" y1="165.0" x2="1082.5" y2="343.0" stroke="#000000" stroke-width="1" />
+    <line x1="1017.5" y1="455.0" x2="1098.75" y2="292.75" stroke="#000000" stroke-width="1" />
+    <line x1="1090.625" y1="156.875" x2="1090.625" y2="325.875" stroke="#000000" stroke-width="1" />
+    <path d="M1111.25,230 L1361.25,230 L1361.25,480 L1111.25,480 L1111.25,230 Z" fill="#1db954" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1361.25,230 L1442.5,148.75 L1442.5,308.75 L1361.25,480 L1361.25,230 Z" fill="#15803d" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1111.25,230 L1282.5,148.75 L1442.5,148.75 L1361.25,230 L1111.25,230 Z" fill="#4ade80" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <line x1="1136.25" y1="230" x2="1136.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="255" x2="1361.25" y2="255" stroke="#000000" stroke-width="1" />
+    <line x1="1161.25" y1="230" x2="1161.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="280" x2="1361.25" y2="280" stroke="#000000" stroke-width="1" />
+    <line x1="1186.25" y1="230" x2="1186.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="305" x2="1361.25" y2="305" stroke="#000000" stroke-width="1" />
+    <line x1="1211.25" y1="230" x2="1211.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="330" x2="1361.25" y2="330" stroke="#000000" stroke-width="1" />
+    <line x1="1236.25" y1="230" x2="1236.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="355" x2="1361.25" y2="355" stroke="#000000" stroke-width="1" />
+    <line x1="1261.25" y1="230" x2="1261.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="380" x2="1361.25" y2="380" stroke="#000000" stroke-width="1" />
+    <line x1="1286.25" y1="230" x2="1286.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="405" x2="1361.25" y2="405" stroke="#000000" stroke-width="1" />
+    <line x1="1311.25" y1="230" x2="1311.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="430" x2="1361.25" y2="430" stroke="#000000" stroke-width="1" />
+    <line x1="1336.25" y1="230" x2="1336.25" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1111.25" y1="455" x2="1361.25" y2="455" stroke="#000000" stroke-width="1" />
+    <line x1="1136.25" y1="230.0" x2="1298.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1128.375" y1="221.875" x2="1369.375" y2="221.875" stroke="#000000" stroke-width="1" />
+    <line x1="1161.25" y1="230.0" x2="1314.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1145.5" y1="213.75" x2="1377.5" y2="213.75" stroke="#000000" stroke-width="1" />
+    <line x1="1186.25" y1="230.0" x2="1330.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1162.625" y1="205.625" x2="1385.625" y2="205.625" stroke="#000000" stroke-width="1" />
+    <line x1="1211.25" y1="230.0" x2="1346.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1179.75" y1="197.5" x2="1393.75" y2="197.5" stroke="#000000" stroke-width="1" />
+    <line x1="1236.25" y1="230.0" x2="1362.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1196.875" y1="189.375" x2="1401.875" y2="189.375" stroke="#000000" stroke-width="1" />
+    <line x1="1261.25" y1="230.0" x2="1378.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1214.0" y1="181.25" x2="1410.0" y2="181.25" stroke="#000000" stroke-width="1" />
+    <line x1="1286.25" y1="230.0" x2="1394.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1231.125" y1="173.125" x2="1418.125" y2="173.125" stroke="#000000" stroke-width="1" />
+    <line x1="1311.25" y1="230.0" x2="1410.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1248.25" y1="165.0" x2="1426.25" y2="165.0" stroke="#000000" stroke-width="1" />
+    <line x1="1336.25" y1="230.0" x2="1426.5" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1265.375" y1="156.875" x2="1434.375" y2="156.875" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="255.0" x2="1442.5" y2="164.75" stroke="#000000" stroke-width="1" />
+    <line x1="1369.375" y1="221.875" x2="1369.375" y2="462.875" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="280.0" x2="1442.5" y2="180.75" stroke="#000000" stroke-width="1" />
+    <line x1="1377.5" y1="213.75" x2="1377.5" y2="445.75" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="305.0" x2="1442.5" y2="196.75" stroke="#000000" stroke-width="1" />
+    <line x1="1385.625" y1="205.625" x2="1385.625" y2="428.625" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="330.0" x2="1442.5" y2="212.75" stroke="#000000" stroke-width="1" />
+    <line x1="1393.75" y1="197.5" x2="1393.75" y2="411.5" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="355.0" x2="1442.5" y2="228.75" stroke="#000000" stroke-width="1" />
+    <line x1="1401.875" y1="189.375" x2="1401.875" y2="394.375" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="380.0" x2="1442.5" y2="244.75" stroke="#000000" stroke-width="1" />
+    <line x1="1410.0" y1="181.25" x2="1410.0" y2="377.25" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="405.0" x2="1442.5" y2="260.75" stroke="#000000" stroke-width="1" />
+    <line x1="1418.125" y1="173.125" x2="1418.125" y2="360.125" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="430.0" x2="1442.5" y2="276.75" stroke="#000000" stroke-width="1" />
+    <line x1="1426.25" y1="165.0" x2="1426.25" y2="343.0" stroke="#000000" stroke-width="1" />
+    <line x1="1361.25" y1="455.0" x2="1442.5" y2="292.75" stroke="#000000" stroke-width="1" />
+    <line x1="1434.375" y1="156.875" x2="1434.375" y2="325.875" stroke="#000000" stroke-width="1" />
+    <path d="M1455.0,230 L1705.0,230 L1705.0,480 L1455.0,480 L1455.0,230 Z" fill="#1db954" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1705.0,230 L1786.25,148.75 L1786.25,308.75 L1705.0,480 L1705.0,230 Z" fill="#15803d" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1455.0,230 L1626.25,148.75 L1786.25,148.75 L1705.0,230 L1455.0,230 Z" fill="#4ade80" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <line x1="1480.0" y1="230" x2="1480.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="255" x2="1705.0" y2="255" stroke="#000000" stroke-width="1" />
+    <line x1="1505.0" y1="230" x2="1505.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="280" x2="1705.0" y2="280" stroke="#000000" stroke-width="1" />
+    <line x1="1530.0" y1="230" x2="1530.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="305" x2="1705.0" y2="305" stroke="#000000" stroke-width="1" />
+    <line x1="1555.0" y1="230" x2="1555.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="330" x2="1705.0" y2="330" stroke="#000000" stroke-width="1" />
+    <line x1="1580.0" y1="230" x2="1580.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="355" x2="1705.0" y2="355" stroke="#000000" stroke-width="1" />
+    <line x1="1605.0" y1="230" x2="1605.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="380" x2="1705.0" y2="380" stroke="#000000" stroke-width="1" />
+    <line x1="1630.0" y1="230" x2="1630.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="405" x2="1705.0" y2="405" stroke="#000000" stroke-width="1" />
+    <line x1="1655.0" y1="230" x2="1655.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="430" x2="1705.0" y2="430" stroke="#000000" stroke-width="1" />
+    <line x1="1680.0" y1="230" x2="1680.0" y2="480" stroke="#000000" stroke-width="1" />
+    <line x1="1455.0" y1="455" x2="1705.0" y2="455" stroke="#000000" stroke-width="1" />
+    <line x1="1480.0" y1="230.0" x2="1642.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1472.125" y1="221.875" x2="1713.125" y2="221.875" stroke="#000000" stroke-width="1" />
+    <line x1="1505.0" y1="230.0" x2="1658.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1489.25" y1="213.75" x2="1721.25" y2="213.75" stroke="#000000" stroke-width="1" />
+    <line x1="1530.0" y1="230.0" x2="1674.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1506.375" y1="205.625" x2="1729.375" y2="205.625" stroke="#000000" stroke-width="1" />
+    <line x1="1555.0" y1="230.0" x2="1690.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1523.5" y1="197.5" x2="1737.5" y2="197.5" stroke="#000000" stroke-width="1" />
+    <line x1="1580.0" y1="230.0" x2="1706.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1540.625" y1="189.375" x2="1745.625" y2="189.375" stroke="#000000" stroke-width="1" />
+    <line x1="1605.0" y1="230.0" x2="1722.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1557.75" y1="181.25" x2="1753.75" y2="181.25" stroke="#000000" stroke-width="1" />
+    <line x1="1630.0" y1="230.0" x2="1738.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1574.875" y1="173.125" x2="1761.875" y2="173.125" stroke="#000000" stroke-width="1" />
+    <line x1="1655.0" y1="230.0" x2="1754.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1592.0" y1="165.0" x2="1770.0" y2="165.0" stroke="#000000" stroke-width="1" />
+    <line x1="1680.0" y1="230.0" x2="1770.25" y2="148.75" stroke="#000000" stroke-width="1" />
+    <line x1="1609.125" y1="156.875" x2="1778.125" y2="156.875" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="255.0" x2="1786.25" y2="164.75" stroke="#000000" stroke-width="1" />
+    <line x1="1713.125" y1="221.875" x2="1713.125" y2="462.875" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="280.0" x2="1786.25" y2="180.75" stroke="#000000" stroke-width="1" />
+    <line x1="1721.25" y1="213.75" x2="1721.25" y2="445.75" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="305.0" x2="1786.25" y2="196.75" stroke="#000000" stroke-width="1" />
+    <line x1="1729.375" y1="205.625" x2="1729.375" y2="428.625" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="330.0" x2="1786.25" y2="212.75" stroke="#000000" stroke-width="1" />
+    <line x1="1737.5" y1="197.5" x2="1737.5" y2="411.5" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="355.0" x2="1786.25" y2="228.75" stroke="#000000" stroke-width="1" />
+    <line x1="1745.625" y1="189.375" x2="1745.625" y2="394.375" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="380.0" x2="1786.25" y2="244.75" stroke="#000000" stroke-width="1" />
+    <line x1="1753.75" y1="181.25" x2="1753.75" y2="377.25" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="405.0" x2="1786.25" y2="260.75" stroke="#000000" stroke-width="1" />
+    <line x1="1761.875" y1="173.125" x2="1761.875" y2="360.125" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="430.0" x2="1786.25" y2="276.75" stroke="#000000" stroke-width="1" />
+    <line x1="1770.0" y1="165.0" x2="1770.0" y2="343.0" stroke="#000000" stroke-width="1" />
+    <line x1="1705.0" y1="455.0" x2="1786.25" y2="292.75" stroke="#000000" stroke-width="1" />
+    <line x1="1778.125" y1="156.875" x2="1778.125" y2="325.875" stroke="#000000" stroke-width="1" />
+    <text x="903.125" y="610" font-family="Arial, sans-serif" font-size="24" fill="#000000">5 thousands</text>
+    <path d="M1803.75,230 L1828.75,230 L1828.75,255 L1803.75,255 L1803.75,230 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,230 L1841.25,217.5 L1841.25,242.5 L1828.75,255 L1828.75,230 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,230 L1816.25,217.5 L1841.25,217.5 L1828.75,230 L1803.75,230 Z" fill="#41b6fe" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,255 L1828.75,255 L1828.75,280 L1803.75,280 L1803.75,255 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,255 L1841.25,242.5 L1841.25,267.5 L1828.75,280 L1828.75,255 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,280 L1828.75,280 L1828.75,305 L1803.75,305 L1803.75,280 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,280 L1841.25,267.5 L1841.25,292.5 L1828.75,305 L1828.75,280 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,305 L1828.75,305 L1828.75,330 L1803.75,330 L1803.75,305 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,305 L1841.25,292.5 L1841.25,317.5 L1828.75,330 L1828.75,305 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,330 L1828.75,330 L1828.75,355 L1803.75,355 L1803.75,330 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,330 L1841.25,317.5 L1841.25,342.5 L1828.75,355 L1828.75,330 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,355 L1828.75,355 L1828.75,380 L1803.75,380 L1803.75,355 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,355 L1841.25,342.5 L1841.25,367.5 L1828.75,380 L1828.75,355 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,380 L1828.75,380 L1828.75,405 L1803.75,405 L1803.75,380 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,380 L1841.25,367.5 L1841.25,392.5 L1828.75,405 L1828.75,380 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,405 L1828.75,405 L1828.75,430 L1803.75,430 L1803.75,405 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,405 L1841.25,392.5 L1841.25,417.5 L1828.75,430 L1828.75,405 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,430 L1828.75,430 L1828.75,455 L1803.75,455 L1803.75,430 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,430 L1841.25,417.5 L1841.25,442.5 L1828.75,455 L1828.75,430 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1803.75,455 L1828.75,455 L1828.75,480 L1803.75,480 L1803.75,455 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1828.75,455 L1841.25,442.5 L1841.25,467.5 L1828.75,480 L1828.75,455 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,230 L1878.75,230 L1878.75,255 L1853.75,255 L1853.75,230 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,230 L1891.25,217.5 L1891.25,242.5 L1878.75,255 L1878.75,230 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,230 L1866.25,217.5 L1891.25,217.5 L1878.75,230 L1853.75,230 Z" fill="#41b6fe" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,255 L1878.75,255 L1878.75,280 L1853.75,280 L1853.75,255 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,255 L1891.25,242.5 L1891.25,267.5 L1878.75,280 L1878.75,255 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,280 L1878.75,280 L1878.75,305 L1853.75,305 L1853.75,280 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,280 L1891.25,267.5 L1891.25,292.5 L1878.75,305 L1878.75,280 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,305 L1878.75,305 L1878.75,330 L1853.75,330 L1853.75,305 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,305 L1891.25,292.5 L1891.25,317.5 L1878.75,330 L1878.75,305 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,330 L1878.75,330 L1878.75,355 L1853.75,355 L1853.75,330 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,330 L1891.25,317.5 L1891.25,342.5 L1878.75,355 L1878.75,330 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,355 L1878.75,355 L1878.75,380 L1853.75,380 L1853.75,355 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,355 L1891.25,342.5 L1891.25,367.5 L1878.75,380 L1878.75,355 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,380 L1878.75,380 L1878.75,405 L1853.75,405 L1853.75,380 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,380 L1891.25,367.5 L1891.25,392.5 L1878.75,405 L1878.75,380 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,405 L1878.75,405 L1878.75,430 L1853.75,430 L1853.75,405 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,405 L1891.25,392.5 L1891.25,417.5 L1878.75,430 L1878.75,405 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,430 L1878.75,430 L1878.75,455 L1853.75,455 L1853.75,430 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,430 L1891.25,417.5 L1891.25,442.5 L1878.75,455 L1878.75,430 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1853.75,455 L1878.75,455 L1878.75,480 L1853.75,480 L1853.75,455 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1878.75,455 L1891.25,442.5 L1891.25,467.5 L1878.75,480 L1878.75,455 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,230 L1928.75,230 L1928.75,255 L1903.75,255 L1903.75,230 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,230 L1941.25,217.5 L1941.25,242.5 L1928.75,255 L1928.75,230 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,230 L1916.25,217.5 L1941.25,217.5 L1928.75,230 L1903.75,230 Z" fill="#41b6fe" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,255 L1928.75,255 L1928.75,280 L1903.75,280 L1903.75,255 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,255 L1941.25,242.5 L1941.25,267.5 L1928.75,280 L1928.75,255 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,280 L1928.75,280 L1928.75,305 L1903.75,305 L1903.75,280 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,280 L1941.25,267.5 L1941.25,292.5 L1928.75,305 L1928.75,280 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,305 L1928.75,305 L1928.75,330 L1903.75,330 L1903.75,305 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,305 L1941.25,292.5 L1941.25,317.5 L1928.75,330 L1928.75,305 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,330 L1928.75,330 L1928.75,355 L1903.75,355 L1903.75,330 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,330 L1941.25,317.5 L1941.25,342.5 L1928.75,355 L1928.75,330 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,355 L1928.75,355 L1928.75,380 L1903.75,380 L1903.75,355 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,355 L1941.25,342.5 L1941.25,367.5 L1928.75,380 L1928.75,355 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,380 L1928.75,380 L1928.75,405 L1903.75,405 L1903.75,380 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,380 L1941.25,367.5 L1941.25,392.5 L1928.75,405 L1928.75,380 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,405 L1928.75,405 L1928.75,430 L1903.75,430 L1903.75,405 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,405 L1941.25,392.5 L1941.25,417.5 L1928.75,430 L1928.75,405 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,430 L1928.75,430 L1928.75,455 L1903.75,455 L1903.75,430 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,430 L1941.25,417.5 L1941.25,442.5 L1928.75,455 L1928.75,430 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1903.75,455 L1928.75,455 L1928.75,480 L1903.75,480 L1903.75,455 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1928.75,455 L1941.25,442.5 L1941.25,467.5 L1928.75,480 L1928.75,455 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,230 L1978.75,230 L1978.75,255 L1953.75,255 L1953.75,230 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,230 L1991.25,217.5 L1991.25,242.5 L1978.75,255 L1978.75,230 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,230 L1966.25,217.5 L1991.25,217.5 L1978.75,230 L1953.75,230 Z" fill="#41b6fe" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,255 L1978.75,255 L1978.75,280 L1953.75,280 L1953.75,255 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,255 L1991.25,242.5 L1991.25,267.5 L1978.75,280 L1978.75,255 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,280 L1978.75,280 L1978.75,305 L1953.75,305 L1953.75,280 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,280 L1991.25,267.5 L1991.25,292.5 L1978.75,305 L1978.75,280 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,305 L1978.75,305 L1978.75,330 L1953.75,330 L1953.75,305 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,305 L1991.25,292.5 L1991.25,317.5 L1978.75,330 L1978.75,305 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,330 L1978.75,330 L1978.75,355 L1953.75,355 L1953.75,330 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,330 L1991.25,317.5 L1991.25,342.5 L1978.75,355 L1978.75,330 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,355 L1978.75,355 L1978.75,380 L1953.75,380 L1953.75,355 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,355 L1991.25,342.5 L1991.25,367.5 L1978.75,380 L1978.75,355 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,380 L1978.75,380 L1978.75,405 L1953.75,405 L1953.75,380 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,380 L1991.25,367.5 L1991.25,392.5 L1978.75,405 L1978.75,380 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,405 L1978.75,405 L1978.75,430 L1953.75,430 L1953.75,405 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,405 L1991.25,392.5 L1991.25,417.5 L1978.75,430 L1978.75,405 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,430 L1978.75,430 L1978.75,455 L1953.75,455 L1953.75,430 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,430 L1991.25,417.5 L1991.25,442.5 L1978.75,455 L1978.75,430 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1953.75,455 L1978.75,455 L1978.75,480 L1953.75,480 L1953.75,455 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M1978.75,455 L1991.25,442.5 L1991.25,467.5 L1978.75,480 L1978.75,455 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <text x="1867.5" y="610" font-family="Arial, sans-serif" font-size="24" fill="#000000">4 tens</text>
+    <path d="M2008.75,455 L2033.75,455 L2033.75,480 L2008.75,480 L2008.75,455 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2033.75,455 L2046.25,442.5 L2046.25,467.5 L2033.75,480 L2033.75,455 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2008.75,455 L2021.25,442.5 L2046.25,442.5 L2033.75,455 L2008.75,455 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2058.75,455 L2083.75,455 L2083.75,480 L2058.75,480 L2058.75,455 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2083.75,455 L2096.25,442.5 L2096.25,467.5 L2083.75,480 L2083.75,455 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2058.75,455 L2071.25,442.5 L2096.25,442.5 L2083.75,455 L2058.75,455 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2108.75,455 L2133.75,455 L2133.75,480 L2108.75,480 L2108.75,455 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2133.75,455 L2146.25,442.5 L2146.25,467.5 L2133.75,480 L2133.75,455 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2108.75,455 L2121.25,442.5 L2146.25,442.5 L2133.75,455 L2108.75,455 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2158.75,455 L2183.75,455 L2183.75,480 L2158.75,480 L2158.75,455 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2183.75,455 L2196.25,442.5 L2196.25,467.5 L2183.75,480 L2183.75,455 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2158.75,455 L2171.25,442.5 L2196.25,442.5 L2183.75,455 L2158.75,455 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2208.75,455 L2233.75,455 L2233.75,480 L2208.75,480 L2208.75,455 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2233.75,455 L2246.25,442.5 L2246.25,467.5 L2233.75,480 L2233.75,455 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2208.75,455 L2221.25,442.5 L2246.25,442.5 L2233.75,455 L2208.75,455 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2258.75,455 L2283.75,455 L2283.75,480 L2258.75,480 L2258.75,455 Z" fill="#ffcc00" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2283.75,455 L2296.25,442.5 L2296.25,467.5 L2283.75,480 L2283.75,455 Z" fill="#cc9900" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M2258.75,455 L2271.25,442.5 L2296.25,442.5 L2283.75,455 L2258.75,455 Z" fill="#ffee99" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <text x="2122.5" y="610" font-family="Arial, sans-serif" font-size="24" fill="#000000">6 ones</text>
+  </g>
+</svg>

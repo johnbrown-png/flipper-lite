@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <g>
+    <text x="20" y="30" font-family="Arial, sans-serif" font-size="24" fill="#000000">Representing 10 (one ten rod)</text>
+    <path d="M250,80 L275,80 L275,105 L250,105 L250,80 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,80 L287.5,67.5 L287.5,92.5 L275,105 L275,80 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,80 L262.5,67.5 L287.5,67.5 L275,80 L250,80 Z" fill="#41b6fe" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,105 L275,105 L275,130 L250,130 L250,105 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,105 L287.5,92.5 L287.5,117.5 L275,130 L275,105 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,130 L275,130 L275,155 L250,155 L250,130 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,130 L287.5,117.5 L287.5,142.5 L275,155 L275,130 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,155 L275,155 L275,180 L250,180 L250,155 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,155 L287.5,142.5 L287.5,167.5 L275,180 L275,155 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,180 L275,180 L275,205 L250,205 L250,180 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,180 L287.5,167.5 L287.5,192.5 L275,205 L275,180 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,205 L275,205 L275,230 L250,230 L250,205 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,205 L287.5,192.5 L287.5,217.5 L275,230 L275,205 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,230 L275,230 L275,255 L250,255 L250,230 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,230 L287.5,217.5 L287.5,242.5 L275,255 L275,230 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,255 L275,255 L275,280 L250,280 L250,255 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,255 L287.5,242.5 L287.5,267.5 L275,280 L275,255 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,280 L275,280 L275,305 L250,305 L250,280 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,280 L287.5,267.5 L287.5,292.5 L275,305 L275,280 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M250,305 L275,305 L275,330 L250,330 L250,305 Z" fill="#009fff" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <path d="M275,305 L287.5,292.5 L287.5,317.5 L275,330 L275,305 Z" fill="#0680c9" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+    <text x="240" y="360" font-family="Arial, sans-serif" font-size="18" fill="#000000">1 ten</text>
+  </g>
+</svg>

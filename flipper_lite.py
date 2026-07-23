@@ -468,9 +468,6 @@ def render_thought_prompt(prompt, visual_generator):
         visual_type = prompt['visual_type']
         
         if visual_type == 'base10_blocks':
-            if 'thousands' in params:
-                st.info("⏭ This prompt requires 4-digit base-10 blocks (coming soon)")
-                return None
             img = visual_generator.generate_base10_blocks(**params)
         elif visual_type == 'part_whole_model':
             if 'alternative' in params:

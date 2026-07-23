@@ -201,83 +201,309 @@ class MathVisualGenerator:
             unit_size: Size of each unit cube
         """
         # Colors for the thousand cube
+        front_color = '#1E3A8A'    # Dark blue
+        right_color = '#4682B4'    # Steel blue
         top_color = '#87CEEB'      # Sky blue
-        right_color = '#4682B4'    # Steel blue (darker)
-        left_color = '#1E3A8A'     # Dark blue (darkest)
-        
-        # Total size for 10×10×10 structure
-        cube_size = unit_size * 10
-        iso_width = cube_size
-        iso_height = int(cube_size * 0.5)
-        
-        # Top face - shows 10×10 grid
-        top_points = [
-            (x, y),
-            (x + iso_width, y + iso_height),
-            (x + iso_width, y + iso_height + cube_size),
-            (x, y + cube_size)
-        ]
-        draw.polygon(top_points, fill=top_color, outline=self.colors['line'], width=2)
-        
-        # Draw grid on top to show 10×10 structure
+
+        span = unit_size * 10
+        depth = int(unit_size * 6.5)
+
+        # Front face corners
+        front_tl = (x, y)
+        front_tr = (x + span, y)
+        front_br = (x + span, y + span)
+        front_bl = (x, y + span)
+
+        # Oblique depth offsets (up-right)
+        back_tl = (x + depth, y - depth)
+        back_tr = (x + span + depth, y - depth)
+        back_br = (x + span + depth, y + span - depth)
+
+        # Draw three visible faces only: front, right, top
+        draw.polygon([front_tl, front_tr, front_br, front_bl],
+                     fill=front_color, outline=self.colors['line'], width=2)
+        draw.polygon([front_tr, back_tr, back_br, front_br],
+                     fill=right_color, outline=self.colors['line'], width=2)
+        draw.polygon([front_tl, back_tl, back_tr, front_tr],
+                     fill=top_color, outline=self.colors['line'], width=2)
+
+        # Grid on front face (10x10)
         for i in range(1, 10):
-            # Lines going right-down
-            start_x = x + (iso_width // 10) * i
-            start_y = y + (iso_height // 10) * i
-            end_x = x + (iso_width // 10) * i
-            end_y = y + cube_size + (iso_height // 10) * i
-            draw.line([start_x, start_y, end_x, end_y],
-                     fill=self.colors['line'], width=1)
-            
-            # Lines going right-up
-            start_x = x
-            start_y = y + (cube_size // 10) * i
-            end_x = x + iso_width
-            end_y = y + iso_height + (cube_size // 10) * i
-            draw.line([start_x, start_y, end_x, end_y],
-                     fill=self.colors['line'], width=1)
-        
-        # Right face - shows depth with grid
-        right_points = [
-            (x + iso_width, y + iso_height),
-            (x + iso_width, y + iso_height + cube_size),
-            (x + iso_width, y + iso_height + cube_size + iso_height),
-            (x + iso_width, y + iso_height + iso_height)
-        ]
-        draw.polygon(right_points, fill=right_color, outline=self.colors['line'], width=2)
-        
+            offset = i * unit_size
+            draw.line([x + offset, y, x + offset, y + span], fill=self.colors['line'], width=1)
+            draw.line([x, y + offset, x + span, y + offset], fill=self.colors['line'], width=1)
+
+        # Grid on top face
+        for i in range(1, 10):
+            t = i / 10
+            # Width direction lines
+            sx = front_tl[0] + int(span * t)
+            sy = front_tl[1]
+            ex = back_tl[0] + int(span * t)
+            ey = back_tl[1]
+            draw.line([sx, sy, ex, ey], fill=self.colors['line'], width=1)
+
+            # Depth direction lines
+            sx = front_tl[0] + int(depth * t)
+            sy = front_tl[1] - int(depth * t)
+            ex = front_tr[0] + int(depth * t)
+            ey = front_tr[1] - int(depth * t)
+            draw.line([sx, sy, ex, ey], fill=self.colors['line'], width=1)
+
         # Grid on right face
         for i in range(1, 10):
-            # Horizontal lines
-            y_pos = y + iso_height + (cube_size // 10) * i
-            draw.line([x + iso_width, y_pos, x + iso_width, y_pos + iso_height],
-                     fill=self.colors['line'], width=1)
-            
-            # Vertical lines (showing depth)
-            y_pos = y + iso_height + iso_height * (i / 10)
-            draw.line([x + iso_width, y_pos, x + iso_width, y_pos + cube_size],
-                     fill=self.colors['line'], width=1)
-        
-        # Left face - shows depth with grid
-        left_points = [
-            (x, y),
-            (x, y + cube_size),
-            (x, y + cube_size + iso_height),
-            (x, y + iso_height)
-        ]
-        draw.polygon(left_points, fill=left_color, outline=self.colors['line'], width=2)
-        
-        # Grid on left face
+            t = i / 10
+            # Vertical (height) subdivisions
+            sy = front_tr[1] + int(span * t)
+            ey = back_tr[1] + int(span * t)
+            draw.line([front_tr[0], sy, back_tr[0], ey], fill=self.colors['line'], width=1)
+
+            # Depth subdivisions
+            sx = front_tr[0] + int(depth * t)
+            sy = front_tr[1] - int(depth * t)
+            ex = front_br[0] + int(depth * t)
+            ey = front_br[1] - int(depth * t)
+            draw.line([sx, sy, ex, ey], fill=self.colors['line'], width=1)
+
+    def _base10_face_colors(self, family: str) -> Dict[str, str]:
+        """Color palettes aligned to the SVG cube-family style."""
+        palettes = {
+            'one': {'front': '#ffcc00', 'side': '#cc9900', 'top': '#ffee99'},
+            'ten': {'front': '#009fff', 'side': '#0680c9', 'top': '#41b6fe'},
+            'hundred': {'front': '#ff0000', 'side': '#cc0000', 'top': '#ff6666'},
+            'thousand': {'front': '#1db954', 'side': '#15803d', 'top': '#4ade80'},
+        }
+        return palettes[family]
+
+    def _draw_oblique_unit_cube(self, draw: ImageDraw.Draw, x: int, y: int,
+                                size: int, family: str, include_top: bool = True) -> None:
+        """Draw a single oblique unit cube with optional top face."""
+        c = self._base10_face_colors(family)
+        depth = size * 0.5
+
+        # Front face
+        draw.polygon(
+            [(x, y), (x + size, y), (x + size, y + size), (x, y + size)],
+            fill=c['front'], outline='#000000', width=1,
+        )
+
+        # Right face
+        draw.polygon(
+            [
+                (x + size, y),
+                (x + size + depth, y - depth),
+                (x + size + depth, y + size - depth),
+                (x + size, y + size),
+            ],
+            fill=c['side'], outline='#000000', width=1,
+        )
+
+        if include_top:
+            # Top face
+            draw.polygon(
+                [
+                    (x, y),
+                    (x + depth, y - depth),
+                    (x + size + depth, y - depth),
+                    (x + size, y),
+                ],
+                fill=c['top'], outline='#000000', width=1,
+            )
+
+    def _draw_oblique_ten_rod(self, draw: ImageDraw.Draw, x: int, y: int, size: int) -> None:
+        """Draw a ten-rod as ten stacked cubes with realistic occlusion."""
+        for i in range(10):
+            self._draw_oblique_unit_cube(
+                draw,
+                x=x,
+                y=y + (i * size),
+                size=size,
+                family='ten',
+                include_top=(i == 0),
+            )
+
+    def _draw_oblique_hundred_plate(self, draw: ImageDraw.Draw, x: int, y: int, size: int) -> None:
+        """Draw a fused hundred plate (10x10x1) with front grid and thin depth."""
+        c = self._base10_face_colors('hundred')
+        span = size * 10
+        depth = size * 0.5
+
+        # Front face
+        draw.polygon(
+            [(x, y), (x + span, y), (x + span, y + span), (x, y + span)],
+            fill=c['front'], outline='#000000', width=1,
+        )
+
+        # Right thin face
+        draw.polygon(
+            [
+                (x + span, y),
+                (x + span + depth, y - depth),
+                (x + span + depth, y + span - depth),
+                (x + span, y + span),
+            ],
+            fill=c['side'], outline='#000000', width=1,
+        )
+
+        # Top thin face
+        draw.polygon(
+            [(x, y), (x + depth, y - depth), (x + span + depth, y - depth), (x + span, y)],
+            fill=c['top'], outline='#000000', width=1,
+        )
+
+        # 10x10 front grid
         for i in range(1, 10):
-            # Horizontal lines
-            y_pos = y + (cube_size // 10) * i
-            draw.line([x, y_pos, x, y_pos + iso_height],
-                     fill=self.colors['line'], width=1)
-            
-            # Vertical lines (showing depth)
-            y_pos = y + iso_height * (i / 10)
-            draw.line([x, y_pos, x, y_pos + cube_size],
-                     fill=self.colors['line'], width=1)
+            offset = i * size
+            draw.line([x + offset, y, x + offset, y + span], fill='#000000', width=1)
+            draw.line([x, y + offset, x + span, y + offset], fill='#000000', width=1)
+
+    def _draw_oblique_thousand_cube(self, draw: ImageDraw.Draw, x: int, y: int, size: int) -> None:
+        """Draw a foreshortened thousand cube aligned to the SVG perspective style."""
+        c = self._base10_face_colors('thousand')
+        span = size * 10
+        depth = size * 3.25
+        perspective_scale = 0.64
+        back_span = span * perspective_scale
+
+        def lerp(p1, p2, t):
+            return (p1[0] + (p2[0] - p1[0]) * t, p1[1] + (p2[1] - p1[1]) * t)
+
+        front_tl = (x, y)
+        front_tr = (x + span, y)
+        front_br = (x + span, y + span)
+        front_bl = (x, y + span)
+
+        back_tr = (x + span + depth, y - depth)
+        back_tl = (back_tr[0] - back_span, back_tr[1])
+        back_br = (x + span + depth, y - depth + back_span)
+
+        draw.polygon([front_tl, front_tr, front_br, front_bl], fill=c['front'], outline='#000000', width=1)
+        draw.polygon([front_tr, back_tr, back_br, front_br], fill=c['side'], outline='#000000', width=1)
+        draw.polygon([front_tl, back_tl, back_tr, front_tr], fill=c['top'], outline='#000000', width=1)
+
+        # Front grid
+        for i in range(1, 10):
+            offset = i * size
+            draw.line([x + offset, y, x + offset, y + span], fill='#000000', width=1)
+            draw.line([x, y + offset, x + span, y + offset], fill='#000000', width=1)
+
+        # Top grid
+        for i in range(1, 10):
+            t = i / 10
+            p1 = lerp(front_tl, front_tr, t)
+            p2 = lerp(back_tl, back_tr, t)
+            draw.line([p1[0], p1[1], p2[0], p2[1]], fill='#000000', width=1)
+
+            p1 = lerp(front_tl, back_tl, t)
+            p2 = lerp(front_tr, back_tr, t)
+            draw.line([p1[0], p1[1], p2[0], p2[1]], fill='#000000', width=1)
+
+        # Right-face grid
+        for i in range(1, 10):
+            t = i / 10
+            p1 = lerp(front_tr, front_br, t)
+            p2 = lerp(back_tr, back_br, t)
+            draw.line([p1[0], p1[1], p2[0], p2[1]], fill='#000000', width=1)
+
+            p1 = lerp(front_tr, back_tr, t)
+            p2 = lerp(front_br, back_br, t)
+            draw.line([p1[0], p1[1], p2[0], p2[1]], fill='#000000', width=1)
+
+    def _generate_base10_scene(self, thousands: int, hundreds: int, tens: int, ones: int,
+                               label: bool, width: int, height: int) -> Image.Image:
+        """Unified 3D base10 scene renderer shared by 2-digit and 4-digit prompts."""
+        img = Image.new('RGB', (width, height), self.colors['background'])
+        draw = ImageDraw.Draw(img)
+
+        margin_left = 40
+        margin_right = 40
+        baseline_y = int(height * 0.75)
+        margin_top = 60 if label else 20
+
+        def projected_width(kind: str, unit: int) -> float:
+            if kind == 'one':
+                return unit * 1.5
+            if kind == 'ten':
+                return unit * 1.5
+            if kind == 'hundred':
+                return unit * 10.5
+            return unit * 13.25  # thousand
+
+        def front_height(kind: str, unit: int) -> int:
+            if kind == 'one':
+                return unit
+            return unit * 10
+
+        groups = [
+            ('thousand', max(0, int(thousands))),
+            ('hundred', max(0, int(hundreds))),
+            ('ten', max(0, int(tens))),
+            ('one', max(0, int(ones))),
+        ]
+
+        def total_width_for_unit(unit: int) -> float:
+            intra = max(4, int(unit * 0.35))
+            inter = max(12, int(unit * 1.1))
+            total = 0.0
+            active = 0
+            for kind, count in groups:
+                if count <= 0:
+                    continue
+                active += 1
+                w = projected_width(kind, unit)
+                total += (count * w) + ((count - 1) * intra)
+            if active > 1:
+                total += (active - 1) * inter
+            return total
+
+        base_unit = 22
+        for candidate in range(22, 9, -1):
+            if total_width_for_unit(candidate) <= (width - margin_left - margin_right):
+                base_unit = candidate
+                break
+
+        intra_spacing = max(4, int(base_unit * 0.35))
+        inter_spacing = max(12, int(base_unit * 1.1))
+
+        if label:
+            total_value = thousands * 1000 + hundreds * 100 + tens * 10 + ones
+            draw.text((margin_left, 15), f"Representing {total_value:,}", fill=self.colors['text'], font=self.font_medium)
+
+        current_x = margin_left
+
+        for kind, count in groups:
+            if count <= 0:
+                continue
+
+            item_w = projected_width(kind, base_unit)
+            item_h = front_height(kind, base_unit)
+            y = baseline_y - item_h
+
+            for i in range(count):
+                x = int(current_x + i * (item_w + intra_spacing))
+                if kind == 'thousand':
+                    self._draw_oblique_thousand_cube(draw, x, y, base_unit)
+                elif kind == 'hundred':
+                    self._draw_oblique_hundred_plate(draw, x, y, base_unit)
+                elif kind == 'ten':
+                    self._draw_oblique_ten_rod(draw, x, y, base_unit)
+                else:
+                    self._draw_oblique_unit_cube(draw, x, y, base_unit, family='one', include_top=True)
+
+            group_w = (count * item_w) + ((count - 1) * intra_spacing)
+            current_x += group_w + inter_spacing
+
+        if label:
+            label_y = height - 50
+            x_offset = margin_left
+            for kind, count in groups:
+                if count <= 0:
+                    continue
+                text = f"{count} {kind}" if count == 1 else f"{count} {kind}s"
+                draw.text((x_offset, label_y), text, fill=self.colors['text'], font=self.font_small)
+                x_offset += 180
+
+        return img
     
     def generate_base10_blocks(self, tens: int, ones: int, 
                                label: bool = True) -> Image.Image:
@@ -292,122 +518,15 @@ class MathVisualGenerator:
         Returns:
             PIL Image with ten-rods and unit cubes
         """
-        img = Image.new('RGB', (self.default_width, self.default_height), 
-                        self.colors['background'])
-        draw = ImageDraw.Draw(img)
-        
-        # Define margins
-        margin_left = 60
-        margin_right = 60
-        margin_top = 60 if label else 40  # More space if title present
-        margin_bottom = 70 if label else 40  # More space if labels present
-        
-        # Draw title if labeling
-        title_height = 0
-        if label:
-            title = f"Representing {tens * 10 + ones}"
-            draw.text((margin_left, 20), title, fill=self.colors['text'], 
-                     font=self.font_medium)
-            title_height = 40
-        
-        # Calculate available space for the blocks
-        available_width = self.default_width - margin_left - margin_right
-        available_height = self.default_height - margin_top - margin_bottom
-        
-        # Base dimensions for blocks
-        base_unit_size = 40  # Size of one unit cube
-        base_spacing = 15
-        
-        # Calculate required dimensions with base size
-        ones_cols = min(ones, 5) if ones > 0 else 0
-        ones_rows = 2 if ones > 5 else 1
-        
-        required_width = tens * (base_unit_size + base_spacing) + (base_spacing * 2 if tens > 0 else 0) + ones_cols * (base_unit_size + base_spacing)
-        required_height = base_unit_size * 10  # Ten-rod height is the limiting factor
-        
-        # Calculate scale factor to fit both width and height
-        scale_x = available_width / required_width if required_width > 0 else 1.0
-        scale_y = available_height / required_height if required_height > 0 else 1.0
-        scale = min(scale_x, scale_y, 1.0)  # Never scale up, only down
-        
-        # Apply scaling
-        unit_size = int(base_unit_size * scale)
-        spacing = int(base_spacing * scale)
-        ten_rod_width = unit_size
-        ten_rod_height = unit_size * 10
-        
-        # Calculate actual content dimensions
-        ones_rows_actual = 2 if ones > 5 else 1
-        content_height = max(ten_rod_height, unit_size * ones_rows_actual + spacing if ones > 5 else unit_size)
-        content_width = tens * (ten_rod_width + spacing) + (spacing * 2 if tens > 0 else 0) + ones_cols * (unit_size + spacing)
-        
-        # Center the content within available space
-        start_x = margin_left + (available_width - content_width) // 2
-        start_y = margin_top + (available_height - content_height) // 2
-        
-        # Draw ten-rods
-        current_x = start_x
-        for i in range(tens):
-            # Draw the ten-rod rectangle
-            draw.rectangle(
-                [current_x, start_y, 
-                 current_x + ten_rod_width, start_y + ten_rod_height],
-                fill=self.colors['ten_rod'],
-                outline=self.colors['line'],
-                width=2
-            )
-            
-            # Draw horizontal lines to show 10 units
-            for j in range(1, 10):
-                y = start_y + (j * unit_size)
-                draw.line(
-                    [current_x, y, current_x + ten_rod_width, y],
-                    fill=self.colors['background'],
-                    width=1
-                )
-            
-            current_x += ten_rod_width + spacing
-        
-        # Add spacing between tens and ones
-        if tens > 0:
-            current_x += spacing * 2
-        
-        # Draw unit cubes
-        ones_start_x = current_x
-        for i in range(ones):
-            # Arrange ones in 2 rows if more than 5
-            if i < 5:
-                x = ones_start_x + (i * (unit_size + spacing))
-                y = start_y
-            else:
-                x = ones_start_x + ((i - 5) * (unit_size + spacing))
-                y = start_y + unit_size + spacing
-            
-            draw.rectangle(
-                [x, y, x + unit_size, y + unit_size],
-                fill=self.colors['unit_cube'],
-                outline=self.colors['line'],
-                width=2
-            )
-        
-        # Add labels
-        if label:
-            # Position labels below the content with some spacing
-            label_y = start_y + content_height + int(20 * scale)
-            
-            if tens > 0:
-                tens_label_x = start_x + (tens * (ten_rod_width + spacing)) // 2
-                draw.text((tens_label_x - 40, label_y), 
-                         f"{tens} ten{'s' if tens != 1 else ''}", 
-                         fill=self.colors['text'], font=self.font_small)
-            
-            if ones > 0:
-                ones_label_x = ones_start_x + (min(ones, 5) * (unit_size + spacing)) // 2
-                draw.text((ones_label_x - 40, label_y), 
-                         f"{ones} one{'s' if ones != 1 else ''}", 
-                         fill=self.colors['text'], font=self.font_small)
-        
-        return img
+        return self._generate_base10_scene(
+            thousands=0,
+            hundreds=0,
+            tens=tens,
+            ones=ones,
+            label=label,
+            width=self.default_width,
+            height=self.default_height,
+        )
     
     def generate_base10_blocks_4digit(self, thousands: int = 0, hundreds: int = 0,
                                       tens: int = 0, ones: int = 0,
@@ -425,175 +544,15 @@ class MathVisualGenerator:
         Returns:
             PIL Image with isometric 3D representation
         """
-        # Use larger canvas for 4-digit numbers
-        img_width = 1200
-        img_height = 700
-        img = Image.new('RGB', (img_width, img_height), self.colors['background'])
-        draw = ImageDraw.Draw(img)
-        
-        # Calculate base unit size dynamically based on number of blocks
-        # Smaller size when we have many thousands
-        total_thousands_space = thousands * 10  # Each thousand needs 10 units of space
-        total_hundreds_space = hundreds * 10    # Each hundred needs 10 units of space
-        
-        # Adjust unit size based on content
-        if thousands >= 4 or (thousands > 0 and hundreds >= 5):
-            base_unit = 15  # Smaller for many blocks
-        elif thousands >= 2 or hundreds >= 5:
-            base_unit = 20  # Medium for moderate blocks
-        else:
-            base_unit = 25  # Larger for fewer blocks
-        
-        spacing = max(20, int(base_unit * 0.8))
-        
-        # Margins
-        margin_left = 40
-        margin_top = 60 if label else 30
-        
-        # Title
-        if label:
-            total_value = thousands * 1000 + hundreds * 100 + tens * 10 + ones
-            title = f"Representing {total_value:,}"
-            draw.text((margin_left, 15), title, fill=self.colors['text'],
-                     font=self.font_medium)
-        
-        # Starting position
-        current_x = margin_left
-        current_y = margin_top
-        
-        # Track label positions for later
-        label_positions = []
-        
-        # Calculate block dimensions for layout
-        thousand_block_width = (base_unit * 10) + int(base_unit * 5)  # Width including isometric projection
-        hundred_block_width = (base_unit * 10) + int(base_unit * 5)
-        
-        # Draw thousands (10×10×10 cubes)
-        if thousands > 0:
-            thousands_start_x = current_x
-            for i in range(thousands):
-                # Arrange in 2 rows if more than 3
-                if thousands > 3 and i >= 3:
-                    x = thousands_start_x + (i - 3) * (thousand_block_width + spacing)
-                    y = current_y + (base_unit * 10) + int(base_unit * 5) + spacing + 20
-                else:
-                    x = thousands_start_x + i * (thousand_block_width + spacing)
-                    y = current_y
-                
-                self._draw_isometric_thousand_cube(draw, x, y, base_unit)
-                label_positions.append(('thousands', x, y, base_unit * 10))
-            
-            # Move x position past all thousands
-            if thousands <= 3:
-                current_x = thousands_start_x + thousands * (thousand_block_width + spacing)
-            else:
-                current_x = thousands_start_x + 3 * (thousand_block_width + spacing)
-        
-        # Add extra spacing between place values
-        if thousands > 0:
-            current_x += spacing
-        
-        # Draw hundreds (10×10×1 flats)
-        if hundreds > 0:
-            hundreds_start_x = current_x
-            for i in range(hundreds):
-                # Stack hundreds in 2 rows if more than 4
-                if hundreds > 4 and i >= 4:
-                    x = hundreds_start_x + (i - 4) * (hundred_block_width + spacing)
-                    y = current_y + (base_unit * 10) + spacing + 15
-                else:
-                    x = hundreds_start_x + i * (hundred_block_width + spacing)
-                    y = current_y
-                
-                self._draw_isometric_hundred_flat(draw, x, y, base_unit)
-                label_positions.append(('hundreds', x, y, base_unit * 10))
-            
-            # Move x position past all hundreds
-            if hundreds <= 4:
-                current_x = hundreds_start_x + hundreds * (hundred_block_width + spacing)
-            else:
-                current_x = hundreds_start_x + 4 * (hundred_block_width + spacing)
-        
-        # Add spacing
-        if hundreds > 0:
-            current_x += spacing
-        
-        # Draw tens (simple 2D rectangles, smaller for 4-digit context)
-        if tens > 0:
-            tens_start_x = current_x
-            ten_width = base_unit
-            ten_height = base_unit * 10
-            
-            for i in range(tens):
-                draw.rectangle(
-                    [current_x, current_y,
-                     current_x + ten_width, current_y + ten_height],
-                    fill=self.colors['ten_rod'],
-                    outline=self.colors['line'],
-                    width=2
-                )
-                
-                # Show 10 units with lines
-                for j in range(1, 10):
-                    y = current_y + (j * base_unit)
-                    draw.line(
-                        [current_x, y, current_x + ten_width, y],
-                        fill=self.colors['background'],
-                        width=1
-                    )
-                
-                label_positions.append(('tens', current_x, current_y, ten_height))
-                current_x += ten_width + (spacing // 2)
-        
-        # Add spacing
-        if tens > 0:
-            current_x += spacing
-        
-        # Draw ones (simple 2D squares, smaller for 4-digit context)
-        if ones > 0:
-            ones_start_x = current_x
-            unit_size = base_unit
-            
-            for i in range(ones):
-                # Arrange in 2 rows if more than 5
-                if i < 5:
-                    x = ones_start_x + (i * (unit_size + (spacing // 2)))
-                    y = current_y
-                else:
-                    x = ones_start_x + ((i - 5) * (unit_size + (spacing // 2)))
-                    y = current_y + unit_size + (spacing // 2)
-                
-                draw.rectangle(
-                    [x, y, x + unit_size, y + unit_size],
-                    fill=self.colors['unit_cube'],
-                    outline=self.colors['line'],
-                    width=2
-                )
-                
-                if i == 0:
-                    label_positions.append(('ones', x, y, unit_size))
-        
-        # Add labels at bottom
-        if label:
-            label_y = img_height - 50
-            
-            # Count each type for labels
-            place_counts = {
-                'thousands': thousands,
-                'hundreds': hundreds,
-                'tens': tens,
-                'ones': ones
-            }
-            
-            x_offset = margin_left
-            for place_name, count in place_counts.items():
-                if count > 0:
-                    label_text = f"{count} {place_name}" if count > 1 else f"{count} {place_name[:-1]}"
-                    draw.text((x_offset, label_y), label_text,
-                             fill=self.colors['text'], font=self.font_small)
-                    x_offset += 180
-        
-        return img
+        return self._generate_base10_scene(
+            thousands=thousands,
+            hundreds=hundreds,
+            tens=tens,
+            ones=ones,
+            label=label,
+            width=1400,
+            height=700,
+        )
     
     def generate_part_whole_model(self, total: int, parts: list, 
                                   label: bool = True) -> Image.Image:

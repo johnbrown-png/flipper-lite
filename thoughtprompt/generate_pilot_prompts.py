@@ -127,10 +127,10 @@ class ThoughtPromptGenerator:
                 'video_id': video_id,
                 'rank': rank,
                 'variant': 2,
-                'prompt_text': 'Complete this partition: 58 = ___ + 8',
+                'prompt_text': 'Complete this partition: 458 = ___ + 8',
                 'visual_type': 'part_whole_model',
-                'visual_params': json.dumps({'total': 58, 'parts': [50, 8], 'label': False}),
-                'answer_type': 'numeric',
+                'visual_params': json.dumps({'total': 458, 'parts': [400, 50, 8], 'label': False}),
+                'answer_type': 'text_match',
                 'correct_answer': '50',
                 'options': None,
                 'difficulty': 'medium'
@@ -141,11 +141,11 @@ class ThoughtPromptGenerator:
                 'video_id': video_id,
                 'rank': rank,
                 'variant': 3,
-                'prompt_text': 'This part-whole shows a number with zero in the ones place. What is the missing part?',
+                'prompt_text': 'This part-whole shows a number with zero in the tens place. What is the missing part?',
                 'visual_type': 'part_whole_model',
-                'visual_params': json.dumps({'total': 90, 'parts': [30, '?'], 'label': False}),
+                'visual_params': json.dumps({'total': 306, 'parts': [300, "?", 6], 'label': False}),
                 'answer_type': 'numeric',
-                'correct_answer': '60',
+                'correct_answer': '0',
                 'options': None,
                 'difficulty': 'hard'
             }

@@ -12,7 +12,7 @@ Supports 4 visual types:
 from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, List, Tuple
 
 
 class MathVisualGenerator:
@@ -675,6 +675,110 @@ class MathVisualGenerator:
         
         return img
     
+    def generate_double_part_whole_model(self, total: int, parts: List[int],
+                                         alternative_parts: List[int],
+                                         label: bool = True) -> Image.Image:
+        """
+        Generate TWO side-by-side part-whole models for flexible partitioning comparison.
+        
+        Both models share the same total but show different partitions.
+        The left model uses `parts`, the right model uses `alternative_parts`.
+        
+        Args:
+            total: The whole number (same for both models)
+            parts: Parts for the left (primary) partition
+            alternative_parts: Parts for the right (alternative) partition
+            label: Whether to add a title
+        
+        Returns:
+            PIL Image with two part-whole diagrams side-by-side
+        """
+        # Wider canvas to fit two models
+        width = self.default_width
+        height = self.default_height
+        img = Image.new('RGB', (width, height), self.colors['background'])
+        draw = ImageDraw.Draw(img)
+        
+        # Title
+        if label:
+            draw.text((20, 10), f"Flexible Partitioning of {total}",
+                     fill=self.colors['text'], font=self.font_medium)
+        
+        # Split canvas into two halves
+        half_width = width // 2
+        
+        # Use smaller circles to fit 4 parts comfortably
+        circle_radius = 40
+        total_y = 80
+        
+        # --- Draw each half-model ---
+        for model_idx, (part_set, x_offset) in enumerate([
+            (parts, 0),
+            (alternative_parts, half_width),
+        ]):
+            total_x = x_offset + half_width // 2
+            
+            # Total circle
+            draw.ellipse(
+                [total_x - circle_radius, total_y - circle_radius,
+                 total_x + circle_radius, total_y + circle_radius],
+                fill=self.colors['circle_main'],
+                outline=self.colors['line'],
+                width=2
+            )
+            
+            # Total number
+            total_text = str(total)
+            bbox = draw.textbbox((0, 0), total_text, font=self.font_medium)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            draw.text((total_x - text_width // 2, total_y - text_height // 2),
+                     total_text, fill=self.colors['text'], font=self.font_medium)
+            
+            # Parts at the bottom
+            num_parts = len(part_set)
+            parts_y = 280
+            
+            # Spacing: tighter for more parts, with max width constraint
+            available_width = half_width - 60
+            max_spacing = min(200, max(60, available_width // max(num_parts, 1)))
+            
+            # Calculate total width of all part circles + gaps
+            total_part_width = (num_parts - 1) * max_spacing
+            part_start_x = x_offset + (half_width - total_part_width) // 2
+            
+            # Draw connecting lines from total to each part
+            for i in range(num_parts):
+                part_x = part_start_x + (i * max_spacing)
+                draw.line([total_x, total_y + circle_radius,
+                          part_x, parts_y - circle_radius],
+                         fill=self.colors['line'], width=2)
+            
+            # Draw part circles
+            for i, part in enumerate(part_set):
+                part_x = part_start_x + (i * max_spacing)
+                
+                # Use a distinct fill for the right-side model parts
+                part_fill = self.colors['circle_part'] if model_idx == 0 else '#FFEAA7'
+                
+                draw.ellipse(
+                    [part_x - circle_radius, parts_y - circle_radius,
+                     part_x + circle_radius, parts_y + circle_radius],
+                    fill=part_fill,
+                    outline=self.colors['line'],
+                    width=2
+                )
+                
+                # Part number
+                part_text = str(part)
+                bbox = draw.textbbox((0, 0), part_text, font=self.font_medium)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                draw.text((part_x - text_width // 2, parts_y - text_height // 2),
+                         part_text, fill=self.colors['text'], font=self.font_medium)
+        
+        return img
+    
     def generate_bar_model(self, total: int, parts: list, 
                           operation: str = 'addition',
                           label: bool = True) -> Image.Image:
@@ -955,10 +1059,18 @@ class MathVisualGenerator:
                     label=params.get('label', True)
                 )
         elif visual_type == 'part_whole_model':
+            # Check if this is a dual (flexible partitioning) model
+            if 'alternative' in params:
+                return self.generate_double_part_whole_model(
+                    total=params.get('total', 0),
+                    parts=params.get('parts', []),
+                    alternative_parts=params.get('alternative', []),
+                    label=params.get('label', True),
+                )
             return self.generate_part_whole_model(
                 total=params.get('total', 0),
                 parts=params.get('parts', []),
-                label=params.get('label', True)
+                label=params.get('label', True),
             )
         elif visual_type == 'bar_model':
             return self.generate_bar_model(

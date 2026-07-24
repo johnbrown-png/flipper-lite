@@ -61,11 +61,10 @@ def demo_prompt_to_visual():
                     img = gen.generate_base10_blocks(**params)
             
             elif row['visual_type'] == 'part_whole_model':
-                # Check if alternative partition exists (flexible partitioning)
-                if 'alternative' in params:
-                    print(f"  ⏭ Prompt {idx+1}: part_whole_model (dual) - requires generator extension")
-                    continue
-                img = gen.generate_part_whole_model(**params)
+                img = gen.generate(
+                    visual_type='part_whole_model',
+                    params=params,
+                )
             
             elif row['visual_type'] == 'number_line':
                 img = gen.generate_number_line(**params)

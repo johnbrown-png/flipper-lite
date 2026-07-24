@@ -1042,6 +1042,11 @@ class MathVisualGenerator:
             PIL Image
         """
         if visual_type == 'base10_blocks':
+            # Suppress imagery for prompts comparing/ordering multiple 4-digit numbers.
+            # There is not room to show more than one 4-digit base-10 depiction,
+            # and showing multiple would be cognitively overloading.
+            if 'number_a' in params or 'numbers' in params:
+                return None
             # Check if this is a 4-digit number (has thousands or hundreds)
             if 'thousands' in params or 'hundreds' in params:
                 return self.generate_base10_blocks_4digit(

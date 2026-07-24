@@ -583,7 +583,7 @@ class ThoughtPromptGenerator:
                 'video_id': video_id,
                 'rank': rank,
                 'variant': 1,
-                'prompt_text': 'Put these in ascending order: 3,247, 3,274, 3,427',
+                'prompt_text': 'Put the smallest first, then the next smallest then the biggest: 3,247, 3,274, 3,427',
                 'visual_type': 'number_line',
                 'visual_params': json.dumps({'start': 3200, 'end': 3500, 'highlight': [3247, 3274, 3427], 'interval': 50, 'label': False}),
                 'answer_type': 'text_match',

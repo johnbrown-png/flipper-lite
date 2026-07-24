@@ -51,29 +51,12 @@ def demo_prompt_to_visual():
         
         # Generate visual based on type
         try:
-            if row['visual_type'] == 'base10_blocks':
-                # Handle both 2-digit and 4-digit formats
-                if 'thousands' in params:
-                    # 4-digit: Need to extend generator (skip for now)
-                    print(f"  ⏭ Prompt {idx+1}: base10_blocks (4-digit) - requires generator extension")
-                    continue
-                else:
-                    img = gen.generate_base10_blocks(**params)
+            # Use the routing method for all visual types
+            img = gen.generate(visual_type=row['visual_type'], params=params)
             
-            elif row['visual_type'] == 'part_whole_model':
-                img = gen.generate(
-                    visual_type='part_whole_model',
-                    params=params,
-                )
-            
-            elif row['visual_type'] == 'number_line':
-                img = gen.generate_number_line(**params)
-            
-            elif row['visual_type'] == 'bar_model':
-                img = gen.generate_bar_model(**params)
-            
-            else:
-                print(f"  ✗ Prompt {idx+1}: Unknown visual type '{row['visual_type']}'")
+            if img is None:
+                # Suppressed: no visual for this prompt (e.g. multi-number 4-digit comparison)
+                print(f"  ⏭ Prompt {idx+1}: {row['visual_type']} - no imagery (multi-value/cognitive load)")
                 continue
             
             # Save the image

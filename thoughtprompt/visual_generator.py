@@ -477,8 +477,9 @@ class MathVisualGenerator:
         available_width = width - margin_left - margin_right
         available_height = baseline_y - margin_top
 
-        base_unit = 3
-        for candidate in range(22, 2, -1):
+        # Find the largest base_unit that fits within the canvas
+        base_unit = 1
+        for candidate in range(22, 0, -1):
             if (
                 total_width_for_unit(candidate) <= available_width
                 and vertical_extent_for_unit(candidate) <= available_height
@@ -488,6 +489,17 @@ class MathVisualGenerator:
 
         intra_spacing, inter_spacing = spacing_for_unit(base_unit)
         layout_width = total_width_for_unit(base_unit)
+
+        # If the scene still overflows the canvas at base_unit=1, widen the canvas
+        required_width = int(layout_width + margin_left + margin_right + 10)
+        if layout_width > available_width and width < required_width:
+            # Re-render with a wider canvas
+            new_width = max(required_width, width)
+            return self._generate_base10_scene(
+                thousands=thousands, hundreds=hundreds, tens=tens, ones=ones,
+                label=label, width=new_width, height=height,
+            )
+
         current_x = margin_left + max(0, int((available_width - layout_width) // 2))
 
         if label:

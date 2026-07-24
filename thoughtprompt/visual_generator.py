@@ -441,9 +441,13 @@ class MathVisualGenerator:
             ('one', max(0, int(ones))),
         ]
 
+        def spacing_for_unit(unit: int) -> tuple[int, int]:
+            intra = max(2, int(unit * 0.35))
+            inter = max(4, int(unit * 1.1))
+            return intra, inter
+
         def total_width_for_unit(unit: int) -> float:
-            intra = max(4, int(unit * 0.35))
-            inter = max(12, int(unit * 1.1))
+            intra, inter = spacing_for_unit(unit)
             total = 0.0
             active = 0
             for kind, count in groups:
@@ -456,20 +460,39 @@ class MathVisualGenerator:
                 total += (active - 1) * inter
             return total
 
-        base_unit = 22
-        for candidate in range(22, 9, -1):
-            if total_width_for_unit(candidate) <= (width - margin_left - margin_right):
+        def vertical_extent_for_unit(unit: int) -> float:
+            """Estimate tallest draw height above the baseline anchor."""
+            extent = 0.0
+            for kind, count in groups:
+                if count <= 0:
+                    continue
+                if kind == 'thousand':
+                    extent = max(extent, unit * 13.25)
+                elif kind in ('hundred', 'ten'):
+                    extent = max(extent, unit * 10.5)
+                else:
+                    extent = max(extent, unit * 1.5)
+            return extent
+
+        available_width = width - margin_left - margin_right
+        available_height = baseline_y - margin_top
+
+        base_unit = 3
+        for candidate in range(22, 2, -1):
+            if (
+                total_width_for_unit(candidate) <= available_width
+                and vertical_extent_for_unit(candidate) <= available_height
+            ):
                 base_unit = candidate
                 break
 
-        intra_spacing = max(4, int(base_unit * 0.35))
-        inter_spacing = max(12, int(base_unit * 1.1))
+        intra_spacing, inter_spacing = spacing_for_unit(base_unit)
+        layout_width = total_width_for_unit(base_unit)
+        current_x = margin_left + max(0, int((available_width - layout_width) // 2))
 
         if label:
             total_value = thousands * 1000 + hundreds * 100 + tens * 10 + ones
             draw.text((margin_left, 15), f"Representing {total_value:,}", fill=self.colors['text'], font=self.font_medium)
-
-        current_x = margin_left
 
         for kind, count in groups:
             if count <= 0:
@@ -550,8 +573,8 @@ class MathVisualGenerator:
             tens=tens,
             ones=ones,
             label=label,
-            width=1400,
-            height=700,
+            width=self.default_width,
+            height=self.default_height,
         )
     
     def generate_part_whole_model(self, total: int, parts: list, 

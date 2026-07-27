@@ -71,27 +71,6 @@
         height: 100%;
     }
 
-    .slider-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: 8px;
-    }
-
-    .slider-row input[type="range"] {
-        flex: 1;
-        accent-color: var(--handle-color);
-        height: 8px;
-    }
-
-    .slider-value {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--handle-color);
-        min-width: 60px;
-        text-align: center;
-    }
-
     .controls {
         display: flex;
         gap: 12px;
@@ -189,15 +168,10 @@
 
 <div class="number-line-widget" id="widget">
     <div class="title" id="title">Number Line</div>
-    <div class="subtitle" id="subtitle">Drag the red marker to your answer, then click Check Answer</div>
+    <div class="subtitle" id="subtitle">Click or drag the arrow marker to your answer, then click Check Answer</div>
 
     <div class="canvas-container" id="canvasContainer">
         <canvas id="numberLineCanvas"></canvas>
-    </div>
-
-    <div class="slider-row">
-        <input type="range" id="rangeSlider" min="0" max="100" value="0" step="1">
-        <span class="slider-value" id="sliderValue">0</span>
     </div>
 
     <div class="controls">
@@ -210,7 +184,7 @@
     <div class="legend" id="legend">
         <span><kbd>← →</kbd> Fine-tune</span>
         <span><kbd>Shift</kbd> + arrow Jump 10</span>
-        <span>Drag marker or slider</span>
+        <span>Click or drag on the line</span>
     </div>
 </div>
 
@@ -248,8 +222,6 @@
     const canvas        = document.getElementById('numberLineCanvas');
     const ctx           = canvas.getContext('2d');
     const container     = document.getElementById('canvasContainer');
-    const rangeSlider   = document.getElementById('rangeSlider');
-    const sliderValueEl = document.getElementById('sliderValue');
     const btnCheck      = document.getElementById('btnCheck');
     const btnReset      = document.getElementById('btnReset');
     const btnSnap       = document.getElementById('btnSnap');
@@ -276,8 +248,6 @@
 
     function setValue(v) {
         currentValue = apply_snap(clamp(v));
-        rangeSlider.value = currentValue;
-        sliderValueEl.textContent = currentValue;
         draw();
         // Clear feedback if user moves after submitting
         if (answerSubmitted && lastSubmittedValue !== currentValue) {
@@ -394,40 +364,34 @@
             }
         }
 
-        // Draggable handle
+        // Downward-pointing arrow handle
         const hx = valueToX(currentValue);
-        const hr = 16;
+        const arrowSize = 18;
 
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.15)';
         ctx.beginPath();
-        ctx.arc(hx, b.y + 2, hr, 0, Math.PI * 2);
+        ctx.moveTo(hx - arrowSize, b.y - arrowSize);
+        ctx.lineTo(hx, b.y + arrowSize + 2);
+        ctx.lineTo(hx + arrowSize, b.y - arrowSize);
+        ctx.closePath();
         ctx.fill();
 
-        // Main circle
-        const grad = ctx.createRadialGradient(hx - 3, b.y - 3, hr * 0.3, hx, b.y, hr);
+        // Main arrow (downward-pointing triangle)
+        const grad = ctx.createLinearGradient(hx, b.y - arrowSize, hx, b.y + arrowSize);
         grad.addColorStop(0, '#ff9999');
         grad.addColorStop(1, '#cc3333');
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(hx, b.y, hr, 0, Math.PI * 2);
+        ctx.moveTo(hx - arrowSize, b.y - arrowSize);
+        ctx.lineTo(hx, b.y + arrowSize);
+        ctx.lineTo(hx + arrowSize, b.y - arrowSize);
+        ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = '#991111';
         ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
         ctx.stroke();
-
-        // Inner white dot
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(hx, b.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Value label above handle
-        ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
-        ctx.fillStyle = '#cc3333';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(String(currentValue), hx, b.y - hr - 14);
     }
 
     // ── Event handlers ─────────────────────────────────
@@ -442,17 +406,13 @@
     }
 
     function onPointerDown(e) {
-        const pos = getCanvasPos(e);
-        const hx   = valueToX(currentValue);
-        const b    = getLineBounds();
-        const dist = Math.sqrt((pos.x - hx)**2 + (pos.y - b.y)**2);
-
-        // Grab handle if within 30px, or grab anywhere near the line
-        if (dist < 30) {
-            isDragging = true;
-            canvas.setPointerCapture(e.pointerId);
-            e.preventDefault();
-        }
+        // Any click on the canvas immediately moves the marker
+        isDragging = true;
+        canvas.setPointerCapture(e.pointerId);
+        e.preventDefault();
+        const pos  = getCanvasPos(e);
+        const val  = xToValue(pos.x);
+        setValue(val);
     }
 
     function onPointerMove(e) {
@@ -473,17 +433,6 @@
     canvas.addEventListener('pointermove', onPointerMove);
     canvas.addEventListener('pointerup',   onPointerUp);
     canvas.addEventListener('pointerleave', onPointerUp);
-
-    // ── Range slider sync ──────────────────────────────
-    rangeSlider.min   = CONFIG.start;
-    rangeSlider.max   = CONFIG.end;
-    rangeSlider.step  = 1;
-    rangeSlider.value = currentValue;
-    sliderValueEl.textContent = currentValue;
-
-    rangeSlider.addEventListener('input', function() {
-        setValue(parseInt(this.value));
-    });
 
     // ── Keyboard ───────────────────────────────────────
     document.addEventListener('keydown', function(e) {
@@ -581,14 +530,12 @@
 
     // ── Initialise ─────────────────────────────────────
     titleEl.textContent    = CONFIG.title;
-    subtitleEl.textContent = CONFIG.questionText || 'Drag the red marker to your answer, then click Check Answer';
+    subtitleEl.textContent = CONFIG.questionText || 'Click or drag the arrow marker to your answer, then click Check Answer';
 
     // Set initial value from query param if provided
     if (CONFIG.initialValue !== null) {
         currentValue = clamp(CONFIG.initialValue);
     }
-    rangeSlider.value = currentValue;
-    sliderValueEl.textContent = currentValue;
 
     resizeCanvas();
 })();

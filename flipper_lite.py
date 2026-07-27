@@ -508,9 +508,10 @@ def render_thought_prompt(prompt, visual_generator):
                 return None
         elif visual_type == 'part_whole_model':
             if 'alternative' in params:
-                st.info("⏭ This prompt requires dual part-whole model (coming soon)")
-                return None
-            img = visual_generator.generate_part_whole_model(**params)
+                params['alternative_parts'] = params.pop('alternative')
+                img = visual_generator.generate_double_part_whole_model(**params)
+            else:
+                img = visual_generator.generate_part_whole_model(**params)
         elif visual_type == 'number_line':
             img = visual_generator.generate_number_line(**params)
         elif visual_type == 'bar_model':

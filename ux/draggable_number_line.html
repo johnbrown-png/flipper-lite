@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draggable Number Line</title>
+<style>
+    :root {
+        --bg: #ffffff;
+        --line-color: #2C3E50;
+        --tick-color: #2C3E50;
+        --handle-color: #FF6B6B;
+        --handle-border: #cc4444;
+        --label-color: #000000;
+        --button-bg: #4ECDC4;
+        --button-hover: #3dbdb5;
+        --button-text: #ffffff;
+        --snap-indicator: #6C5CE7;
+        --font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: var(--font-family);
+        background: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .number-line-widget {
+        background: var(--bg);
+        border-radius: 16px;
+        padding: 30px 40px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        max-width: 820px;
+        width: 100%;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+        color: #777;
+        margin-bottom: 24px;
+    }
+
+    .canvas-container {
+        position: relative;
+        width: 100%;
+        height: 160px;
+        cursor: pointer;
+        touch-action: none;
+    }
+
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .slider-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    .slider-row input[type="range"] {
+        flex: 1;
+        accent-color: var(--handle-color);
+        height: 8px;
+    }
+
+    .slider-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--handle-color);
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .controls {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+        font-family: var(--font-family);
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-check {
+        background: var(--button-bg);
+        color: var(--button-text);
+    }
+    .btn-check:hover { background: var(--button-hover); }
+
+    .btn-reset {
+        background: #eee;
+        color: #555;
+    }
+    .btn-reset:hover { background: #ddd; }
+
+    .btn-snap {
+        background: #f0ebff;
+        color: var(--snap-indicator);
+        font-size: 13px;
+        padding: 8px 16px;
+    }
+    .btn-snap:hover { background: #e0d8ff; }
+    .btn-snap.active {
+        background: var(--snap-indicator);
+        color: #fff;
+    }
+
+    .feedback {
+        margin-top: 16px;
+        padding: 12px 18px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        display: none;
+    }
+    .feedback.show { display: block; }
+    .feedback.correct {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .feedback.incorrect {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .feedback.info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+
+    .legend {
+        font-size: 12px;
+        color: #999;
+        margin-top: 12px;
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .legend span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .legend kbd {
+        background: #eee;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 2px 7px;
+        font-family: monospace;
+        font-size: 12px;
+    }
+</style>
+</head>
+<body>
+
+<div class="number-line-widget" id="widget">
+    <div class="title" id="title">Number Line</div>
+    <div class="subtitle" id="subtitle">Drag the red marker to your answer, then click Check Answer</div>
+
+    <div class="canvas-container" id="canvasContainer">
+        <canvas id="numberLineCanvas"></canvas>
+    </div>
+
+    <div class="slider-row">
+        <input type="range" id="rangeSlider" min="0" max="100" value="0" step="1">
+        <span class="slider-value" id="sliderValue">0</span>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-check" id="btnCheck">✓ Check Answer</button>
+        <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+        <button class="btn btn-snap" id="btnSnap">📏 Snap: Off</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+    <div class="legend" id="legend">
+        <span><kbd>← →</kbd> Fine-tune</span>
+        <span><kbd>Shift</kbd> + arrow Jump 10</span>
+        <span>Drag marker or slider</span>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ── Configuration ──────────────────────────────────
+    const CONFIG = {
+        start: 0,
+        end: 100,
+        correctAnswer: 47,          // null = no right/wrong feedback
+        tolerance: 0,               // ± tolerance for "correct"
+        snapInterval: 1,            // 1 = no snap, >1 = snap to multiples
+        snapEnabled: false,
+        questionText: 'Where is 47 on the number line?',
+        title: 'Number Line',
+        showFeedback: true,
+        // Read initial value from URL params (for Streamlit integration)
+        initialValue: null,
+    };
+
+    // Parse URL query params for Streamlit integration
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('start'))  CONFIG.start  = parseInt(params.get('start'));
+    if (params.get('end'))    CONFIG.end    = parseInt(params.get('end'));
+    if (params.get('correct')) CONFIG.correctAnswer = parseInt(params.get('correct'));
+    if (params.get('tolerance')) CONFIG.tolerance = parseInt(params.get('tolerance'));
+    if (params.get('snap'))   CONFIG.snapInterval = parseInt(params.get('snap'));
+    if (params.get('snapEnabled') === '1') CONFIG.snapEnabled = true;
+    if (params.get('title'))  CONFIG.title  = params.get('title');
+    if (params.get('question')) CONFIG.questionText = params.get('question');
+    if (params.get('value'))  CONFIG.initialValue = parseInt(params.get('value'));
+    if (params.get('showFeedback') === '0') CONFIG.showFeedback = false;
+
+    // ── DOM references ─────────────────────────────────
+    const canvas        = document.getElementById('numberLineCanvas');
+    const ctx           = canvas.getContext('2d');
+    const container     = document.getElementById('canvasContainer');
+    const rangeSlider   = document.getElementById('rangeSlider');
+    const sliderValueEl = document.getElementById('sliderValue');
+    const btnCheck      = document.getElementById('btnCheck');
+    const btnReset      = document.getElementById('btnReset');
+    const btnSnap       = document.getElementById('btnSnap');
+    const feedbackEl    = document.getElementById('feedback');
+    const titleEl       = document.getElementById('title');
+    const subtitleEl    = document.getElementById('subtitle');
+
+    // ── State ──────────────────────────────────────────
+    let currentValue = CONFIG.initialValue !== null ? CONFIG.initialValue : CONFIG.start;
+    let isDragging   = false;
+    let answerSubmitted = false;
+    let lastSubmittedValue = null;
+
+    // Clamp
+    function clamp(v) {
+        return Math.max(CONFIG.start, Math.min(CONFIG.end, v));
+    }
+
+    // Snap
+    function apply_snap(v) {
+        if (!CONFIG.snapEnabled || CONFIG.snapInterval <= 1) return v;
+        return Math.round(v / CONFIG.snapInterval) * CONFIG.snapInterval;
+    }
+
+    function setValue(v) {
+        currentValue = apply_snap(clamp(v));
+        rangeSlider.value = currentValue;
+        sliderValueEl.textContent = currentValue;
+        draw();
+        // Clear feedback if user moves after submitting
+        if (answerSubmitted && lastSubmittedValue !== currentValue) {
+            answerSubmitted = false;
+            hideFeedback();
+        }
+    }
+
+    // ── Drawing ────────────────────────────────────────
+    function getLineBounds() {
+        const padding = 60;
+        const w = canvas.width;
+        const h = canvas.height;
+        return {
+            x1: padding,
+            x2: w - padding,
+            y:  h * 0.45,
+        };
+    }
+
+    function valueToX(v) {
+        const b = getLineBounds();
+        const range = CONFIG.end - CONFIG.start;
+        const frac  = (v - CONFIG.start) / range;
+        return b.x1 + frac * (b.x2 - b.x1);
+    }
+
+    function xToValue(x) {
+        const b = getLineBounds();
+        const frac = (x - b.x1) / (b.x2 - b.x1);
+        const raw  = CONFIG.start + frac * (CONFIG.end - CONFIG.start);
+        return Math.round(raw);  // round to nearest integer for discrete feel
+    }
+
+    function draw() {
+        const b = getLineBounds();
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Main line
+        ctx.strokeStyle = '#2C3E50';
+        ctx.lineWidth   = 4;
+        ctx.lineCap     = 'round';
+        ctx.beginPath();
+        ctx.moveTo(b.x1, b.y);
+        ctx.lineTo(b.x2, b.y);
+        ctx.stroke();
+
+        // Arrow heads
+        ctx.fillStyle = '#2C3E50';
+        // Left arrow
+        ctx.beginPath();
+        ctx.moveTo(b.x1, b.y);
+        ctx.lineTo(b.x1 + 14, b.y - 8);
+        ctx.lineTo(b.x1 + 14, b.y + 8);
+        ctx.closePath();
+        ctx.fill();
+        // Right arrow
+        ctx.beginPath();
+        ctx.moveTo(b.x2, b.y);
+        ctx.lineTo(b.x2 - 14, b.y - 8);
+        ctx.lineTo(b.x2 - 14, b.y + 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // Tick marks and labels
+        const range = CONFIG.end - CONFIG.start;
+        // Determine sensible interval for ticks
+        let tickInterval;
+        if (range <= 10)       tickInterval = 1;
+        else if (range <= 50)  tickInterval = 5;
+        else if (range <= 200) tickInterval = 10;
+        else if (range <= 500) tickInterval = 50;
+        else                   tickInterval = 100;
+
+        ctx.font = '14px "Segoe UI", Arial, sans-serif';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        for (let v = CONFIG.start; v <= CONFIG.end; v += 1) {
+            const x = valueToX(v);
+            const isMajor = (v % tickInterval === 0) || v === CONFIG.start || v === CONFIG.end;
+            const tickH = isMajor ? 18 : 6;
+
+            ctx.strokeStyle = '#2C3E50';
+            ctx.lineWidth   = isMajor ? 2.5 : 1;
+            ctx.beginPath();
+            ctx.moveTo(x, b.y - tickH);
+            ctx.lineTo(x, b.y + tickH);
+            ctx.stroke();
+
+            if (isMajor) {
+                ctx.fillText(String(v), x, b.y + 24);
+            }
+        }
+
+        // End labels
+        ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(String(CONFIG.start), b.x1, b.y + 46);
+        ctx.fillText(String(CONFIG.end),   b.x2, b.y + 46);
+
+        // Snap interval ghost markers (if snap enabled)
+        if (CONFIG.snapEnabled && CONFIG.snapInterval > 1) {
+            ctx.fillStyle = 'rgba(108, 92, 231, 0.25)';
+            for (let v = CONFIG.start; v <= CONFIG.end; v += CONFIG.snapInterval) {
+                const x  = valueToX(v);
+                const r  = 6;
+                ctx.beginPath();
+                ctx.arc(x, b.y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Draggable handle
+        const hx = valueToX(currentValue);
+        const hr = 16;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.beginPath();
+        ctx.arc(hx, b.y + 2, hr, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Main circle
+        const grad = ctx.createRadialGradient(hx - 3, b.y - 3, hr * 0.3, hx, b.y, hr);
+        grad.addColorStop(0, '#ff9999');
+        grad.addColorStop(1, '#cc3333');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(hx, b.y, hr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#991111';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Inner white dot
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(hx, b.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Value label above handle
+        ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
+        ctx.fillStyle = '#cc3333';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(String(currentValue), hx, b.y - hr - 14);
+    }
+
+    // ── Event handlers ─────────────────────────────────
+    function getCanvasPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width  / rect.width;   // canvas physical vs CSS
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top)  * scaleY,
+        };
+    }
+
+    function onPointerDown(e) {
+        const pos = getCanvasPos(e);
+        const hx   = valueToX(currentValue);
+        const b    = getLineBounds();
+        const dist = Math.sqrt((pos.x - hx)**2 + (pos.y - b.y)**2);
+
+        // Grab handle if within 30px, or grab anywhere near the line
+        if (dist < 30) {
+            isDragging = true;
+            canvas.setPointerCapture(e.pointerId);
+            e.preventDefault();
+        }
+    }
+
+    function onPointerMove(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        const pos  = getCanvasPos(e);
+        const val  = xToValue(pos.x);
+        setValue(val);
+    }
+
+    function onPointerUp(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        canvas.releasePointerCapture(e.pointerId);
+    }
+
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup',   onPointerUp);
+    canvas.addEventListener('pointerleave', onPointerUp);
+
+    // ── Range slider sync ──────────────────────────────
+    rangeSlider.min   = CONFIG.start;
+    rangeSlider.max   = CONFIG.end;
+    rangeSlider.step  = 1;
+    rangeSlider.value = currentValue;
+    sliderValueEl.textContent = currentValue;
+
+    rangeSlider.addEventListener('input', function() {
+        setValue(parseInt(this.value));
+    });
+
+    // ── Keyboard ───────────────────────────────────────
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        const shift = e.shiftKey ? 10 : 1;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            setValue(currentValue - shift);
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            setValue(currentValue + shift);
+        }
+    });
+
+    // ── Buttons ────────────────────────────────────────
+    function showFeedback(type, message) {
+        if (!CONFIG.showFeedback) return;
+        feedbackEl.className = 'feedback show ' + type;
+        feedbackEl.textContent = message;
+    }
+    function hideFeedback() {
+        feedbackEl.className = 'feedback';
+        feedbackEl.textContent = '';
+    }
+
+    btnCheck.addEventListener('click', function() {
+        answerSubmitted = true;
+        lastSubmittedValue = currentValue;
+
+        if (CONFIG.correctAnswer !== null && CONFIG.correctAnswer !== undefined) {
+            const diff = Math.abs(currentValue - CONFIG.correctAnswer);
+            if (diff <= CONFIG.tolerance) {
+                showFeedback('correct',
+                    '✓ Correct! ' + currentValue + ' is the right answer.');
+            } else {
+                const dir = currentValue < CONFIG.correctAnswer ? 'too low' : 'too high';
+                showFeedback('incorrect',
+                    '✗ Not quite. ' + currentValue + ' is ' + dir +
+                    ' (correct answer: ' + CONFIG.correctAnswer + ').');
+            }
+        } else {
+            showFeedback('info', '✓ Answer submitted: ' + currentValue);
+        }
+
+        // Communicate back to Streamlit if in iframe
+        try {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'numberLineAnswer',
+                    value: currentValue,
+                    correct: CONFIG.correctAnswer !== null
+                        ? (Math.abs(currentValue - CONFIG.correctAnswer) <= CONFIG.tolerance)
+                        : null,
+                }, '*');
+            }
+        } catch(e) { /* not in iframe, ignore */ }
+    });
+
+    btnReset.addEventListener('click', function() {
+        setValue(CONFIG.initialValue !== null ? CONFIG.initialValue : CONFIG.start);
+        answerSubmitted = false;
+        lastSubmittedValue = null;
+        hideFeedback();
+    });
+
+    btnSnap.addEventListener('click', function() {
+        CONFIG.snapEnabled = !CONFIG.snapEnabled;
+        btnSnap.textContent = CONFIG.snapEnabled
+            ? '📏 Snap: ' + CONFIG.snapInterval
+            : '📏 Snap: Off';
+        btnSnap.classList.toggle('active', CONFIG.snapEnabled);
+        // Re-apply snap
+        setValue(currentValue);
+    });
+    // Init snap button state
+    if (CONFIG.snapEnabled) {
+        btnSnap.textContent = '📏 Snap: ' + CONFIG.snapInterval;
+        btnSnap.classList.add('active');
+    }
+
+    // ── Resize handling ────────────────────────────────
+    function resizeCanvas() {
+        const rect = container.getBoundingClientRect();
+        const dpr  = window.devicePixelRatio || 1;
+        canvas.width  = rect.width  * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width  = rect.width  + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // Reset font scaling (ctx.scale adds)
+        draw();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // ── Initialise ─────────────────────────────────────
+    titleEl.textContent    = CONFIG.title;
+    subtitleEl.textContent = CONFIG.questionText || 'Drag the red marker to your answer, then click Check Answer';
+
+    // Set initial value from query param if provided
+    if (CONFIG.initialValue !== null) {
+        currentValue = clamp(CONFIG.initialValue);
+    }
+    rangeSlider.value = currentValue;
+    sliderValueEl.textContent = currentValue;
+
+    resizeCanvas();
+})();
+</script>
+</body>
+</html>

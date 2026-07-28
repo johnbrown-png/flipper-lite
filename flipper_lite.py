@@ -240,12 +240,12 @@ def load_video_inventory():
 
 
 def load_thought_prompts():
-    """Load thought prompts from pilot CSV"""
+    """Load thought prompts from multiple choice CSV"""
     if not THOUGHT_PROMPTS_ENABLED:
         return None
     
     try:
-        prompts_path = project_root / 'thoughtprompt' / 'pilot_output' / 'thought_prompts_pilot.csv'
+        prompts_path = project_root / 'thoughtprompt' / 'pilot_output' / 'thought_prompts_multiplechoice.csv'
         if not prompts_path.exists():
             return None
         df = pd.read_csv(prompts_path)
@@ -530,6 +530,9 @@ def render_thought_prompt(prompt, visual_generator):
             img = visual_generator.generate_number_line(**params)
         elif visual_type == 'bar_model':
             img = visual_generator.generate_bar_model(**params)
+        elif visual_type == 'none':
+            # No visual needed - the prompt text is sufficient
+            return True
         else:
             st.error(f"Unknown visual type: {visual_type}")
             return None
@@ -1080,28 +1083,100 @@ def render_thought_prompt_page():
     
     st.markdown("---")
     
-    # Answer input based on answer_type
-    answer_type = current_prompt['answer_type']
+    # Answer input - use large multiple choice buttons from choice1, choice2, choice3 columns
     correct_answer = str(current_prompt['correct_answer']).strip()
     
-    if answer_type == 'multiple_choice':
-        try:
-            options = json.loads(current_prompt['options'])
-            user_answer = st.radio("Select your answer:", options, key=f"answer_mc_{current_variant}")
-        except (json.JSONDecodeError, TypeError):
-            st.error("Invalid multiple choice options")
-            return
-    else:
-        user_answer = st.text_input("Your answer:", key=f"answer_text_{current_variant}")
+    # Get the thought_prompt_num to check if this is prompt #25 (which uses draggable number line, not buttons)
+    prompt_num = None
+    try:
+        prompt_num = int(float(current_prompt.get('thought_prompt_num', 0)))
+    except (TypeError, ValueError):
+        pass
     
-    # Submit button
-    col1, col2, col3 = st.columns([1, 1, 2])
-    with col1:
-        submit_clicked = st.button("✓ Check Answer", key=f"submit_{current_variant}", type="primary")
+    # Check if this prompt has choice columns (exclude prompt #25 which uses draggable number line)
+    has_choices = (
+        'choice1' in current_prompt and 'choice2' in current_prompt and 'choice3' in current_prompt
+        and str(current_prompt.get('choice1', '')).strip() != ''
+        and str(current_prompt.get('choice2', '')).strip() != ''
+        and str(current_prompt.get('choice3', '')).strip() != ''
+        and prompt_num != 25
+    )
+    
+    if has_choices:
+        # Use large multiple choice buttons
+        choice1 = str(current_prompt.get('choice1', '')).strip()
+        choice2 = str(current_prompt.get('choice2', '')).strip()
+        choice3 = str(current_prompt.get('choice3', '')).strip()
+        
+        st.markdown("### Select your answer:")
+        
+        # Custom CSS for large multiple choice buttons
+        st.markdown("""
+        <style>
+        .mc-button-container button {
+            min-height: 70px !important;
+            font-size: 1.3rem !important;
+            font-weight: 600 !important;
+            border-radius: 14px !important;
+            padding: 1rem 1.5rem !important;
+            margin: 0.4rem 0 !important;
+            transition: all 0.2s ease !important;
+            border: 3px solid #4a90c8 !important;
+            background: linear-gradient(135deg, #ffffff 0%, #e8f1f7 100%) !important;
+            color: #1e3a5f !important;
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.12) !important;
+        }
+        .mc-button-container button:hover {
+            background: linear-gradient(135deg, #e0ecf4 0%, #c8ddf0 100%) !important;
+            border-color: #2c5f8d !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 18px rgba(30, 58, 95, 0.2) !important;
+        }
+        .mc-button-container button:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 6px rgba(30, 58, 95, 0.1) !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Render three full-width buttons
+        submit_clicked = None
+        user_answer = None
+        
+        btn_col1, btn_col2, btn_col3 = st.columns(3)
+        
+        with btn_col1:
+            st.markdown('<div class="mc-button-container">', unsafe_allow_html=True)
+            if st.button(f"**A**: {choice1}", key=f"mc_btn_{current_variant}_1", use_container_width=True):
+                submit_clicked = True
+                user_answer = choice1
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with btn_col2:
+            st.markdown('<div class="mc-button-container">', unsafe_allow_html=True)
+            if st.button(f"**B**: {choice2}", key=f"mc_btn_{current_variant}_2", use_container_width=True):
+                submit_clicked = True
+                user_answer = choice2
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with btn_col3:
+            st.markdown('<div class="mc-button-container">', unsafe_allow_html=True)
+            if st.button(f"**C**: {choice3}", key=f"mc_btn_{current_variant}_3", use_container_width=True):
+                submit_clicked = True
+                user_answer = choice3
+            st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        # Fallback: text input for prompts without choices
+        user_answer = st.text_input("Your answer:", key=f"answer_text_{current_variant}")
+        
+        # Submit button
+        col1, col2, col3 = st.columns([1, 1, 2])
+        with col1:
+            submit_clicked = st.button("✓ Check Answer", key=f"submit_{current_variant}", type="primary")
     
     if submit_clicked:
         if not user_answer:
-            st.warning("Please enter an answer first")
+            st.warning("Please provide an answer first")
             return
         
         # Normalize answers for comparison

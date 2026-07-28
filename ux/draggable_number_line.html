@@ -230,7 +230,7 @@
     const subtitleEl    = document.getElementById('subtitle');
 
     // ── State ──────────────────────────────────────────
-    let currentValue = CONFIG.initialValue !== null ? CONFIG.initialValue : CONFIG.start;
+    let currentValue = CONFIG.initialValue !== null ? CONFIG.initialValue : CONFIG.end;
     let isDragging   = false;
     let answerSubmitted = false;
     let lastSubmittedValue = null;
@@ -364,28 +364,32 @@
             }
         }
 
-        // Downward-pointing arrow handle
+        // Downward-pointing arrow handle (fully above the line)
         const hx = valueToX(currentValue);
         const arrowSize = 18;
+
+        // Arrow body height above the line
+        const arrowTop = b.y - arrowSize * 2;
+        const arrowTip = b.y;  // tip touches the line at the tick marks
 
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.15)';
         ctx.beginPath();
-        ctx.moveTo(hx - arrowSize, b.y - arrowSize);
-        ctx.lineTo(hx, b.y + arrowSize + 2);
-        ctx.lineTo(hx + arrowSize, b.y - arrowSize);
+        ctx.moveTo(hx - arrowSize, arrowTop);
+        ctx.lineTo(hx, arrowTip + 2);
+        ctx.lineTo(hx + arrowSize, arrowTop);
         ctx.closePath();
         ctx.fill();
 
-        // Main arrow (downward-pointing triangle)
-        const grad = ctx.createLinearGradient(hx, b.y - arrowSize, hx, b.y + arrowSize);
+        // Main arrow (downward-pointing triangle, fully above line)
+        const grad = ctx.createLinearGradient(hx, arrowTop, hx, arrowTip);
         grad.addColorStop(0, '#ff9999');
         grad.addColorStop(1, '#cc3333');
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.moveTo(hx - arrowSize, b.y - arrowSize);
-        ctx.lineTo(hx, b.y + arrowSize);
-        ctx.lineTo(hx + arrowSize, b.y - arrowSize);
+        ctx.moveTo(hx - arrowSize, arrowTop);
+        ctx.lineTo(hx, arrowTip);
+        ctx.lineTo(hx + arrowSize, arrowTop);
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = '#991111';
@@ -492,7 +496,7 @@
     });
 
     btnReset.addEventListener('click', function() {
-        setValue(CONFIG.initialValue !== null ? CONFIG.initialValue : CONFIG.start);
+        setValue(CONFIG.initialValue !== null ? CONFIG.initialValue : CONFIG.end);
         answerSubmitted = false;
         lastSubmittedValue = null;
         hideFeedback();

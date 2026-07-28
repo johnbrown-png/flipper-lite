@@ -1,5 +1,6 @@
 [
   {
+    "thought_prompt_num": 1,
     "small_step_num": 374,
     "small_step_name": "Partition numbers to 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_2_Partition numbers to 1,000_rank1_placeholder",
@@ -14,6 +15,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 2,
     "small_step_num": 374,
     "small_step_name": "Partition numbers to 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_2_Partition numbers to 1,000_rank1_placeholder",
@@ -28,6 +30,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 3,
     "small_step_num": 374,
     "small_step_name": "Partition numbers to 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_2_Partition numbers to 1,000_rank1_placeholder",
@@ -42,6 +45,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 4,
     "small_step_num": 375,
     "small_step_name": "Number line to 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_3_Number line to 1,000_rank1_placeholder",
@@ -56,6 +60,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 5,
     "small_step_num": 375,
     "small_step_name": "Number line to 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_3_Number line to 1,000_rank1_placeholder",
@@ -70,6 +75,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 6,
     "small_step_num": 375,
     "small_step_name": "Number line to 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_3_Number line to 1,000_rank1_placeholder",
@@ -84,6 +90,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 7,
     "small_step_num": 376,
     "small_step_name": "Thousands",
     "video_id": "Year 4_8-9_Autumn__Place value_4_Thousands_rank1_placeholder",
@@ -98,6 +105,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 8,
     "small_step_num": 376,
     "small_step_name": "Thousands",
     "video_id": "Year 4_8-9_Autumn__Place value_4_Thousands_rank1_placeholder",
@@ -112,6 +120,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 9,
     "small_step_num": 376,
     "small_step_name": "Thousands",
     "video_id": "Year 4_8-9_Autumn__Place value_4_Thousands_rank1_placeholder",
@@ -126,6 +135,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 10,
     "small_step_num": 377,
     "small_step_name": "Represent numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_5_Represent numbers to 10,000_rank1_placeholder",
@@ -140,6 +150,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 11,
     "small_step_num": 377,
     "small_step_name": "Represent numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_5_Represent numbers to 10,000_rank1_placeholder",
@@ -154,6 +165,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 12,
     "small_step_num": 377,
     "small_step_name": "Represent numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_5_Represent numbers to 10,000_rank1_placeholder",
@@ -168,6 +180,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 13,
     "small_step_num": 378,
     "small_step_name": "Partition numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_6_Partition numbers to 10,000_rank1_placeholder",
@@ -182,6 +195,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 14,
     "small_step_num": 378,
     "small_step_name": "Partition numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_6_Partition numbers to 10,000_rank1_placeholder",
@@ -196,6 +210,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 15,
     "small_step_num": 378,
     "small_step_name": "Partition numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_6_Partition numbers to 10,000_rank1_placeholder",
@@ -210,6 +225,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 16,
     "small_step_num": 379,
     "small_step_name": "Flexible partitioning of numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_7_Flexible partitioning of numbers to 10,000_rank1_placeholder",
@@ -224,6 +240,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 17,
     "small_step_num": 379,
     "small_step_name": "Flexible partitioning of numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_7_Flexible partitioning of numbers to 10,000_rank1_placeholder",
@@ -238,6 +255,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 18,
     "small_step_num": 379,
     "small_step_name": "Flexible partitioning of numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_7_Flexible partitioning of numbers to 10,000_rank1_placeholder",
@@ -252,6 +270,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 19,
     "small_step_num": 380,
     "small_step_name": "Find 1, 10, 100, 1,000 more or less",
     "video_id": "Year 4_8-9_Autumn__Place value_8_Find 1, 10, 100, 1,000 more or less_rank1_placeholder",
@@ -266,6 +285,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 20,
     "small_step_num": 380,
     "small_step_name": "Find 1, 10, 100, 1,000 more or less",
     "video_id": "Year 4_8-9_Autumn__Place value_8_Find 1, 10, 100, 1,000 more or less_rank1_placeholder",
@@ -280,6 +300,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 21,
     "small_step_num": 380,
     "small_step_name": "Find 1, 10, 100, 1,000 more or less",
     "video_id": "Year 4_8-9_Autumn__Place value_8_Find 1, 10, 100, 1,000 more or less_rank1_placeholder",
@@ -294,6 +315,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 22,
     "small_step_num": 381,
     "small_step_name": "Number line to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_9_Number line to 10,000_rank1_placeholder",
@@ -308,6 +330,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 23,
     "small_step_num": 381,
     "small_step_name": "Number line to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_9_Number line to 10,000_rank1_placeholder",
@@ -322,6 +345,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 24,
     "small_step_num": 381,
     "small_step_name": "Number line to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_9_Number line to 10,000_rank1_placeholder",
@@ -336,6 +360,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 25,
     "small_step_num": 382,
     "small_step_name": "Estimate on a number line to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_10_Estimate on a number line to 10,000_rank1_placeholder",
@@ -350,6 +375,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 26,
     "small_step_num": 382,
     "small_step_name": "Estimate on a number line to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_10_Estimate on a number line to 10,000_rank1_placeholder",
@@ -364,6 +390,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 27,
     "small_step_num": 382,
     "small_step_name": "Estimate on a number line to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_10_Estimate on a number line to 10,000_rank1_placeholder",
@@ -378,6 +405,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 28,
     "small_step_num": 383,
     "small_step_name": "Compare numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_11_Compare numbers to 10,000_rank1_placeholder",
@@ -392,6 +420,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 29,
     "small_step_num": 383,
     "small_step_name": "Compare numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_11_Compare numbers to 10,000_rank1_placeholder",
@@ -406,6 +435,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 30,
     "small_step_num": 383,
     "small_step_name": "Compare numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_11_Compare numbers to 10,000_rank1_placeholder",
@@ -420,6 +450,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 31,
     "small_step_num": 384,
     "small_step_name": "Order numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_12_Order numbers to 10,000_rank1_placeholder",
@@ -434,6 +465,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 32,
     "small_step_num": 384,
     "small_step_name": "Order numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_12_Order numbers to 10,000_rank1_placeholder",
@@ -448,6 +480,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 33,
     "small_step_num": 384,
     "small_step_name": "Order numbers to 10,000",
     "video_id": "Year 4_8-9_Autumn__Place value_12_Order numbers to 10,000_rank1_placeholder",
@@ -462,6 +495,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 34,
     "small_step_num": 385,
     "small_step_name": "Roman numerals",
     "video_id": "Year 4_8-9_Autumn__Place value_13_Roman numerals_rank1_placeholder",
@@ -476,6 +510,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 35,
     "small_step_num": 385,
     "small_step_name": "Roman numerals",
     "video_id": "Year 4_8-9_Autumn__Place value_13_Roman numerals_rank1_placeholder",
@@ -490,6 +525,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 36,
     "small_step_num": 385,
     "small_step_name": "Roman numerals",
     "video_id": "Year 4_8-9_Autumn__Place value_13_Roman numerals_rank1_placeholder",
@@ -504,6 +540,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 37,
     "small_step_num": 386,
     "small_step_name": "Round to the nearest 10",
     "video_id": "Year 4_8-9_Autumn__Place value_14_Round to the nearest 10_rank1_placeholder",
@@ -518,6 +555,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 38,
     "small_step_num": 386,
     "small_step_name": "Round to the nearest 10",
     "video_id": "Year 4_8-9_Autumn__Place value_14_Round to the nearest 10_rank1_placeholder",
@@ -532,6 +570,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 39,
     "small_step_num": 386,
     "small_step_name": "Round to the nearest 10",
     "video_id": "Year 4_8-9_Autumn__Place value_14_Round to the nearest 10_rank1_placeholder",
@@ -546,6 +585,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 40,
     "small_step_num": 387,
     "small_step_name": "Round to the nearest 100",
     "video_id": "Year 4_8-9_Autumn__Place value_15_Round to the nearest 100_rank1_placeholder",
@@ -560,6 +600,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 41,
     "small_step_num": 387,
     "small_step_name": "Round to the nearest 100",
     "video_id": "Year 4_8-9_Autumn__Place value_15_Round to the nearest 100_rank1_placeholder",
@@ -574,6 +615,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 42,
     "small_step_num": 387,
     "small_step_name": "Round to the nearest 100",
     "video_id": "Year 4_8-9_Autumn__Place value_15_Round to the nearest 100_rank1_placeholder",
@@ -588,6 +630,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 43,
     "small_step_num": 388,
     "small_step_name": "Round to the nearest 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_16_Round to the nearest 1,000_rank1_placeholder",
@@ -602,6 +645,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 44,
     "small_step_num": 388,
     "small_step_name": "Round to the nearest 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_16_Round to the nearest 1,000_rank1_placeholder",
@@ -616,6 +660,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 45,
     "small_step_num": 388,
     "small_step_name": "Round to the nearest 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_16_Round to the nearest 1,000_rank1_placeholder",
@@ -630,6 +675,7 @@
     "difficulty": "hard"
   },
   {
+    "thought_prompt_num": 46,
     "small_step_num": 389,
     "small_step_name": "Round to the nearest 10, 100 or 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_17_Round to the nearest 10, 100 or 1,000_rank1_placeholder",
@@ -644,6 +690,7 @@
     "difficulty": "medium"
   },
   {
+    "thought_prompt_num": 47,
     "small_step_num": 389,
     "small_step_name": "Round to the nearest 10, 100 or 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_17_Round to the nearest 10, 100 or 1,000_rank1_placeholder",
@@ -658,6 +705,7 @@
     "difficulty": "easy"
   },
   {
+    "thought_prompt_num": 48,
     "small_step_num": 389,
     "small_step_name": "Round to the nearest 10, 100 or 1,000",
     "video_id": "Year 4_8-9_Autumn__Place value_17_Round to the nearest 10, 100 or 1,000_rank1_placeholder",

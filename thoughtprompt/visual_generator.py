@@ -995,30 +995,12 @@ class MathVisualGenerator:
             offset = highlight - start
             x = line_start_x + int(offset * scale)
 
-            # Draw highlight circle
-            circle_radius = 12
-            draw.ellipse(
-                [x - circle_radius, line_y - circle_radius,
-                 x + circle_radius, line_y + circle_radius],
-                fill=self.colors['highlight'],
-                outline=self.colors['line'],
-                width=3
-            )
-
-            # Draw arrow pointing to highlight
-            arrow_y = line_y - 60
-            draw.line([x, arrow_y, x, line_y - circle_radius - 5],
+            # Draw arrow pointing upward to the number line increment lines
+            arrow_y = line_y + 60
+            draw.line([x, arrow_y, x, line_y + 5],
                      fill=self.colors['highlight'], width=3)
-            draw.polygon([x, arrow_y, x - 8, arrow_y + 15, x + 8, arrow_y + 15],
+            draw.polygon([x, arrow_y, x - 8, arrow_y - 15, x + 8, arrow_y - 15],
                         fill=self.colors['highlight'])
-
-            # Label the highlighted number
-            label_text = str(highlight)
-            bbox = draw.textbbox((0, 0), label_text, font=self.font_medium)
-            text_width = bbox[2] - bbox[0]
-            draw.text((x - text_width // 2, arrow_y - 30),
-                     label_text, fill=self.colors['highlight'],
-                     font=self.font_medium)
 
         return img
 

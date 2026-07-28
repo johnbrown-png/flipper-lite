@@ -868,7 +868,6 @@ def _render_interactive_number_line_prompt(current_prompt, small_step_num, curre
     title = current_prompt['small_step_name']
 
     st.markdown(f"### 🎯 {question}")
-    st.markdown(f"{'🟢' if difficulty == 'easy' else '🟡' if difficulty == 'medium' else '🔴'} **Difficulty**: {difficulty.title()} | **Attempt**: {current_variant}/3")
 
     widget_key = f"interactive_nl_{current_variant}"
 
@@ -1053,12 +1052,8 @@ def render_thought_prompt_page():
     
     current_prompt = prompts[current_variant - 1]
     
-    # Show difficulty indicator
+    # Extract difficulty for tracking purposes
     difficulty = current_prompt['difficulty']
-    diff_colors = {'easy': '🟢', 'medium': '🟡', 'hard': '🔴'}
-    diff_emoji = diff_colors.get(difficulty, '⚪')
-    st.markdown(f"{diff_emoji} **Difficulty**: {difficulty.title()} | **Attempt**: {current_variant}/3")
-    st.markdown("---")
     
     # Initialize visual generator
     visual_generator = MathVisualGenerator()

@@ -1041,6 +1041,8 @@ class MathVisualGenerator:
         Returns:
             PIL Image
         """
+        if visual_type == 'none':
+            return None
         if visual_type == 'base10_blocks':
             # Suppress imagery for prompts comparing/ordering multiple 4-digit numbers.
             # There is not room to show more than one 4-digit base-10 depiction,

@@ -867,8 +867,6 @@ def _render_interactive_number_line_prompt(current_prompt, small_step_num, curre
     question = current_prompt['prompt_text']
     title = current_prompt['small_step_name']
 
-    st.markdown(f"### 🎯 {question}")
-
     widget_key = f"interactive_nl_{current_variant}"
 
     # Build and render the self-contained widget HTML

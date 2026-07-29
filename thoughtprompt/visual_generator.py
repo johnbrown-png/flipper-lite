@@ -43,11 +43,16 @@ class MathVisualGenerator:
             self.font_large = ImageFont.truetype("arial.ttf", 36)
             self.font_medium = ImageFont.truetype("arial.ttf", 24)
             self.font_small = ImageFont.truetype("arial.ttf", 18)
+            # Larger fonts for part-whole models (+20%): 36→43, 24→29
+            self.font_large_pw = ImageFont.truetype("arial.ttf", 43)
+            self.font_medium_pw = ImageFont.truetype("arial.ttf", 29)
         except:
             # Fallback to default PIL font
             self.font_large = ImageFont.load_default()
             self.font_medium = ImageFont.load_default()
             self.font_small = ImageFont.load_default()
+            self.font_large_pw = ImageFont.load_default()
+            self.font_medium_pw = ImageFont.load_default()
 
     # Isometric 3D drawing helpers
     def _draw_isometric_cube(self, draw: ImageDraw.Draw, x: int, y: int,
@@ -625,7 +630,7 @@ class MathVisualGenerator:
         # Draw title
         if label:
             draw.text((20, 20), f"Part-Whole Model: {total}",
-                     fill=self.colors['text'], font=self.font_medium)
+                     fill=self.colors['text'], font=self.font_medium_pw)
 
         # Draw lines from total to parts first (so they're behind circles)
         for i, part in enumerate(parts):
@@ -646,11 +651,11 @@ class MathVisualGenerator:
         # Draw total number
         total_text = str(total)
         # Get text size for centering
-        bbox = draw.textbbox((0, 0), total_text, font=self.font_large)
+        bbox = draw.textbbox((0, 0), total_text, font=self.font_large_pw)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
         draw.text((total_x - text_width // 2, total_y - text_height // 2),
-                 total_text, fill=self.colors['text'], font=self.font_large)
+                 total_text, fill=self.colors['text'], font=self.font_large_pw)
 
         # Draw part circles
         for i, part in enumerate(parts):
@@ -667,11 +672,11 @@ class MathVisualGenerator:
 
             # Draw part number
             part_text = str(part)
-            bbox = draw.textbbox((0, 0), part_text, font=self.font_large)
+            bbox = draw.textbbox((0, 0), part_text, font=self.font_large_pw)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
             draw.text((part_x - text_width // 2, parts_y - text_height // 2),
-                     part_text, fill=self.colors['text'], font=self.font_large)
+                     part_text, fill=self.colors['text'], font=self.font_large_pw)
 
         return img
 
@@ -702,7 +707,7 @@ class MathVisualGenerator:
         # Title
         if label:
             draw.text((20, 10), f"Flexible Partitioning of {total}",
-                     fill=self.colors['text'], font=self.font_medium)
+                     fill=self.colors['text'], font=self.font_medium_pw)
 
         # Split canvas into two halves
         half_width = width // 2
@@ -729,11 +734,11 @@ class MathVisualGenerator:
 
             # Total number
             total_text = str(total)
-            bbox = draw.textbbox((0, 0), total_text, font=self.font_medium)
+            bbox = draw.textbbox((0, 0), total_text, font=self.font_medium_pw)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
             draw.text((total_x - text_width // 2, total_y - text_height // 2),
-                     total_text, fill=self.colors['text'], font=self.font_medium)
+                     total_text, fill=self.colors['text'], font=self.font_medium_pw)
 
             # Parts at the bottom
             num_parts = len(part_set)
@@ -771,11 +776,11 @@ class MathVisualGenerator:
 
                 # Part number
                 part_text = str(part)
-                bbox = draw.textbbox((0, 0), part_text, font=self.font_medium)
+                bbox = draw.textbbox((0, 0), part_text, font=self.font_medium_pw)
                 text_width = bbox[2] - bbox[0]
                 text_height = bbox[3] - bbox[1]
                 draw.text((part_x - text_width // 2, parts_y - text_height // 2),
-                         part_text, fill=self.colors['text'], font=self.font_medium)
+                         part_text, fill=self.colors['text'], font=self.font_medium_pw)
 
         return img
 

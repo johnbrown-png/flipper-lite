@@ -538,7 +538,7 @@ def render_thought_prompt(prompt, visual_generator):
             return None
         
         # Display visual - further constrained width for learner-friendly layout
-        col_img, col_spacer = st.columns([2, 2])
+        col_img, col_spacer = st.columns([2.2, 1.8])
         with col_img:
             st.image(img, use_container_width=True)
         

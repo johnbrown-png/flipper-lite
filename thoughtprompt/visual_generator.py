@@ -1003,11 +1003,12 @@ class MathVisualGenerator:
                     offset = h - start
                     x = line_start_x + int(offset * scale)
 
-                    # Draw arrow pointing upward to the number line increment lines
-                    arrow_y = line_y + 60
-                    draw.line([x, arrow_y, x, line_y + 5],
+                    # Draw arrow above the number line pointing downward,
+                    # with the tip meeting the number line at the target integer
+                    arrow_top_y = line_y - 70
+                    draw.line([x, arrow_top_y, x, line_y - 8],
                              fill=self.colors['highlight'], width=3)
-                    draw.polygon([x, arrow_y, x - 8, arrow_y - 15, x + 8, arrow_y - 15],
+                    draw.polygon([x, line_y, x - 8, line_y - 15, x + 8, line_y - 15],
                                  fill=self.colors['highlight'])
 
         return img

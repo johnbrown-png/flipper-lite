@@ -537,8 +537,8 @@ def render_thought_prompt(prompt, visual_generator):
             st.error(f"Unknown visual type: {visual_type}")
             return None
         
-        # Display visual - constrained width for learner-friendly layout
-        col_img, col_spacer = st.columns([3, 1])
+        # Display visual - further constrained width for learner-friendly layout
+        col_img, col_spacer = st.columns([2, 2])
         with col_img:
             st.image(img, use_container_width=True)
         

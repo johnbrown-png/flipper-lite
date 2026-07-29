@@ -537,8 +537,10 @@ def render_thought_prompt(prompt, visual_generator):
             st.error(f"Unknown visual type: {visual_type}")
             return None
         
-        # Display visual
-        st.image(img, use_container_width=True)
+        # Display visual - constrained width for learner-friendly layout
+        col_img, col_spacer = st.columns([3, 1])
+        with col_img:
+            st.image(img, use_container_width=True)
         
         return img
     
@@ -1039,18 +1041,6 @@ def render_thought_prompt_page():
         st.session_state.tp_active_small_step = small_step_num
         st.session_state.tp_current_variant = 1
     
-    # Back button
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        if st.button("← Back to Video", key="back_to_video", type="secondary"):
-            st.session_state.showing_thought_prompt = False
-            st.rerun()
-    
-    with col2:
-        st.markdown(f"**Small Step**: {prompts[0]['small_step_name']}")
-    
-    st.markdown("---")
-    
     # Get current prompt based on variant
     current_variant = st.session_state.tp_current_variant
     if current_variant > len(prompts):
@@ -1123,8 +1113,8 @@ def render_thought_prompt_page():
         st.markdown("""
         <style>
         .mc-button-container button {
-            min-height: 70px !important;
-            font-size: 1.3rem !important;
+            min-height: 80px !important;
+            font-size: 1.6rem !important;
             font-weight: 600 !important;
             border-radius: 14px !important;
             padding: 1rem 1.5rem !important;
@@ -1182,6 +1172,11 @@ def render_thought_prompt_page():
         col1, col2, col3 = st.columns([1, 1, 2])
         with col1:
             submit_clicked = st.button("✓ Check Answer", key=f"submit_{current_variant}", type="primary")
+    
+    st.markdown("---")
+    if st.button("← Back to Video", key="back_to_video_main", type="secondary"):
+        st.session_state.showing_thought_prompt = False
+        st.rerun()
     
     if submit_clicked:
         if not user_answer:

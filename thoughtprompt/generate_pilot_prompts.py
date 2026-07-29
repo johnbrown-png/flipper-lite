@@ -550,12 +550,12 @@ class ThoughtPromptGenerator:
                 'video_id': video_id,
                 'rank': rank,
                 'variant': 2,
-                'prompt_text': 'Complete with <, > or =: 5,046 ___ 5,064',
+                'prompt_text': 'Complete with "Greater Than (>)" and "Less Than (<)": 5,046 ___ 5,064',
                 'visual_type': 'number_line',
                 'visual_params': json.dumps({'start': 5000, 'end': 5100, 'highlight': [5046, 5064], 'interval': 10, 'label': False}),
                 'answer_type': 'text_match',
-                'correct_answer': '<',
-                'options': json.dumps(['<', '>', '=']),
+                'correct_answer': 'Less Than (<)',
+                'options': json.dumps(['Less Than (<)', 'Greater Than (>)', 'Equals (=)']),
                 'difficulty': 'medium'
             },
             {

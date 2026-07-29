@@ -12,7 +12,7 @@ Supports 4 visual types:
 from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Union
 
 
 class MathVisualGenerator:
@@ -908,7 +908,7 @@ class MathVisualGenerator:
         return img
 
     def generate_number_line(self, start: int, end: int,
-                            highlight: int = None,
+                            highlight: Union[int, List[int]] = None,
                             interval: int = None,
                             label: bool = True) -> Image.Image:
         """
@@ -917,7 +917,7 @@ class MathVisualGenerator:
         Args:
             start: Starting number
             end: Ending number
-            highlight: Number to highlight (optional)
+            highlight: Number or list of numbers to highlight (optional)
             interval: Interval between marks (auto-calculated if None)
             label: Whether to add text labels
 
@@ -990,17 +990,25 @@ class MathVisualGenerator:
 
             current += max(1, interval // 10)  # Smaller steps for minor ticks
 
-        # Highlight specific number if provided
-        if highlight is not None and start <= highlight <= end:
-            offset = highlight - start
-            x = line_start_x + int(offset * scale)
+        # Highlight specific number(s) if provided
+        if highlight is not None:
+            # Normalize to list for uniform handling
+            if isinstance(highlight, (int, float)):
+                highlights = [int(highlight)]
+            else:
+                highlights = [int(h) for h in highlight]
 
-            # Draw arrow pointing upward to the number line increment lines
-            arrow_y = line_y + 60
-            draw.line([x, arrow_y, x, line_y + 5],
-                     fill=self.colors['highlight'], width=3)
-            draw.polygon([x, arrow_y, x - 8, arrow_y - 15, x + 8, arrow_y - 15],
-                        fill=self.colors['highlight'])
+            for h in highlights:
+                if start <= h <= end:
+                    offset = h - start
+                    x = line_start_x + int(offset * scale)
+
+                    # Draw arrow pointing upward to the number line increment lines
+                    arrow_y = line_y + 60
+                    draw.line([x, arrow_y, x, line_y + 5],
+                             fill=self.colors['highlight'], width=3)
+                    draw.polygon([x, arrow_y, x - 8, arrow_y - 15, x + 8, arrow_y - 15],
+                                 fill=self.colors['highlight'])
 
         return img
 

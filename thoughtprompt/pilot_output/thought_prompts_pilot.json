@@ -718,5 +718,50 @@
     "correct_answer": "1000",
     "options": "[\"10\", \"100\", \"1000\"]",
     "difficulty": "hard"
+  },
+  {
+    "thought_prompt_num": 49,
+    "small_step_num": 373,
+    "small_step_name": "Represent numbers to 1000",
+    "video_id": "Year 4_8-9_Autumn__Place value_1_Represent numbers to 1000_rank1_placeholder",
+    "rank": 1,
+    "variant": 1,
+    "prompt_text": "What number is this?",
+    "visual_type": "base10_blocks",
+    "visual_params": "{\"thousands\": 1, \"ones\": 3, \"label\": false}",
+    "answer_type": "numeric",
+    "correct_answer": "1003",
+    "options": "[\"999\", \"1001\", \"1003\"]",
+    "difficulty": "easy"
+  },
+  {
+    "thought_prompt_num": 50,
+    "small_step_num": 373,
+    "small_step_name": "Represent numbers to 1000",
+    "video_id": "Year 4_8-9_Autumn__Place value_1_Represent numbers to 1000_rank1_placeholder",
+    "rank": 1,
+    "variant": 2,
+    "prompt_text": "What number is this?",
+    "visual_type": "base10_blocks",
+    "visual_params": "{\"hundreds\": 9, \"tens\": 9, \"ones\": 9, \"label\": false}",
+    "answer_type": "numeric",
+    "correct_answer": "999",
+    "options": "[\"1000\", \"1001\", \"999\"]",
+    "difficulty": "medium"
+  },
+  {
+    "thought_prompt_num": 51,
+    "small_step_num": 373,
+    "small_step_name": "Represent numbers to 1000",
+    "video_id": "Year 4_8-9_Autumn__Place value_1_Represent numbers to 1000_rank1_placeholder",
+    "rank": 1,
+    "variant": 3,
+    "prompt_text": "What number is this?",
+    "visual_type": "base10_blocks",
+    "visual_params": "{\"thousands\": 1, \"tens\": 1, \"label\": false}",
+    "answer_type": "numeric",
+    "correct_answer": "1010",
+    "options": "[\"990\", \"1010\", \"1000\"]",
+    "difficulty": "hard"
   }
 ]

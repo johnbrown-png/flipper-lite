@@ -465,9 +465,67 @@ def get_prompts_for_small_step(prompts_df, small_step_num):
     return matches.sort_values('variant').to_dict('records')
 
 
+def _inject_tts(prompt_text):
+    """Inject a self-contained JS block that speaks prompt_text via Web Speech API.
+    
+    Cancels any in-progress speech first (handles Streamlit reruns from
+    previous answers).  Height=0 so there is zero UI footprint.
+    """
+    if not prompt_text:
+        return
+    
+    # Escape for safe embedding inside a JS single-quoted string
+    escaped = (
+        prompt_text
+        .replace("\\", "\\\\")   # backslashes first
+        .replace("'", "\\'")     # single quotes
+        .replace("\n", " ")      # newlines → spaces
+    )
+    
+    tts_js = f"""<script>
+(function() {{
+    window.speechSynthesis.cancel();
+    
+    function speak() {{
+        var utterance = new SpeechSynthesisUtterance('{escaped}');
+        
+        // Prefer a good English voice
+        var voices = speechSynthesis.getVoices();
+        if (voices.length > 0) {{
+            var preferred = voices.find(function(v) {{
+                return v.name.indexOf('David') !== -1 ||
+                       v.name.indexOf('Google UK English Female') !== -1 ||
+                       v.name.indexOf('Samantha') !== -1 ||
+                       v.lang.indexOf('en') === 0;
+            }});
+            if (preferred) utterance.voice = preferred;
+        }}
+        
+        utterance.rate = 0.9;    // Slightly slower for young learners
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        speechSynthesis.speak(utterance);
+    }}
+    
+    // Voices may load asynchronously; retry once if not yet loaded
+    if (speechSynthesis.getVoices().length === 0) {{
+        speechSynthesis.addEventListener('voiceschanged', speak, {{ once: true }});
+    }} else {{
+        speak();
+    }}
+}})();
+</script>"""
+    
+    components.html(tts_js, height=0)
+
+
 def render_thought_prompt(prompt, visual_generator):
     """Render a single thought prompt with its visual"""
     st.markdown(f"### 🎯 {prompt['prompt_text']}")
+    
+    # --- TTS: speak the prompt text aloud using Web Speech API ---
+    _inject_tts(prompt['prompt_text'])
     
     # Generate visual
     try:

@@ -493,9 +493,9 @@ def _inject_tts(prompt_text):
         var voices = speechSynthesis.getVoices();
         if (voices.length > 0) {{
             var preferred = voices.find(function(v) {{
-                return v.name.indexOf('David') !== -1 ||
-                       v.name.indexOf('Google UK English Female') !== -1 ||
+                return v.name.indexOf('Google UK English Female') !== -1 ||
                        v.name.indexOf('Samantha') !== -1 ||
+                       v.name.indexOf('David') !== -1 ||
                        v.lang.indexOf('en') === 0;
             }});
             if (preferred) utterance.voice = preferred;

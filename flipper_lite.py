@@ -774,7 +774,7 @@ def _build_interactive_number_line_html(start, end, correct_answer, tolerance, i
         <div class="handle" id="handle" style="left:100%;"></div>
     </div>
     <div class="controls">
-        <button class="btn btn-check" id="btnCheck">&#10003; Check Answer</button>
+        <button class="btn btn-check" id="btnCheck">Check Answer</button>
         <button class="btn btn-reset" id="btnReset">&#8634; Reset</button>
     </div>
     <div class="feedback" id="feedback"></div>
@@ -881,21 +881,19 @@ def _build_interactive_number_line_html(start, end, correct_answer, tolerance, i
         var diff = Math.abs(val - CORRECT);
         feedback.style.display = 'block';
         if (diff <= TOLERANCE) {{
-            feedback.textContent = '&#10004; Correct! ' + val.toLocaleString() + ' is within ' + TOLERANCE + ' of ' + CORRECT.toLocaleString() + '.';
+            feedback.textContent = 'Correct! ' + val.toLocaleString() + ' is within ' + TOLERANCE + ' of ' + CORRECT.toLocaleString() + '.';
             feedback.className = 'feedback correct';
         }} else {{
-            feedback.textContent = '&#10008; Not quite. You selected ' + val.toLocaleString() + '. The correct answer is ' + CORRECT.toLocaleString() + '.';
+            feedback.textContent = 'Not quite. You selected ' + val.toLocaleString() + '. The correct answer is ' + CORRECT.toLocaleString() + '.';
             feedback.className = 'feedback incorrect';
         }}
-        // Post answer to parent window (Streamlit)
+        // Pass answer back to Streamlit via setComponentValue
         try {{
-            if (window.parent && window.parent !== window) {{
-                window.parent.postMessage({{
-                    type: 'numberLineAnswer',
+            if (window.Streamlit) {{
+                window.Streamlit.setComponentValue(JSON.stringify({{
                     value: val,
-                    correct: CORRECT,
                     isCorrect: diff <= TOLERANCE
-                }}, '*');
+                }}));
             }}
         }} catch(e) {{}}
     }});
@@ -934,10 +932,27 @@ def _render_interactive_number_line_prompt(current_prompt, small_step_num, curre
         tolerance=tolerance, interval=interval_value,
         title=title, question=question
     )
-    components.html(widget_html, height=420, scrolling=False)
+    result = components.html(widget_html, height=420, scrolling=False)
 
-    # Answer submission is handled entirely by the embedded "Check Answer" button
-    # within the interactive widget HTML.  No manual text entry is provided.
+    # If the learner submitted an answer via the embedded "Check Answer" button,
+    # the widget calls window.Streamlit.setComponentValue() which is captured here.
+    if result:
+        try:
+            data = json.loads(result)
+            if isinstance(data, dict) and 'value' in data:
+                submitted_value = data['value']
+                _process_number_line_answer(
+                    submitted_value=submitted_value,
+                    correct_answer=correct_answer,
+                    tolerance=tolerance,
+                    small_step_num=small_step_num,
+                    current_variant=current_variant,
+                    current_video=current_video,
+                    difficulty=difficulty,
+                    current_prompt=current_prompt
+                )
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass
 
 
 def _process_number_line_answer(submitted_value, correct_answer, tolerance, small_step_num, current_variant, current_video, difficulty, current_prompt):

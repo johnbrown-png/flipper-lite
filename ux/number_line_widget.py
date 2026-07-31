@@ -282,9 +282,9 @@ def render_number_line_exercise(
 
     if submitted is not None:
         if is_correct:
-            st.success(f"✓ Correct! {submitted} is the right answer.")
+            st.success(f"Correct! {submitted} is the right answer.")
         else:
             st.error(
-                f"✗ Not quite. You selected {submitted}. "
+                f"Not quite. You selected {submitted}. "
                 f"The correct answer is {correct_answer}."
             )

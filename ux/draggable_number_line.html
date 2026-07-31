@@ -29,6 +29,7 @@
         align-items: center;
         min-height: 100vh;
         padding: 20px;
+        overflow-x: hidden;
     }
 
     .number-line-widget {
@@ -162,6 +163,63 @@
         font-family: monospace;
         font-size: 12px;
     }
+
+    /* Balloons celebration animation */
+    .balloon {
+        position: fixed;
+        bottom: -120px;
+        width: 50px;
+        height: 65px;
+        border-radius: 50% 50% 45% 45%;
+        animation: floatUp 4s ease-in forwards;
+        z-index: 9999;
+        pointer-events: none;
+    }
+    .balloon::before {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 2px;
+        height: 30px;
+        background: #888;
+    }
+    .balloon::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 8px;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 8px solid #888;
+    }
+
+    @keyframes floatUp {
+        0%   {
+            transform: translateY(0) rotate(0deg) scale(0.8);
+            opacity: 0.9;
+        }
+        20%  {
+            transform: translateY(-25vh) rotate(8deg) scale(1);
+            opacity: 1;
+        }
+        40%  {
+            transform: translateY(-45vh) rotate(-5deg) scale(0.95);
+            opacity: 0.9;
+        }
+        70%  {
+            transform: translateY(-70vh) rotate(12deg) scale(0.85);
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(-105vh) rotate(-10deg) scale(0.7);
+            opacity: 0;
+        }
+    }
 </style>
 </head>
 <body>
@@ -175,14 +233,14 @@
     </div>
 
     <div class="controls">
-        <button class="btn btn-check" id="btnCheck">✓ Check Answer</button>
-        <button class="btn btn-reset" id="btnReset">↺ Reset</button>
-        <button class="btn btn-snap" id="btnSnap">📏 Snap: Off</button>
+        <button class="btn btn-check" id="btnCheck">Check Answer</button>
+        <button class="btn btn-reset" id="btnReset">&#8634; Reset</button>
+        <button class="btn btn-snap" id="btnSnap">&#128207; Snap: Off</button>
     </div>
 
     <div class="feedback" id="feedback"></div>
     <div class="legend" id="legend">
-        <span><kbd>← →</kbd> Fine-tune</span>
+        <span><kbd>&larr; &rarr;</kbd> Fine-tune</span>
         <span><kbd>Shift</kbd> + arrow Jump 10</span>
         <span>Click or drag on the line</span>
     </div>
@@ -451,11 +509,40 @@
         }
     });
 
+    // ── Balloons celebration ────────────────────────────
+    function launchBalloons() {
+        const colors = ['#FF6B6B', '#4ECDC4', '#6C5CE7', '#FFD93D', '#FF8A5C',
+                       '#A29BFE', '#FD79A8', '#00CEC9', '#FDCB6E', '#74B9FF'];
+        const balloonCount = 15;
+        for (let i = 0; i < balloonCount; i++) {
+            setTimeout(function() {
+                const balloon = document.createElement('div');
+                balloon.className = 'balloon';
+                balloon.style.left = (Math.random() * 80 + 5) + '%';
+                balloon.style.background = colors[Math.floor(Math.random() * colors.length)];
+                balloon.style.animationDuration = (Math.random() * 2 + 3) + 's';
+                balloon.style.animationDelay = '0s';
+                balloon.style.width = (Math.random() * 20 + 35) + 'px';
+                balloon.style.height = (Math.random() * 25 + 50) + 'px';
+                document.body.appendChild(balloon);
+                // Clean up after animation
+                setTimeout(function() {
+                    if (balloon.parentNode) {
+                        balloon.parentNode.removeChild(balloon);
+                    }
+                }, 4500);
+            }, i * 150);
+        }
+    }
+
     // ── Buttons ────────────────────────────────────────
     function showFeedback(type, message) {
         if (!CONFIG.showFeedback) return;
         feedbackEl.className = 'feedback show ' + type;
         feedbackEl.textContent = message;
+        if (type === 'correct') {
+            launchBalloons();
+        }
     }
     function hideFeedback() {
         feedbackEl.className = 'feedback';
@@ -470,15 +557,15 @@
             const diff = Math.abs(currentValue - CONFIG.correctAnswer);
             if (diff <= CONFIG.tolerance) {
                 showFeedback('correct',
-                    '✓ Correct! ' + currentValue + ' is the right answer.');
+                    'Correct! ' + currentValue + ' is the right answer.');
             } else {
                 const dir = currentValue < CONFIG.correctAnswer ? 'too low' : 'too high';
                 showFeedback('incorrect',
-                    '✗ Not quite. ' + currentValue + ' is ' + dir +
+                    'Not quite. ' + currentValue + ' is ' + dir +
                     ' (correct answer: ' + CONFIG.correctAnswer + ').');
             }
         } else {
-            showFeedback('info', '✓ Answer submitted: ' + currentValue);
+            showFeedback('info', 'Answer submitted: ' + currentValue);
         }
 
         // Communicate back to Streamlit if in iframe
@@ -505,15 +592,15 @@
     btnSnap.addEventListener('click', function() {
         CONFIG.snapEnabled = !CONFIG.snapEnabled;
         btnSnap.textContent = CONFIG.snapEnabled
-            ? '📏 Snap: ' + CONFIG.snapInterval
-            : '📏 Snap: Off';
+            ? '\u{1F4CF} Snap: ' + CONFIG.snapInterval
+            : '\u{1F4CF} Snap: Off';
         btnSnap.classList.toggle('active', CONFIG.snapEnabled);
         // Re-apply snap
         setValue(currentValue);
     });
     // Init snap button state
     if (CONFIG.snapEnabled) {
-        btnSnap.textContent = '📏 Snap: ' + CONFIG.snapInterval;
+        btnSnap.textContent = '\u{1F4CF} Snap: ' + CONFIG.snapInterval;
         btnSnap.classList.add('active');
     }
 

@@ -489,14 +489,40 @@ def _inject_tts(prompt_text):
     function speak() {{
         var utterance = new SpeechSynthesisUtterance('{escaped}');
         
-        // Prefer a good English voice
+        // Prefer a good English voice — try in priority order
         var voices = speechSynthesis.getVoices();
         if (voices.length > 0) {{
-            var preferred = voices.find(function(v) {{
-                return v.name.indexOf('Google UK English Female') !== -1 ||
-                       v.name.indexOf('Samantha') !== -1 ||
-                       v.lang.indexOf('en') === 0;
+            var preferred = null;
+
+            // 1st choice: Google UK English Female
+            preferred = voices.find(function(v) {{
+                return v.name.indexOf('Google UK English Female') !== -1;
             }});
+
+            // 2nd choice: Samantha
+            if (!preferred) {{
+                preferred = voices.find(function(v) {{
+                    return v.name.indexOf('Samantha') !== -1;
+                }});
+            }}
+
+            // 3rd choice: any English voice, but skip Microsoft/David
+            if (!preferred) {{
+                preferred = voices.find(function(v) {{
+                    return v.lang.indexOf('en') === 0 &&
+                           v.name.indexOf('Microsoft') === -1 &&
+                           v.name.indexOf('David') === -1 &&
+                           v.name.indexOf('Zira') === -1;
+                }});
+            }}
+
+            // Last resort: any English voice at all
+            if (!preferred) {{
+                preferred = voices.find(function(v) {{
+                    return v.lang.indexOf('en') === 0;
+                }});
+            }}
+
             if (preferred) utterance.voice = preferred;
         }}
         

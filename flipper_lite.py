@@ -495,7 +495,6 @@ def _inject_tts(prompt_text):
             var preferred = voices.find(function(v) {{
                 return v.name.indexOf('Google UK English Female') !== -1 ||
                        v.name.indexOf('Samantha') !== -1 ||
-                       v.name.indexOf('David') !== -1 ||
                        v.lang.indexOf('en') === 0;
             }});
             if (preferred) utterance.voice = preferred;
@@ -768,11 +767,11 @@ def _build_interactive_number_line_html(start, end, correct_answer, tolerance, i
 <div class="widget-container">
     <div class="title">{title}</div>
     <div class="subtitle">{question}</div>
-    <div class="current-value">Your guess: <span class="val" id="currentVal">{correct_answer}</span></div>
+    <div class="current-value">Your guess: <span class="val" id="currentVal">{end}</span></div>
     <div class="number-line-container" id="nlContainer">
         <div class="number-line"></div>
         <div id="ticksLayer"></div>
-        <div class="handle" id="handle" style="left:50%;"></div>
+        <div class="handle" id="handle" style="left:100%;"></div>
     </div>
     <div class="controls">
         <button class="btn btn-check" id="btnCheck">&#10003; Check Answer</button>
@@ -902,14 +901,14 @@ def _build_interactive_number_line_html(start, end, correct_answer, tolerance, i
     }});
 
     document.getElementById('btnReset').addEventListener('click', function() {{
-        updateHandle(0.5);
+        updateHandle(1.0);
         feedback.classList.remove('correct', 'incorrect');
         feedback.style.display = 'none';
     }});
 
     // Initialize
     buildTicks();
-    updateHandle(0.5);
+    updateHandle(1.0);
 }})();
 </script>
 </body>
@@ -937,26 +936,8 @@ def _render_interactive_number_line_prompt(current_prompt, small_step_num, curre
     )
     components.html(widget_html, height=420, scrolling=False)
 
-    # Simple numeric text input for answer submission (manual fallback)
-    st.caption("Or type your answer below:")
-    col1, col2, _ = st.columns([1, 1, 2])
-    with col1:
-        manual_answer = st.number_input(
-            "Your answer",
-            min_value=start,
-            max_value=end,
-            step=interval_value,
-            key=f"nl_manual_{widget_key}",
-            label_visibility="collapsed"
-        )
-    with col2:
-        if st.button("Submit", key=f"nl_submit_{widget_key}", type="primary"):
-            _process_number_line_answer(
-                int(manual_answer), correct_answer, tolerance,
-                small_step_num, current_variant, current_video, difficulty,
-                current_prompt
-            )
-            st.rerun()
+    # Answer submission is handled entirely by the embedded "Check Answer" button
+    # within the interactive widget HTML.  No manual text entry is provided.
 
 
 def _process_number_line_answer(submitted_value, correct_answer, tolerance, small_step_num, current_variant, current_video, difficulty, current_prompt):

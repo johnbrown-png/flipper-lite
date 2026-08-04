@@ -1985,7 +1985,7 @@ def main():
             }}
             </style>
             <div id="flipper-video-container">
-            <div id="flipper-video-header" style="background:#1e3a5f; border-radius:10px 10px 0 0; padding:0.6rem 0.75rem 0.15rem 0.75rem; margin-bottom:-0.2rem;">
+            <div id="flipper-video-header" style="background:#1e3a5f; border-radius:10px 10px 0 0; padding:0.35rem 0.75rem 0.35rem 0.75rem; margin-bottom:0rem;">
                 <div style="color:#f0f4f8; font-size:1rem; font-weight:600;">
                     &#9654; Now Playing: {title}{meta_html}
                 </div>
@@ -2032,14 +2032,30 @@ def main():
         </script>
         <script src="https://www.youtube.com/iframe_api"></script>
         """
-        components.html(player_html, height=800, scrolling=False)
+        components.html(player_html, height=0, scrolling=False)
         st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
 
         # Video controls with thought prompt button
+        st.markdown("""
+        <style>
+        #flipper-video-container .stButton button {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0.35rem !important;
+            padding-bottom: 0.35rem !important;
+        }
+        #flipper-video-container [data-testid="stHorizontalBlock"] {
+            gap: 0.3rem !important;
+        }
+        #flipper-video-container hr {
+            margin: 0.2rem 0 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         if THOUGHT_PROMPTS_ENABLED:
-            _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 1.2, 1, 2.8])
+            btn_col_close, btn_col_prompt, btn_col_next = st.columns([1, 1.2, 1])
         else:
-            _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 0, 1, 3])
+            btn_col_close, btn_col_next = st.columns([2, 1])
     
         with btn_col_close:
             if st.button("✕  Close video", key="close_inline_video", type="secondary", use_container_width=True):
@@ -2079,7 +2095,7 @@ def main():
                     st.session_state.current_video = next_video
                     st.session_state.flipper_lite_scroll_to_player = True
                     st.rerun()
-        st.markdown("---")
+        st.markdown("<hr style='margin:0.2rem 0; border:0; border-top:1px solid rgba(44,95,141,0.15);'>", unsafe_allow_html=True)
         if st.session_state.get('flipper_lite_scroll_to_player'):
             components.html(
                 """

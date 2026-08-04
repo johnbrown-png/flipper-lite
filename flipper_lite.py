@@ -2059,6 +2059,30 @@ def main():
             parent_access_error: 0
         }};
 
+        function sendComponentValue(payload) {{
+            var sent = false;
+            var value = JSON.stringify(payload);
+
+            try {{
+                if (window.Streamlit && window.Streamlit.setComponentValue) {{
+                    window.Streamlit.setComponentValue(value);
+                    sent = true;
+                }}
+            }} catch (e) {{}}
+
+            if (!sent) {{
+                try {{
+                    window.parent.postMessage({{
+                        isStreamlitMessage: true,
+                        type: 'streamlit:setComponentValue',
+                        value: value
+                    }}, '*');
+                    sent = true;
+                }} catch (e) {{}}
+            }}
+            return sent;
+        }}
+
         function emitToStreamlit(eventName, reason, force) {{
             if (streamlitEventSent && !force) {{
                 return;
@@ -2066,15 +2090,20 @@ def main():
             if (!force) {{
                 streamlitEventSent = true;
             }}
-            try {{
-                if (window.Streamlit && window.Streamlit.setComponentValue) {{
-                    window.Streamlit.setComponentValue(JSON.stringify({{
-                        event: eventName,
-                        reason: reason || '',
-                        counters: debugCounts
-                    }}));
-                }}
-            }} catch (e) {{}}
+
+            var payload = {{
+                event: eventName,
+                reason: reason || '',
+                counters: debugCounts,
+                nonce: String(Date.now()) + '-' + String(Math.random())
+            }};
+
+            var ok = sendComponentValue(payload);
+            if (!ok) {{
+                debugCounts.parent_access_error += 1;
+                setTimeout(function() {{ sendComponentValue(payload); }}, 120);
+                setTimeout(function() {{ sendComponentValue(payload); }}, 320);
+            }}
         }}
 
         function triggerThoughtPrompt() {{
@@ -2082,7 +2111,7 @@ def main():
             debugCounts.trigger_found += 1;
             debugCounts.trigger_clicked += 1;
             emitToStreamlit('auto_trigger', 'video_end_or_near_end', false);
-            return false;
+            return true;
         }}
 
         function triggerThoughtPromptWithRetry(attempt) {{
@@ -2189,7 +2218,12 @@ def main():
         <script src="https://www.youtube.com/iframe_api"></script>
         """
         st.markdown('<div id="flipper-video-player-top"></div>', unsafe_allow_html=True)
-        player_event_value = components.html(player_html, height=800, scrolling=False)
+        player_event_value = components.html(
+            player_html,
+            height=800,
+            scrolling=False,
+            key=f"inline_player_component_{video_id}",
+        )
         st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
 
         if player_event_value:

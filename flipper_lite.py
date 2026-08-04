@@ -2047,80 +2047,174 @@ def main():
                 st.rerun()
 
         st.markdown('<div id="flipper-video-player-top"></div>', unsafe_allow_html=True)
-        if STREAMLIT_PLAYER_ENABLED:
-            player_event = st_player(
-                f"https://www.youtube.com/watch?v={video_id}",
-                height=800,
-                playing=True,
-                controls=True,
-                events=["onReady", "onPlay", "onBuffer", "onDuration", "onProgress", "onEnded", "onError"],
-                key=f"st_player_{video_id}",
-            )
+        snapshot_requested = bool(st.session_state.pop(f'tpdbg_request_snapshot_{video_id}', False))
+        player_html = f"""
+        <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin:0; background:#000;">
+            <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
+        </div>
+        <script>
+        (function() {{
+            var player = null;
+            var nearEndWatcher = null;
+            var endedReported = false;
+            var snapshotRequested = {str(snapshot_requested).lower()};
 
-            if player_event and getattr(player_event, "name", None):
-                event_name = str(player_event.name).strip()
-                event_data = getattr(player_event, "data", None)
-                tpdbg_counts['last_event'] = event_name
-                tpdbg_counts['last_reason'] = ''
+            function report(eventName, data) {{
+                try {{
+                    window.parent.postMessage({{
+                        type: 'tpAutoEvent',
+                        videoId: {json.dumps(video_id)},
+                        event: eventName,
+                        data: data || null,
+                        nonce: String(Date.now()) + '-' + String(Math.random())
+                    }}, '*');
+                }} catch (e) {{}}
+            }}
 
-                if event_name == 'onReady':
-                    tpdbg_counts['api_ready'] += 1
-                    tpdbg_counts['on_ready'] += 1
-                elif event_name == 'onPlay':
-                    tpdbg_counts['state_playing'] += 1
-                elif event_name == 'onBuffer':
-                    tpdbg_counts['state_buffering'] += 1
-                elif event_name == 'onDuration':
-                    try:
-                        st.session_state[f"tpdbg_duration_{video_id}"] = float(event_data)
-                    except (TypeError, ValueError):
-                        pass
-                elif event_name == 'onProgress':
-                    try:
-                        if isinstance(event_data, dict):
-                            played_seconds = float(event_data.get('playedSeconds', 0.0))
-                            duration_seconds = float(st.session_state.get(f"tpdbg_duration_{video_id}", 0.0))
-                            if duration_seconds > 0 and played_seconds >= max(duration_seconds - 1.2, 0):
-                                tpdbg_counts['near_end'] += 1
-                    except (TypeError, ValueError):
-                        pass
-                elif event_name == 'onEnded':
-                    tpdbg_counts['state_ended'] += 1
-                    tpdbg_counts['trigger_attempt'] += 1
-                    tpdbg_counts['trigger_found'] += 1
-                    tpdbg_counts['trigger_clicked'] += 1
-                    if not st.session_state.get('showing_thought_prompt', False):
-                        if _prepare_thought_prompt_open(vid, auto_triggered=True):
-                            tpdbg_counts['auto_trigger_sent'] += 1
-                            st.session_state.tp_debug_events = tpdbg_store
-                            st.rerun()
-                        else:
-                            tpdbg_counts['auto_trigger_failed'] += 1
-                            tpdbg_counts['last_reason'] = 'prepare_thought_prompt_open_returned_false'
-                elif event_name == 'onError':
-                    tpdbg_counts['auto_trigger_failed'] += 1
-                    tpdbg_counts['last_reason'] = 'player_error_event'
+            function stopNearEndWatcher() {{
+                if (nearEndWatcher) {{
+                    clearInterval(nearEndWatcher);
+                    nearEndWatcher = null;
+                }}
+            }}
 
-                st.session_state.tp_debug_events = tpdbg_store
-        else:
-            # Fallback player when streamlit-player dependency is unavailable.
-            embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1&autoplay=1"
-            st.markdown(
-                f"""
-                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 0 0 10px 10px; margin: 0;">
-                    <iframe
-                        src="{embed_url}"
-                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen>
-                    </iframe>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.info("Install `streamlit-player` to enable reliable automatic thought prompt triggering on video end.")
+            function startNearEndWatcher() {{
+                if (nearEndWatcher) return;
+                nearEndWatcher = setInterval(function() {{
+                    if (!player || endedReported) return;
+                    try {{
+                        var duration = player.getDuration ? player.getDuration() : 0;
+                        var currentTime = player.getCurrentTime ? player.getCurrentTime() : 0;
+                        if (duration > 0 && currentTime >= Math.max(duration - 1.2, 0)) {{
+                            report('near_end', {{ duration: duration, currentTime: currentTime }});
+                        }}
+                    }} catch (e) {{}}
+                }}, 500);
+            }}
 
+            function onPlayerReady(event) {{
+                report('on_ready', null);
+                try {{ event.target.playVideo(); }} catch (e) {{}}
+                startNearEndWatcher();
+            }}
+
+            function onPlayerStateChange(event) {{
+                if (event.data === 1) report('state_playing', null);
+                if (event.data === 3) report('state_buffering', null);
+                if (event.data === 0 && !endedReported) {{
+                    endedReported = true;
+                    stopNearEndWatcher();
+                    report('state_ended', null);
+                    report('auto_trigger', {{ source: 'ended' }});
+                }}
+            }}
+
+            function createPlayer() {{
+                report('api_ready', null);
+                player = new YT.Player('yt-player', {{
+                    videoId: {json.dumps(video_id)},
+                    playerVars: {{
+                        rel: 0,
+                        modestbranding: 1,
+                        autoplay: 1,
+                        enablejsapi: 1,
+                        origin: window.location.origin
+                    }},
+                    events: {{
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange
+                    }}
+                }});
+            }}
+
+            window.onYouTubeIframeAPIReady = createPlayer;
+            if (snapshotRequested) {{
+                report('debug_snapshot', {{ source: 'manual_snapshot_request' }});
+            }}
+
+            if (typeof YT !== 'undefined' && YT.ready) {{
+                YT.ready(createPlayer);
+            }}
+        }})();
+        </script>
+        <script src="https://www.youtube.com/iframe_api"></script>
+        """
+        components.html(player_html, height=800, scrolling=False)
+
+        listener_html = """
+        <script>
+        (function() {
+            var latest = null;
+            window.addEventListener('message', function(e) {
+                if (!e || !e.data || e.data.type !== 'tpAutoEvent') return;
+                latest = e.data;
+            });
+
+            function flush() {
+                if (latest === null) return;
+                try {
+                    if (window.Streamlit && window.Streamlit.setComponentValue) {
+                        window.Streamlit.setComponentValue(JSON.stringify(latest));
+                        latest = null;
+                    }
+                } catch (err) {}
+            }
+
+            setInterval(flush, 180);
+        })();
+        </script>
+        """
+        listener_value = components.html(listener_html, height=0, scrolling=False)
         st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
+
+        if listener_value:
+            try:
+                payload = json.loads(listener_value) if isinstance(listener_value, str) else listener_value
+            except (TypeError, json.JSONDecodeError):
+                payload = None
+
+            if isinstance(payload, dict):
+                event_name = str(payload.get('event', '')).strip()
+                event_data = payload.get('data', None)
+                nonce = str(payload.get('nonce', '')).strip()
+                if nonce and st.session_state.get('tpdbg_last_nonce') == nonce:
+                    event_name = ''
+                else:
+                    if nonce:
+                        st.session_state.tpdbg_last_nonce = nonce
+
+                if event_name:
+                    tpdbg_counts['last_event'] = event_name
+                    tpdbg_counts['last_reason'] = ''
+
+                    if event_name == 'api_ready':
+                        tpdbg_counts['api_ready'] += 1
+                    elif event_name == 'on_ready':
+                        tpdbg_counts['on_ready'] += 1
+                    elif event_name == 'state_playing':
+                        tpdbg_counts['state_playing'] += 1
+                    elif event_name == 'state_buffering':
+                        tpdbg_counts['state_buffering'] += 1
+                    elif event_name == 'near_end':
+                        tpdbg_counts['near_end'] += 1
+                    elif event_name == 'state_ended':
+                        tpdbg_counts['state_ended'] += 1
+                    elif event_name == 'auto_trigger':
+                        tpdbg_counts['trigger_attempt'] += 1
+                        tpdbg_counts['trigger_found'] += 1
+                        tpdbg_counts['trigger_clicked'] += 1
+                        if not st.session_state.get('showing_thought_prompt', False):
+                            if _prepare_thought_prompt_open(vid, auto_triggered=True):
+                                tpdbg_counts['auto_trigger_sent'] += 1
+                                st.session_state.tp_debug_events = tpdbg_store
+                                st.rerun()
+                            else:
+                                tpdbg_counts['auto_trigger_failed'] += 1
+                                tpdbg_counts['last_reason'] = 'prepare_thought_prompt_open_returned_false'
+                    elif event_name == 'debug_snapshot':
+                        tpdbg_counts['last_reason'] = 'manual_snapshot_request'
+
+                    st.session_state.tp_debug_events = tpdbg_store
 
         # Video controls with thought prompt button
         if THOUGHT_PROMPTS_ENABLED:

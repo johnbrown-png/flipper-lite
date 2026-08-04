@@ -1917,6 +1917,7 @@ def main():
         meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
         st.markdown(
             f"""
+            <div id="flipper-video-container">
             <div id="flipper-video-header" style="background:#1e3a5f; border-radius:10px 10px 0 0; padding:0.75rem 0.75rem 0.5rem 0.75rem;">
                 <div style="color:#f0f4f8; font-size:1rem; font-weight:600;">
                     &#9654; Now Playing: {title}{meta_html}
@@ -1929,6 +1930,7 @@ def main():
         player_html = f"""
         <div id="yt-player-wrapper" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin-bottom:0.75rem;">
             <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
+        </div>
         </div>
         <script>
         var player = null;
@@ -2055,7 +2057,7 @@ def main():
                 """
                 <script>
                 setTimeout(function() {
-                const target = window.parent.document.getElementById('flipper-video-header');
+                const target = window.parent.document.getElementById('flipper-video-container');
                     if (target) {
                         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }

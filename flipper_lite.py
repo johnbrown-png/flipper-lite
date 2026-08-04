@@ -503,21 +503,27 @@ def _extract_small_step_num_from_video(current_video):
 
 def _prepare_thought_prompt_open(current_video, auto_triggered):
     """Prime session state so the thought prompt page opens at variant 1."""
+    ok, _reason = _prepare_thought_prompt_open_with_reason(current_video, auto_triggered)
+    return ok
+
+
+def _prepare_thought_prompt_open_with_reason(current_video, auto_triggered):
+    """Prime thought prompt state and return (ok, reason) for diagnostics."""
     small_step_num = _extract_small_step_num_from_video(current_video)
     if small_step_num is None:
-        return False
+        return False, "missing_small_step_num"
 
     prompts_df = load_thought_prompts()
     prompts = get_prompts_for_small_step(prompts_df, small_step_num)
     if not prompts:
-        return False
+        return False, f"no_prompts_for_small_step_{small_step_num}"
 
     st.session_state.showing_thought_prompt = True
     st.session_state.tp_auto_triggered = auto_triggered
     st.session_state.tp_was_manual = not auto_triggered
     st.session_state.tp_current_variant = 1
     st.session_state.tp_active_small_step = small_step_num
-    return True
+    return True, ""
 
 
 def _close_thought_prompt_and_video():
@@ -2001,6 +2007,7 @@ def main():
                 With `streamlit-player`, counters update from native player events.
                 """
             )
+            st.caption("If counters remain zero in your deployment, use `Video Finished` below to open the prompt reliably.")
             if st.button("Request debug snapshot from player", key=f"tpdbg_snapshot_request_{video_id}"):
                 tpdbg_counts['last_event'] = 'debug_snapshot'
                 tpdbg_counts['last_reason'] = 'manual_snapshot_request'
@@ -2207,13 +2214,14 @@ def main():
                         tpdbg_counts['trigger_found'] += 1
                         tpdbg_counts['trigger_clicked'] += 1
                         if not st.session_state.get('showing_thought_prompt', False):
-                            if _prepare_thought_prompt_open(vid, auto_triggered=True):
+                            ok, reason = _prepare_thought_prompt_open_with_reason(vid, auto_triggered=True)
+                            if ok:
                                 tpdbg_counts['auto_trigger_sent'] += 1
                                 st.session_state.tp_debug_events = tpdbg_store
                                 st.rerun()
                             else:
                                 tpdbg_counts['auto_trigger_failed'] += 1
-                                tpdbg_counts['last_reason'] = 'prepare_thought_prompt_open_returned_false'
+                                tpdbg_counts['last_reason'] = reason or 'prepare_thought_prompt_open_returned_false'
                     elif event_name == 'debug_snapshot':
                         tpdbg_counts['last_reason'] = 'manual_snapshot_request'
 
@@ -2221,7 +2229,7 @@ def main():
 
         # Video controls with thought prompt button
         if THOUGHT_PROMPTS_ENABLED:
-            _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.5, 1, 1.2, 1, 2.5])
+            _btn_spacer_l, btn_col_close, btn_col_complete, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.2, 1, 1.35, 1.2, 1, 2.25])
         else:
             _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 0, 1, 3])
     
@@ -2231,6 +2239,27 @@ def main():
                 st.session_state.current_video = None
                 st.session_state.current_video_index = 0
                 st.rerun()
+
+        if THOUGHT_PROMPTS_ENABLED:
+            with btn_col_complete:
+                if st.button("✅ Video Finished", key="video_finished_prompt", type="primary", use_container_width=True):
+                    track_event("video_marked_finished", {"video_id": video_id, "source": "manual_finished_button"})
+                    tpdbg_counts['trigger_attempt'] += 1
+                    tpdbg_counts['trigger_found'] += 1
+                    tpdbg_counts['trigger_clicked'] += 1
+                    ok, reason = _prepare_thought_prompt_open_with_reason(vid, auto_triggered=True)
+                    if ok:
+                        tpdbg_counts['auto_trigger_sent'] += 1
+                        tpdbg_counts['last_event'] = 'manual_video_finished'
+                        tpdbg_counts['last_reason'] = ''
+                        st.session_state.tp_debug_events = tpdbg_store
+                        st.rerun()
+                    else:
+                        tpdbg_counts['auto_trigger_failed'] += 1
+                        tpdbg_counts['last_event'] = 'manual_video_finished'
+                        tpdbg_counts['last_reason'] = reason or 'prepare_thought_prompt_open_returned_false'
+                        st.session_state.tp_debug_events = tpdbg_store
+                        st.warning(f"Thought prompt unavailable: {tpdbg_counts['last_reason']}")
     
         with btn_col_prompt:
             if THOUGHT_PROMPTS_ENABLED:

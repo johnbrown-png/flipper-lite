@@ -394,6 +394,21 @@ def format_duration(duration_str):
         return str(duration_str)
 
 
+def duration_to_seconds(duration_str):
+    """Convert duration string to total seconds"""
+    try:
+        if ':' in str(duration_str):
+            parts = str(duration_str).split(':')
+            if len(parts) == 2:  # MM:SS
+                return int(parts[0]) * 60 + int(parts[1])
+            elif len(parts) == 3:  # HH:MM:SS
+                return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+        # Already in seconds
+        return int(float(duration_str))
+    except:
+        return 0
+
+
 def create_circular_progress_svg(score_pct, size=80, text_scale=1.0):
     """
     Create an SVG circular progress indicator.
@@ -1960,12 +1975,33 @@ def main():
         meta_parts = [p for p in [channel, duration] if p]
         meta_str = " | ".join(meta_parts)
         meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
+        
+        # Get video duration in seconds for animation timing
+        video_duration_seconds = duration_to_seconds(vid.get('duration', ''))
+        animation_start_time = int(video_duration_seconds * 0.95)  # Start at 95% of video
+        
         st.markdown(
             f"""
             <style>
             #flipper-video-container div[data-testid="stButton"] {{
                 margin-top: 0 !important;
                 margin-bottom: 0 !important;
+            }}
+            
+            /* Animated button styles - starts pulsing and color cycling at 95% of video */
+            @keyframes colorCycle {{
+                0% {{ background: linear-gradient(135deg, #4a90c8 0%, #2c5f8d 100%); transform: scale(1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
+                25% {{ background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); transform: scale(1.05); box-shadow: 0 4px 12px rgba(231,76,60,0.4); }}
+                50% {{ background: linear-gradient(135deg, #f39c12 0%, #d68910 100%); transform: scale(1.08); box-shadow: 0 4px 16px rgba(243,156,18,0.5); }}
+                75% {{ background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); transform: scale(1.05); box-shadow: 0 4px 12px rgba(39,174,96,0.4); }}
+                100% {{ background: linear-gradient(135deg, #4a90c8 0%, #2c5f8d 100%); transform: scale(1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
+            }}
+            
+            .animated-try-button {{
+                animation: colorCycle 3s ease-in-out infinite;
+                transition: all 0.3s ease;
+                font-weight: 600 !important;
+                font-size: 1.05rem !important;
             }}
             </style>
             <div id="flipper-video-container">
@@ -1978,83 +2014,7 @@ def main():
             unsafe_allow_html=True
         )
 
-        tpdbg_video_key = f"tpdbg::{video_id}"
-        tpdbg_store = st.session_state.setdefault('tp_debug_events', {})
-        if tpdbg_video_key not in tpdbg_store:
-            tpdbg_store[tpdbg_video_key] = {
-                'api_ready': 0,
-                'on_ready': 0,
-                'state_playing': 0,
-                'state_buffering': 0,
-                'state_ended': 0,
-                'near_end': 0,
-                'trigger_attempt': 0,
-                'trigger_found': 0,
-                'trigger_clicked': 0,
-                'trigger_retry_exhausted': 0,
-                'parent_access_error': 0,
-                'auto_trigger_sent': 0,
-                'auto_trigger_failed': 0,
-                'last_event': '',
-                'last_reason': '',
-            }
-        tpdbg_counts = tpdbg_store[tpdbg_video_key]
-
-        with st.expander("Auto Thought Prompt Diagnostics (temporary)", expanded=True):
-            st.markdown(
-                """
-                Use this panel while testing video-end auto prompt behavior.
-                With `streamlit-player`, counters update from native player events.
-                """
-            )
-            st.caption("If counters remain zero in your deployment, use `Video Finished` below to open the prompt reliably.")
-            if st.button("Request debug snapshot from player", key=f"tpdbg_snapshot_request_{video_id}"):
-                tpdbg_counts['last_event'] = 'debug_snapshot'
-                tpdbg_counts['last_reason'] = 'manual_snapshot_request'
-                st.session_state.tp_debug_events = tpdbg_store
-                st.rerun()
-
-            st.write({
-                "video_id": video_id,
-                "api_ready": tpdbg_counts['api_ready'],
-                "on_ready": tpdbg_counts['on_ready'],
-                "state_playing": tpdbg_counts['state_playing'],
-                "state_buffering": tpdbg_counts['state_buffering'],
-                "state_ended": tpdbg_counts['state_ended'],
-                "near_end": tpdbg_counts['near_end'],
-                "trigger_attempt": tpdbg_counts['trigger_attempt'],
-                "trigger_found": tpdbg_counts['trigger_found'],
-                "trigger_clicked": tpdbg_counts['trigger_clicked'],
-                "trigger_retry_exhausted": tpdbg_counts['trigger_retry_exhausted'],
-                "parent_access_error": tpdbg_counts['parent_access_error'],
-                "auto_trigger_sent": tpdbg_counts['auto_trigger_sent'],
-                "auto_trigger_failed": tpdbg_counts['auto_trigger_failed'],
-                "last_event": tpdbg_counts['last_event'],
-                "last_reason": tpdbg_counts['last_reason'],
-            })
-            if st.button("Reset diagnostics for this video", key=f"tpdbg_reset_{video_id}"):
-                tpdbg_store[tpdbg_video_key] = {
-                    'api_ready': 0,
-                    'on_ready': 0,
-                    'state_playing': 0,
-                    'state_buffering': 0,
-                    'state_ended': 0,
-                    'near_end': 0,
-                    'trigger_attempt': 0,
-                    'trigger_found': 0,
-                    'trigger_clicked': 0,
-                    'trigger_retry_exhausted': 0,
-                    'parent_access_error': 0,
-                    'auto_trigger_sent': 0,
-                    'auto_trigger_failed': 0,
-                    'last_event': '',
-                    'last_reason': '',
-                }
-                st.session_state.tp_debug_events = tpdbg_store
-                st.rerun()
-
         st.markdown('<div id="flipper-video-player-top"></div>', unsafe_allow_html=True)
-        snapshot_requested = bool(st.session_state.pop(f'tpdbg_request_snapshot_{video_id}', False))
         player_html = f"""
         <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin:0; background:#000;">
             <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
@@ -2062,90 +2022,38 @@ def main():
         <script>
         (function() {{
             var player = null;
-            var nearEndWatcher = null;
-            var endedReported = false;
-            var playingReported = false;
-            var bufferingReported = false;
-            var nearEndReported = false;
-            var snapshotRequested = {str(snapshot_requested).lower()};
+            var animationStarted = false;
+            var animationStartTime = {animation_start_time}; // seconds
 
-            function emitToStreamlit(payload) {{
+            function checkTimeAndAnimate() {{
+                if (!player || animationStarted) return;
                 try {{
-                    if (window.Streamlit && window.Streamlit.setComponentValue) {{
-                        window.Streamlit.setComponentValue(JSON.stringify(payload));
-                        return true;
+                    var currentTime = player.getCurrentTime ? player.getCurrentTime() : 0;
+                    if (currentTime >= animationStartTime) {{
+                        animationStarted = true;
+                        // Add animation class to the button in parent document
+                        try {{
+                            var buttons = window.parent.document.querySelectorAll('[data-testid="stButton"] button');
+                            for (var i = 0; i < buttons.length; i++) {{
+                                if (buttons[i].textContent.includes('Try this!')) {{
+                                    buttons[i].classList.add('animated-try-button');
+                                    break;
+                                }}
+                            }}
+                        }} catch (e) {{
+                            console.log('Could not animate button:', e);
+                        }}
                     }}
                 }} catch (e) {{}}
-
-                try {{
-                    window.parent.postMessage({{
-                        isStreamlitMessage: true,
-                        type: 'streamlit:setComponentValue',
-                        value: JSON.stringify(payload)
-                    }}, '*');
-                    return true;
-                }} catch (e) {{}}
-
-                return false;
-            }}
-
-            function report(eventName, data) {{
-                emitToStreamlit({{
-                    type: 'tpAutoEvent',
-                    videoId: {json.dumps(video_id)},
-                    event: eventName,
-                    data: data || null,
-                    nonce: String(Date.now()) + '-' + String(Math.random())
-                }});
-            }}
-
-            function stopNearEndWatcher() {{
-                if (nearEndWatcher) {{
-                    clearInterval(nearEndWatcher);
-                    nearEndWatcher = null;
-                }}
-            }}
-
-            function startNearEndWatcher() {{
-                if (nearEndWatcher) return;
-                nearEndWatcher = setInterval(function() {{
-                    if (!player || endedReported) return;
-                    try {{
-                        var duration = player.getDuration ? player.getDuration() : 0;
-                        var currentTime = player.getCurrentTime ? player.getCurrentTime() : 0;
-                        if (!nearEndReported && duration > 0 && currentTime >= Math.max(duration - 1.2, 0)) {{
-                            nearEndReported = true;
-                            report('near_end', {{ duration: duration, currentTime: currentTime }});
-                        }}
-                    }} catch (e) {{}}
-                }}, 500);
             }}
 
             function onPlayerReady(event) {{
-                report('on_ready', null);
                 try {{ event.target.playVideo(); }} catch (e) {{}}
-                startNearEndWatcher();
-            }}
-
-            function onPlayerStateChange(event) {{
-                if (event.data === 1 && !playingReported) {{
-                    playingReported = true;
-                    report('state_playing', null);
-                }}
-                if (event.data === 3 && !bufferingReported) {{
-                    bufferingReported = true;
-                    report('state_buffering', null);
-                }}
-                if (event.data === 0 && !endedReported) {{
-                    endedReported = true;
-                    stopNearEndWatcher();
-                    report('state_ended', null);
-                    report('auto_trigger', {{ source: 'ended' }});
-                }}
+                // Check time every 500ms to trigger animation
+                setInterval(checkTimeAndAnimate, 500);
             }}
 
             function createPlayer() {{
-                report('api_ready', null);
                 player = new YT.Player('yt-player', {{
                     videoId: {json.dumps(video_id)},
                     playerVars: {{
@@ -2156,16 +2064,12 @@ def main():
                         origin: window.location.origin
                     }},
                     events: {{
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange
+                        'onReady': onPlayerReady
                     }}
                 }});
             }}
 
             window.onYouTubeIframeAPIReady = createPlayer;
-            if (snapshotRequested) {{
-                report('debug_snapshot', {{ source: 'manual_snapshot_request' }});
-            }}
 
             if (typeof YT !== 'undefined' && YT.ready) {{
                 YT.ready(createPlayer);
@@ -2174,62 +2078,12 @@ def main():
         </script>
         <script src="https://www.youtube.com/iframe_api"></script>
         """
-        player_value = components.html(player_html, height=800, scrolling=False)
+        components.html(player_html, height=800, scrolling=False)
         st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
-
-        if player_value:
-            try:
-                payload = json.loads(player_value) if isinstance(player_value, str) else player_value
-            except (TypeError, json.JSONDecodeError):
-                payload = None
-
-            if isinstance(payload, dict):
-                event_name = str(payload.get('event', '')).strip()
-                event_data = payload.get('data', None)
-                nonce = str(payload.get('nonce', '')).strip()
-                if nonce and st.session_state.get('tpdbg_last_nonce') == nonce:
-                    event_name = ''
-                else:
-                    if nonce:
-                        st.session_state.tpdbg_last_nonce = nonce
-
-                if event_name:
-                    tpdbg_counts['last_event'] = event_name
-                    tpdbg_counts['last_reason'] = ''
-
-                    if event_name == 'api_ready':
-                        tpdbg_counts['api_ready'] += 1
-                    elif event_name == 'on_ready':
-                        tpdbg_counts['on_ready'] += 1
-                    elif event_name == 'state_playing':
-                        tpdbg_counts['state_playing'] += 1
-                    elif event_name == 'state_buffering':
-                        tpdbg_counts['state_buffering'] += 1
-                    elif event_name == 'near_end':
-                        tpdbg_counts['near_end'] += 1
-                    elif event_name == 'state_ended':
-                        tpdbg_counts['state_ended'] += 1
-                    elif event_name == 'auto_trigger':
-                        tpdbg_counts['trigger_attempt'] += 1
-                        tpdbg_counts['trigger_found'] += 1
-                        tpdbg_counts['trigger_clicked'] += 1
-                        if not st.session_state.get('showing_thought_prompt', False):
-                            ok, reason = _prepare_thought_prompt_open_with_reason(vid, auto_triggered=True)
-                            if ok:
-                                tpdbg_counts['auto_trigger_sent'] += 1
-                                st.session_state.tp_debug_events = tpdbg_store
-                                st.rerun()
-                            else:
-                                tpdbg_counts['auto_trigger_failed'] += 1
-                                tpdbg_counts['last_reason'] = reason or 'prepare_thought_prompt_open_returned_false'
-                    elif event_name == 'debug_snapshot':
-                        tpdbg_counts['last_reason'] = 'manual_snapshot_request'
-
-                    st.session_state.tp_debug_events = tpdbg_store
 
         # Video controls with thought prompt button
         if THOUGHT_PROMPTS_ENABLED:
-            _btn_spacer_l, btn_col_close, btn_col_complete, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.2, 1, 1.35, 1.2, 1, 2.25])
+            _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 1.2, 1, 2.8])
         else:
             _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 0, 1, 3])
     
@@ -2239,31 +2093,10 @@ def main():
                 st.session_state.current_video = None
                 st.session_state.current_video_index = 0
                 st.rerun()
-
-        if THOUGHT_PROMPTS_ENABLED:
-            with btn_col_complete:
-                if st.button("✅ Video Finished", key="video_finished_prompt", type="primary", use_container_width=True):
-                    track_event("video_marked_finished", {"video_id": video_id, "source": "manual_finished_button"})
-                    tpdbg_counts['trigger_attempt'] += 1
-                    tpdbg_counts['trigger_found'] += 1
-                    tpdbg_counts['trigger_clicked'] += 1
-                    ok, reason = _prepare_thought_prompt_open_with_reason(vid, auto_triggered=True)
-                    if ok:
-                        tpdbg_counts['auto_trigger_sent'] += 1
-                        tpdbg_counts['last_event'] = 'manual_video_finished'
-                        tpdbg_counts['last_reason'] = ''
-                        st.session_state.tp_debug_events = tpdbg_store
-                        st.rerun()
-                    else:
-                        tpdbg_counts['auto_trigger_failed'] += 1
-                        tpdbg_counts['last_event'] = 'manual_video_finished'
-                        tpdbg_counts['last_reason'] = reason or 'prepare_thought_prompt_open_returned_false'
-                        st.session_state.tp_debug_events = tpdbg_store
-                        st.warning(f"Thought prompt unavailable: {tpdbg_counts['last_reason']}")
     
         with btn_col_prompt:
             if THOUGHT_PROMPTS_ENABLED:
-                if st.button("🎯 Try Thought Prompt", key="try_thought_prompt", type="primary", use_container_width=True):
+                if st.button("🎯 Try this!", key="try_thought_prompt", type="primary", use_container_width=True):
                     track_event("thought_prompt_opened", {"video_id": video_id})
                     small_step_num = _extract_small_step_num_from_video(vid)
                     if small_step_num is not None:

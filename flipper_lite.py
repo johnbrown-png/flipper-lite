@@ -1930,11 +1930,11 @@ def main():
         <div id="yt-player-wrapper" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin-bottom:0.75rem;">
             <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
         </div>
-        <script src="https://www.youtube.com/iframe_api"></script>
         <script>
-        var player;
+        var player = null;
         var videoEnded = false;
-        function onYouTubeIframeAPIReady() {{
+
+        function createPlayer() {{
             player = new YT.Player('yt-player', {{
                 videoId: '{video_id}',
                 playerVars: {{
@@ -1950,11 +1950,13 @@ def main():
                 }}
             }});
         }}
+
         function onPlayerReady(event) {{
             event.target.playVideo();
         }}
+
         function onPlayerStateChange(event) {{
-            if (event.data === YT.PlayerState.ENDED && !videoEnded) {{
+            if (event.data === 0 && !videoEnded) {{
                 videoEnded = true;
                 try {{
                     if (window.Streamlit) {{
@@ -1963,9 +1965,18 @@ def main():
                 }} catch(e) {{}}
             }}
         }}
+
+        // Define callback BEFORE loading the YouTube API script (must be global)
+        window.onYouTubeIframeAPIReady = createPlayer;
+
+        // Fallback: if API already loaded (unlikely but safe), use YT.ready()
+        if (typeof YT !== 'undefined' && YT.ready) {{
+            YT.ready(createPlayer);
+        }}
         </script>
+        <script src="https://www.youtube.com/iframe_api"></script>
         """
-        player_result = components.html(player_html, height=400, scrolling=False)
+        player_result = components.html(player_html, height=800, scrolling=False)
         
         # Handle video-ended event — auto-trigger thought prompt
         if player_result:

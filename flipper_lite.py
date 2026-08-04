@@ -1948,8 +1948,14 @@ def main():
         meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
         st.markdown(
             f"""
+            <style>
+            #flipper-video-container div[data-testid="stButton"] {{
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+            }}
+            </style>
             <div id="flipper-video-container">
-            <div id="flipper-video-header" style="background:#1e3a5f; border-radius:10px 10px 0 0; padding:0.75rem 0.75rem 0.5rem 0.75rem;">
+            <div id="flipper-video-header" style="background:#1e3a5f; border-radius:10px 10px 0 0; padding:0.6rem 0.75rem 0.15rem 0.75rem; margin-bottom:-0.2rem;">
                 <div style="color:#f0f4f8; font-size:1rem; font-weight:600;">
                     &#9654; Now Playing: {title}{meta_html}
                 </div>
@@ -1994,7 +2000,7 @@ def main():
 
         # YouTube IFrame Player API component — auto-detects video end for thought prompt transition
         player_html = f"""
-        <div id="yt-player-wrapper" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin-bottom:0.75rem;">
+        <div id="yt-player-wrapper" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin:0;">
             <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
         <script>
         var player = null;

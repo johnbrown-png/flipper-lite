@@ -1995,44 +1995,20 @@ def main():
         )
 
         st.markdown('<div id="flipper-video-player-top"></div>', unsafe_allow_html=True)
-        player_html = f"""
-        <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin:0; background:#000;">
-            <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
-        </div>
-        <script>
-        (function() {{
-            var player = null;
-
-            function onPlayerReady(event) {{
-                try {{ event.target.playVideo(); }} catch (e) {{}}
-            }}
-
-            function createPlayer() {{
-                player = new YT.Player('yt-player', {{
-                    videoId: {json.dumps(video_id)},
-                    playerVars: {{
-                        rel: 0,
-                        modestbranding: 1,
-                        autoplay: 1,
-                        enablejsapi: 1,
-                        origin: window.location.origin
-                    }},
-                    events: {{
-                        'onReady': onPlayerReady
-                    }}
-                }});
-            }}
-
-            window.onYouTubeIframeAPIReady = createPlayer;
-
-            if (typeof YT !== 'undefined' && YT.ready) {{
-                YT.ready(createPlayer);
-            }}
-        }})();
-        </script>
-        <script src="https://www.youtube.com/iframe_api"></script>
-        """
-        components.html(player_html, height=0, scrolling=False)
+        embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1&autoplay=1"
+        st.markdown(
+            f"""
+            <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin:0; background:#000;">
+                <iframe
+                    src="{embed_url}"
+                    style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
 
         # Video controls with thought prompt button

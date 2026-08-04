@@ -2057,18 +2057,39 @@ def main():
             var player = null;
             var nearEndWatcher = null;
             var endedReported = false;
+            var playingReported = false;
+            var bufferingReported = false;
+            var nearEndReported = false;
             var snapshotRequested = {str(snapshot_requested).lower()};
 
-            function report(eventName, data) {{
+            function emitToStreamlit(payload) {{
+                try {{
+                    if (window.Streamlit && window.Streamlit.setComponentValue) {{
+                        window.Streamlit.setComponentValue(JSON.stringify(payload));
+                        return true;
+                    }}
+                }} catch (e) {{}}
+
                 try {{
                     window.parent.postMessage({{
-                        type: 'tpAutoEvent',
-                        videoId: {json.dumps(video_id)},
-                        event: eventName,
-                        data: data || null,
-                        nonce: String(Date.now()) + '-' + String(Math.random())
+                        isStreamlitMessage: true,
+                        type: 'streamlit:setComponentValue',
+                        value: JSON.stringify(payload)
                     }}, '*');
+                    return true;
                 }} catch (e) {{}}
+
+                return false;
+            }}
+
+            function report(eventName, data) {{
+                emitToStreamlit({{
+                    type: 'tpAutoEvent',
+                    videoId: {json.dumps(video_id)},
+                    event: eventName,
+                    data: data || null,
+                    nonce: String(Date.now()) + '-' + String(Math.random())
+                }});
             }}
 
             function stopNearEndWatcher() {{
@@ -2085,7 +2106,8 @@ def main():
                     try {{
                         var duration = player.getDuration ? player.getDuration() : 0;
                         var currentTime = player.getCurrentTime ? player.getCurrentTime() : 0;
-                        if (duration > 0 && currentTime >= Math.max(duration - 1.2, 0)) {{
+                        if (!nearEndReported && duration > 0 && currentTime >= Math.max(duration - 1.2, 0)) {{
+                            nearEndReported = true;
                             report('near_end', {{ duration: duration, currentTime: currentTime }});
                         }}
                     }} catch (e) {{}}
@@ -2099,8 +2121,14 @@ def main():
             }}
 
             function onPlayerStateChange(event) {{
-                if (event.data === 1) report('state_playing', null);
-                if (event.data === 3) report('state_buffering', null);
+                if (event.data === 1 && !playingReported) {{
+                    playingReported = true;
+                    report('state_playing', null);
+                }}
+                if (event.data === 3 && !bufferingReported) {{
+                    bufferingReported = true;
+                    report('state_buffering', null);
+                }}
                 if (event.data === 0 && !endedReported) {{
                     endedReported = true;
                     stopNearEndWatcher();
@@ -2139,37 +2167,12 @@ def main():
         </script>
         <script src="https://www.youtube.com/iframe_api"></script>
         """
-        components.html(player_html, height=800, scrolling=False)
-
-        listener_html = """
-        <script>
-        (function() {
-            var latest = null;
-            window.addEventListener('message', function(e) {
-                if (!e || !e.data || e.data.type !== 'tpAutoEvent') return;
-                latest = e.data;
-            });
-
-            function flush() {
-                if (latest === null) return;
-                try {
-                    if (window.Streamlit && window.Streamlit.setComponentValue) {
-                        window.Streamlit.setComponentValue(JSON.stringify(latest));
-                        latest = null;
-                    }
-                } catch (err) {}
-            }
-
-            setInterval(flush, 180);
-        })();
-        </script>
-        """
-        listener_value = components.html(listener_html, height=0, scrolling=False)
+        player_value = components.html(player_html, height=800, scrolling=False)
         st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
 
-        if listener_value:
+        if player_value:
             try:
-                payload = json.loads(listener_value) if isinstance(listener_value, str) else listener_value
+                payload = json.loads(player_value) if isinstance(player_value, str) else player_value
             except (TypeError, json.JSONDecodeError):
                 payload = None
 

@@ -1032,8 +1032,10 @@ def _process_number_line_answer(submitted_value, correct_answer, tolerance, smal
             time.sleep(1.5)
             st.session_state.tp_current_variant += 1
             st.rerun()
-        else:
-            st.warning("You've tried all variants. Review the material and try again later!")
+        # All variants attempted — auto-return to video
+        st.session_state.showing_thought_prompt = False
+        st.session_state.tp_current_variant = 1
+        st.rerun()
 
 
 def render_thought_prompt_page():
@@ -1124,15 +1126,10 @@ def render_thought_prompt_page():
     # Get current prompt based on variant
     current_variant = st.session_state.tp_current_variant
     if current_variant > len(prompts):
-        # All prompts attempted
-        st.error("❌ You've tried all three prompts. This topic might need some review!")
-        if st.button("Try Again from Start", key="retry_prompts"):
-            st.session_state.tp_current_variant = 1
-            st.rerun()
-        if st.button("← Back to Video", key="back_to_video_bottom", type="primary"):
-            st.session_state.showing_thought_prompt = False
-            st.rerun()
-        return
+        # All prompts attempted — auto-return to video
+        st.session_state.showing_thought_prompt = False
+        st.session_state.tp_current_variant = 1
+        st.rerun()
     
     current_prompt = prompts[current_variant - 1]
     
@@ -1321,8 +1318,10 @@ def render_thought_prompt_page():
                 time.sleep(1.5)
                 st.session_state.tp_current_variant += 1
                 st.rerun()
-            else:
-                st.warning("You've tried all variants. Review the material and try again later!")
+            # All variants attempted — auto-return to video
+            st.session_state.showing_thought_prompt = False
+            st.session_state.tp_current_variant = 1
+            st.rerun()
 
 
 def render_educator_view():
@@ -1913,27 +1912,94 @@ def main():
         title = vid['title']
         channel = vid.get('channel', '').replace('_', ' ')
         duration = format_duration(vid.get('duration', ''))
-        embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1&autoplay=1"
         meta_parts = [p for p in [channel, duration] if p]
         meta_str = " | ".join(meta_parts)
         meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
         st.markdown(
             f"""
-            <div id="flipper-video-player" style="background:#1e3a5f; border-radius:10px; padding:0.75rem 0.75rem 0.5rem 0.75rem; margin-bottom:0.75rem;">
-                <div style="color:#f0f4f8; font-size:1rem; font-weight:600; margin-bottom:0.5rem;">
+            <div id="flipper-video-header" style="background:#1e3a5f; border-radius:10px 10px 0 0; padding:0.75rem 0.75rem 0.5rem 0.75rem;">
+                <div style="color:#f0f4f8; font-size:1rem; font-weight:600;">
                     &#9654; Now Playing: {title}{meta_html}
-                </div>
-                <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:6px;">
-                    <iframe src="{embed_url}"
-                        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen>
-                    </iframe>
                 </div>
             </div>
             """,
             unsafe_allow_html=True
         )
+        # YouTube IFrame Player API component — auto-detects video end for thought prompt transition
+        player_html = f"""
+        <div id="yt-player-wrapper" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin-bottom:0.75rem;">
+            <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
+        </div>
+        <script src="https://www.youtube.com/iframe_api"></script>
+        <script>
+        var player;
+        var videoEnded = false;
+        function onYouTubeIframeAPIReady() {{
+            player = new YT.Player('yt-player', {{
+                videoId: '{video_id}',
+                playerVars: {{
+                    rel: 0,
+                    modestbranding: 1,
+                    autoplay: 1,
+                    enablejsapi: 1,
+                    origin: window.location.origin
+                }},
+                events: {{
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }}
+            }});
+        }}
+        function onPlayerReady(event) {{
+            event.target.playVideo();
+        }}
+        function onPlayerStateChange(event) {{
+            if (event.data === YT.PlayerState.ENDED && !videoEnded) {{
+                videoEnded = true;
+                try {{
+                    if (window.Streamlit) {{
+                        window.Streamlit.setComponentValue(JSON.stringify({{event: 'video_ended'}}));
+                    }}
+                }} catch(e) {{}}
+            }}
+        }}
+        </script>
+        """
+        player_result = components.html(player_html, height=400, scrolling=False)
+        
+        # Handle video-ended event — auto-trigger thought prompt
+        if player_result:
+            try:
+                data = json.loads(player_result)
+                if data.get("event") == "video_ended" and not st.session_state.get('showing_thought_prompt', False):
+                    # Check if thought prompts exist for this small step before auto-triggering
+                    prompts_df = load_thought_prompts()
+                    prompts_exist = False
+                    if prompts_df is not None:
+                        current_video_context = st.session_state.get('current_video', {})
+                        small_step_num = None
+                        if 'small_step_num_global' in current_video_context:
+                            small_step_num = current_video_context['small_step_num_global']
+                        elif 'small_step_num' in current_video_context:
+                            small_step_num = current_video_context['small_step_num']
+                        if small_step_num is not None:
+                            try:
+                                step_num = int(float(small_step_num))
+                                prompts = prompts_df[prompts_df['small_step_num'] == step_num]
+                                prompts_exist = len(prompts) > 0
+                            except (ValueError, TypeError):
+                                pass
+                    
+                    if prompts_exist:
+                        st.session_state.showing_thought_prompt = True
+                        st.session_state.tp_auto_triggered = True
+                        st.session_state.tp_was_manual = False
+                        st.rerun()
+                    else:
+                        # No prompts available — silently stay on video page
+                        pass
+            except (json.JSONDecodeError, TypeError, ValueError):
+                pass
         # Video controls with thought prompt button
         if THOUGHT_PROMPTS_ENABLED:
             _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.5, 1, 1.2, 1, 2.5])
@@ -1952,6 +2018,7 @@ def main():
                 if st.button("🎯 Try Thought Prompt", key="try_thought_prompt", type="primary", use_container_width=True):
                     track_event("thought_prompt_opened", {"video_id": video_id})
                     st.session_state.showing_thought_prompt = True
+                    st.session_state.tp_was_manual = True
                     st.rerun()
     
         with btn_col_next:
@@ -1977,7 +2044,7 @@ def main():
                 """
                 <script>
                 setTimeout(function() {
-                    const target = window.parent.document.getElementById('flipper-video-player');
+                const target = window.parent.document.getElementById('flipper-video-header');
                     if (target) {
                         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }

@@ -1940,6 +1940,17 @@ def main():
         vid = st.session_state.current_video
         video_id = vid['video_id']
         auto_prompt_trigger_label = f"AUTO_TP_TRIGGER__{video_id}"
+        tpdbg_api_ready_label = f"TPDBG_API_READY__{video_id}"
+        tpdbg_on_ready_label = f"TPDBG_ON_READY__{video_id}"
+        tpdbg_state_playing_label = f"TPDBG_STATE_PLAYING__{video_id}"
+        tpdbg_state_buffering_label = f"TPDBG_STATE_BUFFERING__{video_id}"
+        tpdbg_state_ended_label = f"TPDBG_STATE_ENDED__{video_id}"
+        tpdbg_near_end_label = f"TPDBG_NEAR_END__{video_id}"
+        tpdbg_trigger_attempt_label = f"TPDBG_TRIGGER_ATTEMPT__{video_id}"
+        tpdbg_trigger_found_label = f"TPDBG_TRIGGER_FOUND__{video_id}"
+        tpdbg_trigger_clicked_label = f"TPDBG_TRIGGER_CLICKED__{video_id}"
+        tpdbg_trigger_retry_exhausted_label = f"TPDBG_TRIGGER_RETRY_EXHAUSTED__{video_id}"
+        tpdbg_parent_error_label = f"TPDBG_PARENT_ACCESS_ERR__{video_id}"
         title = vid['title']
         channel = vid.get('channel', '').replace('_', ' ')
         duration = format_duration(vid.get('duration', ''))
@@ -1967,6 +1978,59 @@ def main():
             auto_prompt_trigger_label,
             key=f"auto_tp_trigger_{video_id}",
         )
+
+        tpdbg_video_key = f"tpdbg::{video_id}"
+        tpdbg_store = st.session_state.setdefault('tp_debug_events', {})
+        if tpdbg_video_key not in tpdbg_store:
+            tpdbg_store[tpdbg_video_key] = {
+                'api_ready': 0,
+                'on_ready': 0,
+                'state_playing': 0,
+                'state_buffering': 0,
+                'state_ended': 0,
+                'near_end': 0,
+                'trigger_attempt': 0,
+                'trigger_found': 0,
+                'trigger_clicked': 0,
+                'trigger_retry_exhausted': 0,
+                'parent_access_error': 0,
+            }
+        tpdbg_counts = tpdbg_store[tpdbg_video_key]
+
+        if st.button(tpdbg_api_ready_label, key=f"tpdbg_api_ready_{video_id}"):
+            tpdbg_counts['api_ready'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_on_ready_label, key=f"tpdbg_on_ready_{video_id}"):
+            tpdbg_counts['on_ready'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_state_playing_label, key=f"tpdbg_state_playing_{video_id}"):
+            tpdbg_counts['state_playing'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_state_buffering_label, key=f"tpdbg_state_buffering_{video_id}"):
+            tpdbg_counts['state_buffering'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_state_ended_label, key=f"tpdbg_state_ended_{video_id}"):
+            tpdbg_counts['state_ended'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_near_end_label, key=f"tpdbg_near_end_{video_id}"):
+            tpdbg_counts['near_end'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_trigger_attempt_label, key=f"tpdbg_trigger_attempt_{video_id}"):
+            tpdbg_counts['trigger_attempt'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_trigger_found_label, key=f"tpdbg_trigger_found_{video_id}"):
+            tpdbg_counts['trigger_found'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_trigger_clicked_label, key=f"tpdbg_trigger_clicked_{video_id}"):
+            tpdbg_counts['trigger_clicked'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_trigger_retry_exhausted_label, key=f"tpdbg_trigger_retry_exhausted_{video_id}"):
+            tpdbg_counts['trigger_retry_exhausted'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+        if st.button(tpdbg_parent_error_label, key=f"tpdbg_parent_error_{video_id}"):
+            tpdbg_counts['parent_access_error'] += 1
+            st.session_state.tp_debug_events = tpdbg_store
+
         components.html(
             f"""
             <script>
@@ -1974,25 +2038,79 @@ def main():
                 function hideInternalTriggerButton() {{
                     const parentDoc = window.parent.document;
                     const buttons = Array.from(parentDoc.querySelectorAll('button'));
-                    const target = buttons.find(
-                        (btn) => btn.innerText && btn.innerText.trim() === {json.dumps(auto_prompt_trigger_label)}
-                    );
-                    if (!target) {{
-                        return;
-                    }}
-                    const wrapper = target.closest('div[data-testid="stButton"]') || target.parentElement;
-                    if (wrapper) {{
-                        wrapper.style.display = 'none';
-                    }}
+                    const hiddenLabels = new Set([
+                        {json.dumps(auto_prompt_trigger_label)},
+                        {json.dumps(tpdbg_api_ready_label)},
+                        {json.dumps(tpdbg_on_ready_label)},
+                        {json.dumps(tpdbg_state_playing_label)},
+                        {json.dumps(tpdbg_state_buffering_label)},
+                        {json.dumps(tpdbg_state_ended_label)},
+                        {json.dumps(tpdbg_near_end_label)},
+                        {json.dumps(tpdbg_trigger_attempt_label)},
+                        {json.dumps(tpdbg_trigger_found_label)},
+                        {json.dumps(tpdbg_trigger_clicked_label)},
+                        {json.dumps(tpdbg_trigger_retry_exhausted_label)},
+                        {json.dumps(tpdbg_parent_error_label)}
+                    ]);
+
+                    buttons.forEach(function(target) {{
+                        const txt = (target.innerText || target.textContent || '').trim();
+                        if (!hiddenLabels.has(txt)) {{
+                            return;
+                        }}
+                        const wrapper = target.closest('div[data-testid="stButton"]') || target.parentElement;
+                        if (wrapper) {{
+                            wrapper.style.display = 'none';
+                        }}
+                    }});
                 }}
 
                 hideInternalTriggerButton();
                 setTimeout(hideInternalTriggerButton, 150);
+                setTimeout(hideInternalTriggerButton, 450);
             }})();
             </script>
             """,
             height=0,
         )
+
+        with st.expander("Auto Thought Prompt Diagnostics (temporary)", expanded=True):
+            st.markdown(
+                """
+                Use this panel while testing video-end auto prompt behavior.
+                Values should increase as events fire from the embedded player.
+                """
+            )
+            st.write({
+                "video_id": video_id,
+                "api_ready": tpdbg_counts['api_ready'],
+                "on_ready": tpdbg_counts['on_ready'],
+                "state_playing": tpdbg_counts['state_playing'],
+                "state_buffering": tpdbg_counts['state_buffering'],
+                "state_ended": tpdbg_counts['state_ended'],
+                "near_end": tpdbg_counts['near_end'],
+                "trigger_attempt": tpdbg_counts['trigger_attempt'],
+                "trigger_found": tpdbg_counts['trigger_found'],
+                "trigger_clicked": tpdbg_counts['trigger_clicked'],
+                "trigger_retry_exhausted": tpdbg_counts['trigger_retry_exhausted'],
+                "parent_access_error": tpdbg_counts['parent_access_error'],
+            })
+            if st.button("Reset diagnostics for this video", key=f"tpdbg_reset_{video_id}"):
+                tpdbg_store[tpdbg_video_key] = {
+                    'api_ready': 0,
+                    'on_ready': 0,
+                    'state_playing': 0,
+                    'state_buffering': 0,
+                    'state_ended': 0,
+                    'near_end': 0,
+                    'trigger_attempt': 0,
+                    'trigger_found': 0,
+                    'trigger_clicked': 0,
+                    'trigger_retry_exhausted': 0,
+                    'parent_access_error': 0,
+                }
+                st.session_state.tp_debug_events = tpdbg_store
+                st.rerun()
 
         if auto_prompt_triggered and not st.session_state.get('showing_thought_prompt', False):
             if _prepare_thought_prompt_open(vid, auto_triggered=True):
@@ -2007,6 +2125,20 @@ def main():
         var autoPromptSent = false;
         var nearEndWatcher = null;
 
+        function fireDebugSignal(label) {{
+            try {{
+                const parentDoc = window.parent.document;
+                const buttons = Array.from(parentDoc.querySelectorAll('button'));
+                const target = buttons.find(function(btn) {{
+                    const txt = (btn.innerText || btn.textContent || '').trim();
+                    return txt === label;
+                }});
+                if (target) {{
+                    target.click();
+                }}
+            }} catch (e) {{}}
+        }}
+
         function findTriggerButton() {{
             const parentDoc = window.parent.document;
             const buttons = Array.from(parentDoc.querySelectorAll('button'));
@@ -2017,13 +2149,18 @@ def main():
         }}
 
         function triggerThoughtPrompt() {{
+            fireDebugSignal({json.dumps(tpdbg_trigger_attempt_label)});
             try {{
                 const target = findTriggerButton();
                 if (target) {{
+                    fireDebugSignal({json.dumps(tpdbg_trigger_found_label)});
                     target.click();
+                    fireDebugSignal({json.dumps(tpdbg_trigger_clicked_label)});
                     return true;
                 }}
-            }} catch (e) {{}}
+            }} catch (e) {{
+                fireDebugSignal({json.dumps(tpdbg_parent_error_label)});
+            }}
             return false;
         }}
 
@@ -2039,6 +2176,8 @@ def main():
                 setTimeout(function() {{
                     triggerThoughtPromptWithRetry(attempt + 1);
                 }}, 250);
+            }} else {{
+                fireDebugSignal({json.dumps(tpdbg_trigger_retry_exhausted_label)});
             }}
         }}
 
@@ -2061,6 +2200,7 @@ def main():
                     const duration = player.getDuration ? player.getDuration() : 0;
                     const currentTime = player.getCurrentTime ? player.getCurrentTime() : 0;
                     if (duration > 0 && currentTime >= Math.max(duration - 1.2, 0)) {{
+                        fireDebugSignal({json.dumps(tpdbg_near_end_label)});
                         stopNearEndWatcher();
                         triggerThoughtPromptWithRetry(0);
                     }}
@@ -2086,6 +2226,7 @@ def main():
         }}
 
         function onPlayerReady(event) {{
+            fireDebugSignal({json.dumps(tpdbg_on_ready_label)});
             event.target.playVideo();
             startNearEndWatcher();
         }}
@@ -2093,6 +2234,7 @@ def main():
         function onPlayerStateChange(event) {{
             // YT.PlayerState.ENDED = 0. Keep this as primary trigger.
             if (event.data === 0) {{
+                fireDebugSignal({json.dumps(tpdbg_state_ended_label)});
                 stopNearEndWatcher();
                 triggerThoughtPromptWithRetry(0);
                 return;
@@ -2100,12 +2242,18 @@ def main():
 
             // Restart watchdog while actively playing/buffering in case ended event is skipped.
             if (event.data === 1 || event.data === 3) {{
+                if (event.data === 1) {{
+                    fireDebugSignal({json.dumps(tpdbg_state_playing_label)});
+                }} else {{
+                    fireDebugSignal({json.dumps(tpdbg_state_buffering_label)});
+                }}
                 startNearEndWatcher();
             }}
         }}
 
         // Define callback BEFORE loading the YouTube API script (must be global)
         window.onYouTubeIframeAPIReady = createPlayer;
+        fireDebugSignal({json.dumps(tpdbg_api_ready_label)});
 
         // Fallback: if API already loaded (unlikely but safe), use YT.ready()
         if (typeof YT !== 'undefined' && YT.ready) {{

@@ -465,6 +465,63 @@ def get_prompts_for_small_step(prompts_df, small_step_num):
     return matches.sort_values('variant').to_dict('records')
 
 
+def _extract_small_step_num_from_video(current_video):
+    """Resolve the thought-prompt small step number from the current video context."""
+    if not current_video:
+        return None
+
+    if 'small_step_num_global' in current_video:
+        try:
+            return int(float(current_video['small_step_num_global']))
+        except (ValueError, TypeError):
+            pass
+
+    if 'small_step_num' in current_video:
+        try:
+            return int(float(current_video['small_step_num']))
+        except (ValueError, TypeError):
+            pass
+
+    small_step_id = current_video.get('small_step_id', '')
+    if small_step_id and 'ss_' in small_step_id:
+        try:
+            return int(small_step_id.replace('ss_', '').split('_')[0])
+        except (ValueError, AttributeError):
+            pass
+
+    return None
+
+
+def _prepare_thought_prompt_open(current_video, auto_triggered):
+    """Prime session state so the thought prompt page opens at variant 1."""
+    small_step_num = _extract_small_step_num_from_video(current_video)
+    if small_step_num is None:
+        return False
+
+    prompts_df = load_thought_prompts()
+    prompts = get_prompts_for_small_step(prompts_df, small_step_num)
+    if not prompts:
+        return False
+
+    st.session_state.showing_thought_prompt = True
+    st.session_state.tp_auto_triggered = auto_triggered
+    st.session_state.tp_was_manual = not auto_triggered
+    st.session_state.tp_current_variant = 1
+    st.session_state.tp_active_small_step = small_step_num
+    return True
+
+
+def _close_thought_prompt_and_video():
+    """Return from thought prompt mode back to the video selection screen."""
+    st.session_state.showing_thought_prompt = False
+    st.session_state.viewing_video = False
+    st.session_state.current_video = None
+    st.session_state.current_video_index = 0
+    st.session_state.tp_current_variant = 1
+    st.session_state.tp_active_small_step = None
+    st.session_state.flipper_lite_scroll_to_video_cards = True
+
+
 def _inject_tts(prompt_text):
     """Inject a self-contained JS block that speaks prompt_text via Web Speech API.
     
@@ -1013,8 +1070,7 @@ def _process_number_line_answer(submitted_value, correct_answer, tolerance, smal
         
         import time
         time.sleep(2)
-        st.session_state.showing_thought_prompt = False
-        st.session_state.tp_current_variant = 1
+        _close_thought_prompt_and_video()
         st.rerun()
     else:
         st.error(f"❌ Not quite. You selected {submitted_value}. The correct answer is {correct_answer}.")
@@ -1033,8 +1089,7 @@ def _process_number_line_answer(submitted_value, correct_answer, tolerance, smal
             st.session_state.tp_current_variant += 1
             st.rerun()
         # All variants attempted — auto-return to video
-        st.session_state.showing_thought_prompt = False
-        st.session_state.tp_current_variant = 1
+            _close_thought_prompt_and_video()
         st.rerun()
 
 
@@ -1066,31 +1121,8 @@ def render_thought_prompt_page():
         st.warning("No video selected. Please select a video first.")
         return
     
-    # Extract small_step_num from current video - try multiple sources
-    small_step_num = None
-    
-    # Method 1: Use global small_step_num (preferred for thought prompts)
-    if 'small_step_num_global' in current_video:
-        try:
-            small_step_num = int(float(current_video['small_step_num_global']))
-        except (ValueError, TypeError):
-            pass
-    
-    # Method 2: Try direct small_step_num field (local topic number)
-    if small_step_num is None and 'small_step_num' in current_video:
-        try:
-            small_step_num = int(float(current_video['small_step_num']))
-        except (ValueError, TypeError):
-            pass
-    
-    # Method 3: Parse from small_step_id if format is "ss_XXX"
-    if small_step_num is None:
-        small_step_id = current_video.get('small_step_id', '')
-        if small_step_id and 'ss_' in small_step_id:
-            try:
-                small_step_num = int(small_step_id.replace('ss_', '').split('_')[0])
-            except (ValueError, AttributeError):
-                pass
+    # Extract small_step_num from current video
+    small_step_num = _extract_small_step_num_from_video(current_video)
     
     # If we still don't have a small_step_num, show helpful error
     if small_step_num is None:
@@ -1297,8 +1329,7 @@ def render_thought_prompt_page():
             # Return to video after a moment
             import time
             time.sleep(2)
-            st.session_state.showing_thought_prompt = False
-            st.session_state.tp_current_variant = 1  # Reset for next time
+            _close_thought_prompt_and_video()
             st.rerun()
         else:
             st.error(f"❌ Not quite. Try again!")
@@ -1319,8 +1350,7 @@ def render_thought_prompt_page():
                 st.session_state.tp_current_variant += 1
                 st.rerun()
             # All variants attempted — auto-return to video
-            st.session_state.showing_thought_prompt = False
-            st.session_state.tp_current_variant = 1
+            _close_thought_prompt_and_video()
             st.rerun()
 
 
@@ -1909,6 +1939,7 @@ def main():
     if st.session_state.current_video:
         vid = st.session_state.current_video
         video_id = vid['video_id']
+        auto_prompt_trigger_label = f"AUTO_TP_TRIGGER__{video_id}"
         title = vid['title']
         channel = vid.get('channel', '').replace('_', ' ')
         duration = format_duration(vid.get('duration', ''))
@@ -1926,15 +1957,61 @@ def main():
             """,
             unsafe_allow_html=True
         )
+        auto_prompt_triggered = st.button(
+            auto_prompt_trigger_label,
+            key=f"auto_tp_trigger_{video_id}",
+        )
+        components.html(
+            f"""
+            <script>
+            (function() {{
+                function hideInternalTriggerButton() {{
+                    const parentDoc = window.parent.document;
+                    const buttons = Array.from(parentDoc.querySelectorAll('button'));
+                    const target = buttons.find(
+                        (btn) => btn.innerText && btn.innerText.trim() === {json.dumps(auto_prompt_trigger_label)}
+                    );
+                    if (!target) {{
+                        return;
+                    }}
+                    const wrapper = target.closest('div[data-testid="stButton"]') || target.parentElement;
+                    if (wrapper) {{
+                        wrapper.style.display = 'none';
+                    }}
+                }}
+
+                hideInternalTriggerButton();
+                setTimeout(hideInternalTriggerButton, 150);
+            }})();
+            </script>
+            """,
+            height=0,
+        )
+
+        if auto_prompt_triggered and not st.session_state.get('showing_thought_prompt', False):
+            if _prepare_thought_prompt_open(vid, auto_triggered=True):
+                st.rerun()
+
         # YouTube IFrame Player API component — auto-detects video end for thought prompt transition
         player_html = f"""
         <div id="yt-player-wrapper" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin-bottom:0.75rem;">
             <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
-        </div>
-        </div>
         <script>
         var player = null;
         var videoEnded = false;
+
+        function triggerThoughtPrompt() {{
+            try {{
+                const parentDoc = window.parent.document;
+                const buttons = Array.from(parentDoc.querySelectorAll('button'));
+                const target = buttons.find(
+                    (btn) => btn.innerText && btn.innerText.trim() === {json.dumps(auto_prompt_trigger_label)}
+                );
+                if (target) {{
+                    target.click();
+                }}
+            }} catch (e) {{}}
+        }}
 
         function createPlayer() {{
             player = new YT.Player('yt-player', {{
@@ -1960,11 +2037,7 @@ def main():
         function onPlayerStateChange(event) {{
             if (event.data === 0 && !videoEnded) {{
                 videoEnded = true;
-                try {{
-                    if (window.Streamlit) {{
-                        window.Streamlit.setComponentValue(JSON.stringify({{event: 'video_ended'}}));
-                    }}
-                }} catch(e) {{}}
+                triggerThoughtPrompt();
             }}
         }}
 
@@ -1978,41 +2051,10 @@ def main():
         </script>
         <script src="https://www.youtube.com/iframe_api"></script>
         """
-        player_result = components.html(player_html, height=800, scrolling=False)
-        
-        # Handle video-ended event — auto-trigger thought prompt
-        if player_result:
-            try:
-                data = json.loads(player_result)
-                if data.get("event") == "video_ended" and not st.session_state.get('showing_thought_prompt', False):
-                    # Check if thought prompts exist for this small step before auto-triggering
-                    prompts_df = load_thought_prompts()
-                    prompts_exist = False
-                    if prompts_df is not None:
-                        current_video_context = st.session_state.get('current_video', {})
-                        small_step_num = None
-                        if 'small_step_num_global' in current_video_context:
-                            small_step_num = current_video_context['small_step_num_global']
-                        elif 'small_step_num' in current_video_context:
-                            small_step_num = current_video_context['small_step_num']
-                        if small_step_num is not None:
-                            try:
-                                step_num = int(float(small_step_num))
-                                prompts = prompts_df[prompts_df['small_step_num'] == step_num]
-                                prompts_exist = len(prompts) > 0
-                            except (ValueError, TypeError):
-                                pass
-                    
-                    if prompts_exist:
-                        st.session_state.showing_thought_prompt = True
-                        st.session_state.tp_auto_triggered = True
-                        st.session_state.tp_was_manual = False
-                        st.rerun()
-                    else:
-                        # No prompts available — silently stay on video page
-                        pass
-            except (json.JSONDecodeError, TypeError, ValueError):
-                pass
+        st.markdown('<div id="flipper-video-player-top"></div>', unsafe_allow_html=True)
+        components.html(player_html, height=800, scrolling=False)
+        st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
+
         # Video controls with thought prompt button
         if THOUGHT_PROMPTS_ENABLED:
             _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.5, 1, 1.2, 1, 2.5])
@@ -2030,7 +2072,12 @@ def main():
             if THOUGHT_PROMPTS_ENABLED:
                 if st.button("🎯 Try Thought Prompt", key="try_thought_prompt", type="primary", use_container_width=True):
                     track_event("thought_prompt_opened", {"video_id": video_id})
+                    small_step_num = _extract_small_step_num_from_video(vid)
+                    if small_step_num is not None:
+                        st.session_state.tp_current_variant = 1
+                        st.session_state.tp_active_small_step = small_step_num
                     st.session_state.showing_thought_prompt = True
+                    st.session_state.tp_auto_triggered = False
                     st.session_state.tp_was_manual = True
                     st.rerun()
     
@@ -2050,6 +2097,7 @@ def main():
                     )
                     st.session_state.current_video_index = next_idx
                     st.session_state.current_video = next_video
+                    st.session_state.flipper_lite_scroll_to_player = True
                     st.rerun()
         st.markdown("---")
         if st.session_state.get('flipper_lite_scroll_to_player'):
@@ -2057,9 +2105,23 @@ def main():
                 """
                 <script>
                 setTimeout(function() {
-                const target = window.parent.document.getElementById('flipper-video-container');
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const rootWin = window.parent;
+                    const rootDoc = rootWin.document;
+                    const topAnchor = rootDoc.getElementById('flipper-video-player-top');
+                    const bottomAnchor = rootDoc.getElementById('flipper-video-player-bottom');
+
+                    if (topAnchor && bottomAnchor) {
+                        const topY = topAnchor.getBoundingClientRect().top + rootWin.scrollY;
+                        const bottomY = bottomAnchor.getBoundingClientRect().top + rootWin.scrollY;
+                        const midpointY = (topY + bottomY) / 2;
+                        const targetScrollY = Math.max(0, midpointY - (rootWin.innerHeight / 2));
+                        rootWin.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+                        return;
+                    }
+
+                    const fallback = rootDoc.getElementById('flipper-video-container');
+                    if (fallback && typeof fallback.scrollIntoView === 'function') {
+                        fallback.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 }, 150);
                 </script>

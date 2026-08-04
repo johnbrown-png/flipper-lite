@@ -2004,19 +2004,68 @@ def main():
             <div id="yt-player" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
         <script>
         var player = null;
-        var videoEnded = false;
+        var autoPromptSent = false;
+        var nearEndWatcher = null;
+
+        function findTriggerButton() {{
+            const parentDoc = window.parent.document;
+            const buttons = Array.from(parentDoc.querySelectorAll('button'));
+            return buttons.find(function(btn) {{
+                const txt = (btn.innerText || btn.textContent || '').trim();
+                return txt === {json.dumps(auto_prompt_trigger_label)} || txt.indexOf({json.dumps(auto_prompt_trigger_label)}) !== -1;
+            }});
+        }}
 
         function triggerThoughtPrompt() {{
             try {{
-                const parentDoc = window.parent.document;
-                const buttons = Array.from(parentDoc.querySelectorAll('button'));
-                const target = buttons.find(
-                    (btn) => btn.innerText && btn.innerText.trim() === {json.dumps(auto_prompt_trigger_label)}
-                );
+                const target = findTriggerButton();
                 if (target) {{
                     target.click();
+                    return true;
                 }}
             }} catch (e) {{}}
+            return false;
+        }}
+
+        function triggerThoughtPromptWithRetry(attempt) {{
+            if (autoPromptSent) {{
+                return;
+            }}
+            if (triggerThoughtPrompt()) {{
+                autoPromptSent = true;
+                return;
+            }}
+            if (attempt < 4) {{
+                setTimeout(function() {{
+                    triggerThoughtPromptWithRetry(attempt + 1);
+                }}, 250);
+            }}
+        }}
+
+        function stopNearEndWatcher() {{
+            if (nearEndWatcher) {{
+                clearInterval(nearEndWatcher);
+                nearEndWatcher = null;
+            }}
+        }}
+
+        function startNearEndWatcher() {{
+            if (nearEndWatcher) {{
+                return;
+            }}
+            nearEndWatcher = setInterval(function() {{
+                if (!player || autoPromptSent) {{
+                    return;
+                }}
+                try {{
+                    const duration = player.getDuration ? player.getDuration() : 0;
+                    const currentTime = player.getCurrentTime ? player.getCurrentTime() : 0;
+                    if (duration > 0 && currentTime >= Math.max(duration - 1.2, 0)) {{
+                        stopNearEndWatcher();
+                        triggerThoughtPromptWithRetry(0);
+                    }}
+                }} catch (e) {{}}
+            }}, 500);
         }}
 
         function createPlayer() {{
@@ -2038,12 +2087,20 @@ def main():
 
         function onPlayerReady(event) {{
             event.target.playVideo();
+            startNearEndWatcher();
         }}
 
         function onPlayerStateChange(event) {{
-            if (event.data === 0 && !videoEnded) {{
-                videoEnded = true;
-                triggerThoughtPrompt();
+            // YT.PlayerState.ENDED = 0. Keep this as primary trigger.
+            if (event.data === 0) {{
+                stopNearEndWatcher();
+                triggerThoughtPromptWithRetry(0);
+                return;
+            }}
+
+            // Restart watchdog while actively playing/buffering in case ended event is skipped.
+            if (event.data === 1 || event.data === 3) {{
+                startNearEndWatcher();
             }}
         }}
 

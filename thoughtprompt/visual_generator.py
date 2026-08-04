@@ -43,9 +43,9 @@ class MathVisualGenerator:
             self.font_large = ImageFont.truetype("arial.ttf", 36)
             self.font_medium = ImageFont.truetype("arial.ttf", 24)
             self.font_small = ImageFont.truetype("arial.ttf", 18)
-            # Larger fonts for part-whole models (+32%): 36→47, 24→32
-            self.font_large_pw = ImageFont.truetype("arial.ttf", 47)
-            self.font_medium_pw = ImageFont.truetype("arial.ttf", 32)
+            # Larger fonts for part-whole models (+71%): 36→61, 24→42
+            self.font_large_pw = ImageFont.truetype("arial.ttf", 61)
+            self.font_medium_pw = ImageFont.truetype("arial.ttf", 42)
         except:
             # Fallback to default PIL font
             self.font_large = ImageFont.load_default()

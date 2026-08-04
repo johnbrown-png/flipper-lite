@@ -1976,32 +1976,12 @@ def main():
         meta_str = " | ".join(meta_parts)
         meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
         
-        # Get video duration in seconds for animation timing
-        video_duration_seconds = duration_to_seconds(vid.get('duration', ''))
-        animation_start_time = int(video_duration_seconds * 0.95)  # Start at 95% of video
-        
         st.markdown(
             f"""
             <style>
             #flipper-video-container div[data-testid="stButton"] {{
                 margin-top: 0 !important;
                 margin-bottom: 0 !important;
-            }}
-            
-            /* Animated button styles - starts pulsing and color cycling at 95% of video */
-            @keyframes colorCycle {{
-                0% {{ background: linear-gradient(135deg, #4a90c8 0%, #2c5f8d 100%); transform: scale(1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
-                25% {{ background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); transform: scale(1.05); box-shadow: 0 4px 12px rgba(231,76,60,0.4); }}
-                50% {{ background: linear-gradient(135deg, #f39c12 0%, #d68910 100%); transform: scale(1.08); box-shadow: 0 4px 16px rgba(243,156,18,0.5); }}
-                75% {{ background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); transform: scale(1.05); box-shadow: 0 4px 12px rgba(39,174,96,0.4); }}
-                100% {{ background: linear-gradient(135deg, #4a90c8 0%, #2c5f8d 100%); transform: scale(1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
-            }}
-            
-            .animated-try-button {{
-                animation: colorCycle 3s ease-in-out infinite;
-                transition: all 0.3s ease;
-                font-weight: 600 !important;
-                font-size: 1.05rem !important;
             }}
             </style>
             <div id="flipper-video-container">
@@ -2022,35 +2002,9 @@ def main():
         <script>
         (function() {{
             var player = null;
-            var animationStarted = false;
-            var animationStartTime = {animation_start_time}; // seconds
-
-            function checkTimeAndAnimate() {{
-                if (!player || animationStarted) return;
-                try {{
-                    var currentTime = player.getCurrentTime ? player.getCurrentTime() : 0;
-                    if (currentTime >= animationStartTime) {{
-                        animationStarted = true;
-                        // Add animation class to the button in parent document
-                        try {{
-                            var buttons = window.parent.document.querySelectorAll('[data-testid="stButton"] button');
-                            for (var i = 0; i < buttons.length; i++) {{
-                                if (buttons[i].textContent.includes('Try this!')) {{
-                                    buttons[i].classList.add('animated-try-button');
-                                    break;
-                                }}
-                            }}
-                        }} catch (e) {{
-                            console.log('Could not animate button:', e);
-                        }}
-                    }}
-                }} catch (e) {{}}
-            }}
 
             function onPlayerReady(event) {{
                 try {{ event.target.playVideo(); }} catch (e) {{}}
-                // Check time every 500ms to trigger animation
-                setInterval(checkTimeAndAnimate, 500);
             }}
 
             function createPlayer() {{

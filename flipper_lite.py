@@ -2222,7 +2222,6 @@ def main():
             player_html,
             height=800,
             scrolling=False,
-            key=f"inline_player_component_{video_id}",
         )
         st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
 

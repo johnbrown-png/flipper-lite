@@ -26,7 +26,7 @@ try:
     st_player_module = importlib.import_module("streamlit_player")
     st_player = st_player_module.st_player
     STREAMLIT_PLAYER_ENABLED = True
-except ImportError:
+except Exception:
     st_player = None
     STREAMLIT_PLAYER_ENABLED = False
 

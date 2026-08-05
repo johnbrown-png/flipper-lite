@@ -2446,30 +2446,33 @@ def main():
     # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)
     # ==========================================
     if ENABLE_FLIPPER_SEARCH and curriculum_path.exists():
-        from flipper_search.streamlit_ui import render_search_ui
+        try:
+            from flipper_search.streamlit_ui import render_search_ui
 
-        st.markdown("---")
-        embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
-        search_result = render_search_ui(
-            curriculum_csv_path=str(curriculum_path),
-            embeddings_path=str(embeddings_path),
-            use_semantic=True,
-        )
+            st.markdown("---")
+            embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
+            search_result = render_search_ui(
+                curriculum_csv_path=str(curriculum_path),
+                embeddings_path=str(embeddings_path),
+                use_semantic=True,
+            )
 
-        if search_result:
-            action, result_dict = search_result
-            if action == 'small_step_search' and result_dict:
-                track_event(
-                    "step_selection_applied",
-                    {
-                        "source": "flipper_search",
-                        "small_step": result_dict.get("small_step", ""),
-                        "small_step_id": result_dict.get("small_step_id", ""),
-                        "topic": result_dict.get("topic", ""),
-                        "age": result_dict.get("age", ""),
-                    },
-                )
-                apply_small_step_selection(result_dict, recommendations_df, curriculum_assistant, lookup_videos_for_step)
+            if search_result:
+                action, result_dict = search_result
+                if action == 'small_step_search' and result_dict:
+                    track_event(
+                        "step_selection_applied",
+                        {
+                            "source": "flipper_search",
+                            "small_step": result_dict.get("small_step", ""),
+                            "small_step_id": result_dict.get("small_step_id", ""),
+                            "topic": result_dict.get("topic", ""),
+                            "age": result_dict.get("age", ""),
+                        },
+                    )
+                    apply_small_step_selection(result_dict, recommendations_df, curriculum_assistant, lookup_videos_for_step)
+        except Exception as search_error:
+            st.warning(f"Flipper Search is temporarily unavailable: {search_error}")
 
     # Sidebar with info
     with st.sidebar:

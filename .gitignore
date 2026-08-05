@@ -78,7 +78,6 @@ batch_curriculum_quality_audit.py
 delete_content.py
 export_video_inventory.py
 precompute_curriculum_recommendations.py
-query_embedder.py
 gui_main.py
 launch_gui*.bat
 launch_gui.py

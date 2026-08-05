@@ -19,16 +19,7 @@ import streamlit.components.v1 as components
 import pandas as pd
 import math
 import json
-import importlib
 from datetime import datetime
-
-try:
-    st_player_module = importlib.import_module("streamlit_player")
-    st_player = st_player_module.st_player
-    STREAMLIT_PLAYER_ENABLED = True
-except Exception:
-    st_player = None
-    STREAMLIT_PLAYER_ENABLED = False
 
 from shared.curriculum_schema import normalize_precomputed_df
 from shared.analytics import init_analytics, track_event
@@ -170,18 +161,6 @@ st.markdown("""
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(30, 58, 95, 0.1);
         margin: 1rem 0;
-    }
-    
-    /* Watch tracking - subtle opacity for watched videos */
-    .video-card-watched {
-        opacity: 0.65;
-        filter: saturate(0.7);
-        transition: opacity 0.3s ease, filter 0.3s ease;
-    }
-    
-    .video-card-watched:hover {
-        opacity: 0.85;
-        filter: saturate(0.85);
     }
     
     /* Style Watch buttons - make them compact and elegant */
@@ -1495,57 +1474,6 @@ def render_educator_view():
         st.markdown("---")
 
 
-def render_video_player(video_data):
-    """Render full-screen video player view with back button"""
-    video_id = video_data['video_id']
-    title = video_data['title']
-    channel = video_data.get('channel', '')
-    duration = video_data.get('duration', '')
-    
-    # Back button above video display for quick navigation
-    if st.button("← Back to Search Results", key="back_to_search_top", type="primary"):
-        track_event("video_panel_closed", {"video_id": video_id, "location": "top_button"})
-        st.session_state.viewing_video = False
-        st.session_state.current_video = None
-        st.rerun()
-    
-    # Video player at top using youtube-nocookie (privacy-respecting)
-    embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1"
-    
-    # Full-width responsive iframe container at very top - edge to edge
-    st.markdown(
-        f"""
-        <style>
-        /* Remove all padding for video player page to maximize width */
-        .block-container {{
-            padding-top: 0rem !important;
-            padding-left: 0rem !important;
-            padding-right: 0rem !important;
-            max-width: 100% !important;
-        }}
-        </style>
-        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; width: 100vw; background: #000; border-radius: 0px; margin: 0; margin-left: calc(-1 * var(--block-padding-x, 0px));">
-            <iframe 
-                src="{embed_url}" 
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-            </iframe>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    # Back button for navigation - 20px below video
-    if st.button("← Back to Search Results", key="back_to_search_bottom", type="primary"):
-        track_event("video_panel_closed", {"video_id": video_id, "location": "bottom_button"})
-        st.session_state.viewing_video = False
-        st.session_state.current_video = None
-        st.rerun()
-    
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
 def render_result_card(result, compact=False, mobile_viewer_mode=False):
     """Render a single Video card."""
     
@@ -1617,7 +1545,6 @@ def render_result_card(result, compact=False, mobile_viewer_mode=False):
                     idx = 0
                 st.session_state.current_video_index = idx
                 st.session_state.current_video = result
-                st.session_state.flipper_lite_scroll_to_player = True
                 st.rerun()
         
         if show_score_infographic:
@@ -1931,8 +1858,6 @@ def main():
         st.session_state.current_video_index = 0
     if 'flipper_lite_scroll_to_video_cards' not in st.session_state:
         st.session_state.flipper_lite_scroll_to_video_cards = False
-    if 'flipper_lite_scroll_to_player' not in st.session_state:
-        st.session_state.flipper_lite_scroll_to_player = False
     if 'pending_selector_sync' not in st.session_state:
         st.session_state.pending_selector_sync = None
     
@@ -2069,38 +1994,8 @@ def main():
                     )
                     st.session_state.current_video_index = next_idx
                     st.session_state.current_video = next_video
-                    st.session_state.flipper_lite_scroll_to_player = True
                     st.rerun()
         st.markdown("<hr style='margin:0.2rem 0; border:0; border-top:1px solid rgba(44,95,141,0.15);'>", unsafe_allow_html=True)
-        if st.session_state.get('flipper_lite_scroll_to_player'):
-            components.html(
-                """
-                <script>
-                setTimeout(function() {
-                    const rootWin = window.parent;
-                    const rootDoc = rootWin.document;
-                    const topAnchor = rootDoc.getElementById('flipper-video-player-top');
-                    const bottomAnchor = rootDoc.getElementById('flipper-video-player-bottom');
-
-                    if (topAnchor && bottomAnchor) {
-                        const topY = topAnchor.getBoundingClientRect().top + rootWin.scrollY;
-                        const bottomY = bottomAnchor.getBoundingClientRect().top + rootWin.scrollY;
-                        const midpointY = (topY + bottomY) / 2;
-                        const targetScrollY = Math.max(0, midpointY - (rootWin.innerHeight / 2));
-                        rootWin.scrollTo({ top: targetScrollY, behavior: 'smooth' });
-                        return;
-                    }
-
-                    const fallback = rootDoc.getElementById('flipper-video-container');
-                    if (fallback && typeof fallback.scrollIntoView === 'function') {
-                        fallback.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 150);
-                </script>
-                """,
-                height=0,
-            )
-            st.session_state.flipper_lite_scroll_to_player = False
 
     st.markdown('<div id="flipper-video-results-top"></div>', unsafe_allow_html=True)
 
@@ -2527,150 +2422,6 @@ def main():
         All video recommendations are precomputed offline using semantic search 
         and AI-powered instruction quality scoring.
         """)
-
-    # Watch tracking JavaScript - unique per (video_id, topic, small_step)
-    components.html("""
-    <script>
-    (function() {
-        const parentWindow = window.parent;
-        const parentDoc = parentWindow.document;
-
-        // Get watched videos from localStorage (array of objects)
-        function getWatchedVideos() {
-            try {
-                const watched = localStorage.getItem('flipper_watched_videos');
-                return watched ? JSON.parse(watched) : [];
-            } catch (e) {
-                console.error('Error reading watched videos:', e);
-                return [];
-            }
-        }
-
-        // Save watched videos to localStorage
-        function saveWatchedVideos(videos) {
-            try {
-                localStorage.setItem('flipper_watched_videos', JSON.stringify(videos));
-            } catch (e) {
-                console.error('Error saving watched videos:', e);
-            }
-        }
-
-        // Mark a video as watched for a specific context
-        function markVideoWatched(videoId, topic, smallStep) {
-            const watched = getWatchedVideos();
-            // Check if already present
-            const exists = watched.some(v => v.video_id === videoId && v.topic === topic && v.small_step === smallStep);
-            if (!exists) {
-                watched.push({video_id: videoId, topic: topic, small_step: smallStep});
-                saveWatchedVideos(watched);
-                console.log('Marked as watched:', videoId, topic, smallStep);
-            }
-        }
-
-        // Apply watched styling to videos in parent document
-        function applyWatchedStyling() {
-            const watched = getWatchedVideos();
-            // Remove watched class from all video cards first
-            const allCards = parentDoc.querySelectorAll('.video-card');
-            allCards.forEach(card => card.classList.remove('video-card-watched'));
-            // Add watched class only to matching cards
-            watched.forEach(entry => {
-                const domId = `video-card-${entry.video_id}-${entry.topic}-${entry.small_step}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
-                const card = parentDoc.getElementById(domId);
-                if (card) {
-                    card.classList.add('video-card-watched');
-                }
-            });
-        }
-
-        // Reduce only step-navigation button footprint in results mode.
-        function applyCompactStepNavButtons() {
-            const targets = [
-                'Back to search',
-                '◀  Previous Step',
-                'Next Step  ▶',
-                '◀  Previous Small Step',
-                'Next Small Step  ▶'
-            ];
-            const buttons = parentDoc.querySelectorAll('button');
-            buttons.forEach(btn => {
-                const text = (btn.textContent || '').trim();
-                const isTarget = targets.some(t => text.includes(t));
-                if (isTarget) {
-                    btn.style.fontSize = '0.5em';
-                    btn.style.padding = '0.12rem 0.35rem';
-                    btn.style.minHeight = '1.05rem';
-                    btn.style.lineHeight = '1';
-                }
-            });
-        }
-
-        // Attach click handlers to video links
-        function attachClickHandlers() {
-            const videoLinks = parentDoc.querySelectorAll('a.video-link[data-video-id]');
-            videoLinks.forEach(link => {
-                link.removeEventListener('click', handleVideoClick);
-                link.addEventListener('click', handleVideoClick);
-            });
-        }
-
-        function handleVideoClick(event) {
-            const videoId = this.getAttribute('data-video-id');
-            const topic = this.getAttribute('data-topic') || '';
-            const smallStep = this.getAttribute('data-small-step') || '';
-            if (videoId) {
-                markVideoWatched(videoId, topic, smallStep);
-                // Apply styling immediately
-                const domId = `video-card-${videoId}-${topic}-${smallStep}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
-                const card = parentDoc.getElementById(domId);
-                if (card) {
-                    card.classList.add('video-card-watched');
-                }
-            }
-        }
-
-        // Initialize
-        function initialize() {
-            applyWatchedStyling();
-            attachClickHandlers();
-            applyCompactStepNavButtons();
-        }
-
-        // Run initialization
-        initialize();
-
-        // Re-run periodically to catch Streamlit updates
-        setInterval(function() {
-            applyWatchedStyling();
-            attachClickHandlers();
-        }, 500);
-
-        // Watch for DOM changes
-        const observer = new MutationObserver(function(mutations) {
-            let needsUpdate = false;
-            mutations.forEach(mutation => {
-                mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === 1 && 
-                        (node.classList?.contains('video-card') || 
-                         node.querySelector?.('.video-card'))) {
-                        needsUpdate = true;
-                    }
-                });
-            });
-            if (needsUpdate) {
-                setTimeout(initialize, 100);
-            }
-        });
-
-        observer.observe(parentDoc.body, {
-            childList: true,
-            subtree: true
-        });
-
-        console.log('Video watch tracker initialized (context-aware)');
-    })();
-    </script>
-    """, height=0)
 
     # Footer
     st.markdown("---")

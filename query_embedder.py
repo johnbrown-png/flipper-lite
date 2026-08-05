@@ -36,7 +36,12 @@ class QueryEmbedder:
             api_key = os.getenv('OPENAI_API_KEY')
         
         if not api_key or api_key == 'your_api_key_here':
-            raise ValueError("OpenAI API key not provided or not found in environment")
+            # Allow initialization without API key for environments where it's not available
+            print("⚠ Warning: OpenAI API key not provided - QueryEmbedder will not function")
+            self.client = None
+            self.model = model
+            self.dimensions = dimensions
+            return
         
         self.client = OpenAI(api_key=api_key)
         self.model = model
@@ -56,6 +61,9 @@ class QueryEmbedder:
         Returns:
             NumPy array (float32) with shape (1, dimensions)
         """
+        if self.client is None:
+            raise RuntimeError("QueryEmbedder not initialized with valid API key")
+        
         if not query or not query.strip():
             raise ValueError("Query cannot be empty")
         
@@ -86,6 +94,9 @@ class QueryEmbedder:
         Returns:
             NumPy array (float32) with shape (n_queries, dimensions)
         """
+        if self.client is None:
+            raise RuntimeError("QueryEmbedder not initialized with valid API key")
+        
         if not queries:
             raise ValueError("Queries list cannot be empty")
         

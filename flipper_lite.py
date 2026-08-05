@@ -2040,8 +2040,8 @@ def main():
                 st.session_state.current_video_index = 0
                 st.rerun()
     
-        with btn_col_prompt:
-            if THOUGHT_PROMPTS_ENABLED:
+        if THOUGHT_PROMPTS_ENABLED:
+            with btn_col_prompt:
                 if st.button("🎯 Try this!", key="try_thought_prompt", type="primary", use_container_width=True):
                     track_event("thought_prompt_opened", {"video_id": video_id})
                     small_step_num = _extract_small_step_num_from_video(vid)
@@ -2052,7 +2052,7 @@ def main():
                     st.session_state.tp_auto_triggered = False
                     st.session_state.tp_was_manual = True
                     st.rerun()
-    
+        
         with btn_col_next:
             results_for_cycling = st.session_state.get('display_results', [])
             if len(results_for_cycling) > 1:

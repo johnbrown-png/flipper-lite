@@ -163,6 +163,18 @@ st.markdown("""
         margin: 1rem 0;
     }
     
+    /* Watch tracking - subtle opacity for watched videos */
+    .video-card-watched {
+        opacity: 0.65;
+        filter: saturate(0.7);
+        transition: opacity 0.3s ease, filter 0.3s ease;
+    }
+    
+    .video-card-watched:hover {
+        opacity: 0.85;
+        filter: saturate(0.85);
+    }
+    
     /* Style Watch buttons - make them compact and elegant */
     button[key^="play_"] {
         background: linear-gradient(135deg, #2c5f8d 0%, #4a90c8 100%) !important;
@@ -373,21 +385,6 @@ def format_duration(duration_str):
         return str(duration_str)
 
 
-def duration_to_seconds(duration_str):
-    """Convert duration string to total seconds"""
-    try:
-        if ':' in str(duration_str):
-            parts = str(duration_str).split(':')
-            if len(parts) == 2:  # MM:SS
-                return int(parts[0]) * 60 + int(parts[1])
-            elif len(parts) == 3:  # HH:MM:SS
-                return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
-        # Already in seconds
-        return int(float(duration_str))
-    except:
-        return 0
-
-
 def create_circular_progress_svg(score_pct, size=80, text_scale=1.0):
     """
     Create an SVG circular progress indicator.
@@ -466,69 +463,6 @@ def get_prompts_for_small_step(prompts_df, small_step_num):
     
     # Sort by variant (1, 2, 3)
     return matches.sort_values('variant').to_dict('records')
-
-
-def _extract_small_step_num_from_video(current_video):
-    """Resolve the thought-prompt small step number from the current video context."""
-    if not current_video:
-        return None
-
-    if 'small_step_num_global' in current_video:
-        try:
-            return int(float(current_video['small_step_num_global']))
-        except (ValueError, TypeError):
-            pass
-
-    if 'small_step_num' in current_video:
-        try:
-            return int(float(current_video['small_step_num']))
-        except (ValueError, TypeError):
-            pass
-
-    small_step_id = current_video.get('small_step_id', '')
-    if small_step_id and 'ss_' in small_step_id:
-        try:
-            return int(small_step_id.replace('ss_', '').split('_')[0])
-        except (ValueError, AttributeError):
-            pass
-
-    return None
-
-
-def _prepare_thought_prompt_open(current_video, auto_triggered):
-    """Prime session state so the thought prompt page opens at variant 1."""
-    ok, _reason = _prepare_thought_prompt_open_with_reason(current_video, auto_triggered)
-    return ok
-
-
-def _prepare_thought_prompt_open_with_reason(current_video, auto_triggered):
-    """Prime thought prompt state and return (ok, reason) for diagnostics."""
-    small_step_num = _extract_small_step_num_from_video(current_video)
-    if small_step_num is None:
-        return False, "missing_small_step_num"
-
-    prompts_df = load_thought_prompts()
-    prompts = get_prompts_for_small_step(prompts_df, small_step_num)
-    if not prompts:
-        return False, f"no_prompts_for_small_step_{small_step_num}"
-
-    st.session_state.showing_thought_prompt = True
-    st.session_state.tp_auto_triggered = auto_triggered
-    st.session_state.tp_was_manual = not auto_triggered
-    st.session_state.tp_current_variant = 1
-    st.session_state.tp_active_small_step = small_step_num
-    return True, ""
-
-
-def _close_thought_prompt_and_video():
-    """Return from thought prompt mode back to the video selection screen."""
-    st.session_state.showing_thought_prompt = False
-    st.session_state.viewing_video = False
-    st.session_state.current_video = None
-    st.session_state.current_video_index = 0
-    st.session_state.tp_current_variant = 1
-    st.session_state.tp_active_small_step = None
-    st.session_state.flipper_lite_scroll_to_video_cards = True
 
 
 def _inject_tts(prompt_text):
@@ -1079,7 +1013,8 @@ def _process_number_line_answer(submitted_value, correct_answer, tolerance, smal
         
         import time
         time.sleep(2)
-        _close_thought_prompt_and_video()
+        st.session_state.showing_thought_prompt = False
+        st.session_state.tp_current_variant = 1
         st.rerun()
     else:
         st.error(f"❌ Not quite. You selected {submitted_value}. The correct answer is {correct_answer}.")
@@ -1097,9 +1032,8 @@ def _process_number_line_answer(submitted_value, correct_answer, tolerance, smal
             time.sleep(1.5)
             st.session_state.tp_current_variant += 1
             st.rerun()
-        # All variants attempted — auto-return to video
-            _close_thought_prompt_and_video()
-        st.rerun()
+        else:
+            st.warning("You've tried all variants. Review the material and try again later!")
 
 
 def render_thought_prompt_page():
@@ -1130,8 +1064,31 @@ def render_thought_prompt_page():
         st.warning("No video selected. Please select a video first.")
         return
     
-    # Extract small_step_num from current video
-    small_step_num = _extract_small_step_num_from_video(current_video)
+    # Extract small_step_num from current video - try multiple sources
+    small_step_num = None
+    
+    # Method 1: Use global small_step_num (preferred for thought prompts)
+    if 'small_step_num_global' in current_video:
+        try:
+            small_step_num = int(float(current_video['small_step_num_global']))
+        except (ValueError, TypeError):
+            pass
+    
+    # Method 2: Try direct small_step_num field (local topic number)
+    if small_step_num is None and 'small_step_num' in current_video:
+        try:
+            small_step_num = int(float(current_video['small_step_num']))
+        except (ValueError, TypeError):
+            pass
+    
+    # Method 3: Parse from small_step_id if format is "ss_XXX"
+    if small_step_num is None:
+        small_step_id = current_video.get('small_step_id', '')
+        if small_step_id and 'ss_' in small_step_id:
+            try:
+                small_step_num = int(small_step_id.replace('ss_', '').split('_')[0])
+            except (ValueError, AttributeError):
+                pass
     
     # If we still don't have a small_step_num, show helpful error
     if small_step_num is None:
@@ -1167,10 +1124,15 @@ def render_thought_prompt_page():
     # Get current prompt based on variant
     current_variant = st.session_state.tp_current_variant
     if current_variant > len(prompts):
-        # All prompts attempted — auto-return to video
-        st.session_state.showing_thought_prompt = False
-        st.session_state.tp_current_variant = 1
-        st.rerun()
+        # All prompts attempted
+        st.error("❌ You've tried all three prompts. This topic might need some review!")
+        if st.button("Try Again from Start", key="retry_prompts"):
+            st.session_state.tp_current_variant = 1
+            st.rerun()
+        if st.button("← Back to Video", key="back_to_video_bottom", type="primary"):
+            st.session_state.showing_thought_prompt = False
+            st.rerun()
+        return
     
     current_prompt = prompts[current_variant - 1]
     
@@ -1338,7 +1300,8 @@ def render_thought_prompt_page():
             # Return to video after a moment
             import time
             time.sleep(2)
-            _close_thought_prompt_and_video()
+            st.session_state.showing_thought_prompt = False
+            st.session_state.tp_current_variant = 1  # Reset for next time
             st.rerun()
         else:
             st.error(f"❌ Not quite. Try again!")
@@ -1358,9 +1321,8 @@ def render_thought_prompt_page():
                 time.sleep(1.5)
                 st.session_state.tp_current_variant += 1
                 st.rerun()
-            # All variants attempted — auto-return to video
-            _close_thought_prompt_and_video()
-            st.rerun()
+            else:
+                st.warning("You've tried all variants. Review the material and try again later!")
 
 
 def render_educator_view():
@@ -1474,6 +1436,57 @@ def render_educator_view():
         st.markdown("---")
 
 
+def render_video_player(video_data):
+    """Render full-screen video player view with back button"""
+    video_id = video_data['video_id']
+    title = video_data['title']
+    channel = video_data.get('channel', '')
+    duration = video_data.get('duration', '')
+    
+    # Back button above video display for quick navigation
+    if st.button("← Back to Search Results", key="back_to_search_top", type="primary"):
+        track_event("video_panel_closed", {"video_id": video_id, "location": "top_button"})
+        st.session_state.viewing_video = False
+        st.session_state.current_video = None
+        st.rerun()
+    
+    # Video player at top using youtube-nocookie (privacy-respecting)
+    embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1"
+    
+    # Full-width responsive iframe container at very top - edge to edge
+    st.markdown(
+        f"""
+        <style>
+        /* Remove all padding for video player page to maximize width */
+        .block-container {{
+            padding-top: 0rem !important;
+            padding-left: 0rem !important;
+            padding-right: 0rem !important;
+            max-width: 100% !important;
+        }}
+        </style>
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; width: 100vw; background: #000; border-radius: 0px; margin: 0; margin-left: calc(-1 * var(--block-padding-x, 0px));">
+            <iframe 
+                src="{embed_url}" 
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+            </iframe>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Back button for navigation - 20px below video
+    if st.button("← Back to Search Results", key="back_to_search_bottom", type="primary"):
+        track_event("video_panel_closed", {"video_id": video_id, "location": "bottom_button"})
+        st.session_state.viewing_video = False
+        st.session_state.current_video = None
+        st.rerun()
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def render_result_card(result, compact=False, mobile_viewer_mode=False):
     """Render a single Video card."""
     
@@ -1545,6 +1558,7 @@ def render_result_card(result, compact=False, mobile_viewer_mode=False):
                     idx = 0
                 st.session_state.current_video_index = idx
                 st.session_state.current_video = result
+                st.session_state.flipper_lite_scroll_to_player = True
                 st.rerun()
         
         if show_score_infographic:
@@ -1858,6 +1872,8 @@ def main():
         st.session_state.current_video_index = 0
     if 'flipper_lite_scroll_to_video_cards' not in st.session_state:
         st.session_state.flipper_lite_scroll_to_video_cards = False
+    if 'flipper_lite_scroll_to_player' not in st.session_state:
+        st.session_state.flipper_lite_scroll_to_player = False
     if 'pending_selector_sync' not in st.session_state:
         st.session_state.pending_selector_sync = None
     
@@ -1897,66 +1913,32 @@ def main():
         title = vid['title']
         channel = vid.get('channel', '').replace('_', ' ')
         duration = format_duration(vid.get('duration', ''))
+        embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1&autoplay=1"
         meta_parts = [p for p in [channel, duration] if p]
         meta_str = " | ".join(meta_parts)
         meta_html = f'<span style="color:#aac8e4; font-size:0.85rem; font-weight:400; margin-left:1rem;">{meta_str}</span>' if meta_str else ''
-        
         st.markdown(
             f"""
-            <style>
-            #flipper-video-container div[data-testid="stButton"] {{
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
-            }}
-            </style>
-            <div id="flipper-video-container">
-            <div id="flipper-video-header" style="background:#1e3a5f; border-radius:10px 10px 0 0; padding:0.35rem 0.75rem 0.35rem 0.75rem; margin-bottom:0rem;">
-                <div style="color:#f0f4f8; font-size:1rem; font-weight:600;">
+            <div id="flipper-video-player" style="background:#1e3a5f; border-radius:10px; padding:0.75rem 0.75rem 0.5rem 0.75rem; margin-bottom:0.75rem;">
+                <div style="color:#f0f4f8; font-size:1rem; font-weight:600; margin-bottom:0.5rem;">
                     &#9654; Now Playing: {title}{meta_html}
+                </div>
+                <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:6px;">
+                    <iframe src="{embed_url}"
+                        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
                 </div>
             </div>
             """,
             unsafe_allow_html=True
         )
-
-        st.markdown('<div id="flipper-video-player-top"></div>', unsafe_allow_html=True)
-        embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1&autoplay=1"
-        st.markdown(
-            f"""
-            <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:0 0 10px 10px; margin:0; background:#000;">
-                <iframe
-                    src="{embed_url}"
-                    style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-                </iframe>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        st.markdown('<div id="flipper-video-player-bottom"></div>', unsafe_allow_html=True)
-
         # Video controls with thought prompt button
-        st.markdown("""
-        <style>
-        #flipper-video-container .stButton button {
-            margin-top: 0 !important;
-            margin-bottom: 0 !important;
-            padding-top: 0.35rem !important;
-            padding-bottom: 0.35rem !important;
-        }
-        #flipper-video-container [data-testid="stHorizontalBlock"] {
-            gap: 0.3rem !important;
-        }
-        #flipper-video-container hr {
-            margin: 0.2rem 0 !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
         if THOUGHT_PROMPTS_ENABLED:
-            btn_col_close, btn_col_prompt, btn_col_next = st.columns([1, 1.2, 1])
+            _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.5, 1, 1.2, 1, 2.5])
         else:
-            btn_col_close, btn_col_next = st.columns([2, 1])
+            _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 0, 1, 3])
     
         with btn_col_close:
             if st.button("✕  Close video", key="close_inline_video", type="secondary", use_container_width=True):
@@ -1965,19 +1947,13 @@ def main():
                 st.session_state.current_video_index = 0
                 st.rerun()
     
-        if THOUGHT_PROMPTS_ENABLED:
-            with btn_col_prompt:
-                if st.button("🎯 Try this!", key="try_thought_prompt", type="primary", use_container_width=True):
+        with btn_col_prompt:
+            if THOUGHT_PROMPTS_ENABLED:
+                if st.button("🎯 Try Thought Prompt", key="try_thought_prompt", type="primary", use_container_width=True):
                     track_event("thought_prompt_opened", {"video_id": video_id})
-                    small_step_num = _extract_small_step_num_from_video(vid)
-                    if small_step_num is not None:
-                        st.session_state.tp_current_variant = 1
-                        st.session_state.tp_active_small_step = small_step_num
                     st.session_state.showing_thought_prompt = True
-                    st.session_state.tp_auto_triggered = False
-                    st.session_state.tp_was_manual = True
                     st.rerun()
-        
+    
         with btn_col_next:
             results_for_cycling = st.session_state.get('display_results', [])
             if len(results_for_cycling) > 1:
@@ -1995,7 +1971,22 @@ def main():
                     st.session_state.current_video_index = next_idx
                     st.session_state.current_video = next_video
                     st.rerun()
-        st.markdown("<hr style='margin:0.2rem 0; border:0; border-top:1px solid rgba(44,95,141,0.15);'>", unsafe_allow_html=True)
+        st.markdown("---")
+        if st.session_state.get('flipper_lite_scroll_to_player'):
+            components.html(
+                """
+                <script>
+                setTimeout(function() {
+                    const target = window.parent.document.getElementById('flipper-video-player');
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 150);
+                </script>
+                """,
+                height=0,
+            )
+            st.session_state.flipper_lite_scroll_to_player = False
 
     st.markdown('<div id="flipper-video-results-top"></div>', unsafe_allow_html=True)
 
@@ -2341,33 +2332,30 @@ def main():
     # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)
     # ==========================================
     if ENABLE_FLIPPER_SEARCH and curriculum_path.exists():
-        try:
-            from flipper_search.streamlit_ui import render_search_ui
+        from flipper_search.streamlit_ui import render_search_ui
 
-            st.markdown("---")
-            embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
-            search_result = render_search_ui(
-                curriculum_csv_path=str(curriculum_path),
-                embeddings_path=str(embeddings_path),
-                use_semantic=True,
-            )
+        st.markdown("---")
+        embeddings_path = project_root / "data" / "curriculum_embeddings.npy"
+        search_result = render_search_ui(
+            curriculum_csv_path=str(curriculum_path),
+            embeddings_path=str(embeddings_path),
+            use_semantic=True,
+        )
 
-            if search_result:
-                action, result_dict = search_result
-                if action == 'small_step_search' and result_dict:
-                    track_event(
-                        "step_selection_applied",
-                        {
-                            "source": "flipper_search",
-                            "small_step": result_dict.get("small_step", ""),
-                            "small_step_id": result_dict.get("small_step_id", ""),
-                            "topic": result_dict.get("topic", ""),
-                            "age": result_dict.get("age", ""),
-                        },
-                    )
-                    apply_small_step_selection(result_dict, recommendations_df, curriculum_assistant, lookup_videos_for_step)
-        except Exception as search_error:
-            st.warning(f"Flipper Search is temporarily unavailable: {search_error}")
+        if search_result:
+            action, result_dict = search_result
+            if action == 'small_step_search' and result_dict:
+                track_event(
+                    "step_selection_applied",
+                    {
+                        "source": "flipper_search",
+                        "small_step": result_dict.get("small_step", ""),
+                        "small_step_id": result_dict.get("small_step_id", ""),
+                        "topic": result_dict.get("topic", ""),
+                        "age": result_dict.get("age", ""),
+                    },
+                )
+                apply_small_step_selection(result_dict, recommendations_df, curriculum_assistant, lookup_videos_for_step)
 
     # Sidebar with info
     with st.sidebar:
@@ -2422,6 +2410,150 @@ def main():
         All video recommendations are precomputed offline using semantic search 
         and AI-powered instruction quality scoring.
         """)
+
+    # Watch tracking JavaScript - unique per (video_id, topic, small_step)
+    components.html("""
+    <script>
+    (function() {
+        const parentWindow = window.parent;
+        const parentDoc = parentWindow.document;
+
+        // Get watched videos from localStorage (array of objects)
+        function getWatchedVideos() {
+            try {
+                const watched = localStorage.getItem('flipper_watched_videos');
+                return watched ? JSON.parse(watched) : [];
+            } catch (e) {
+                console.error('Error reading watched videos:', e);
+                return [];
+            }
+        }
+
+        // Save watched videos to localStorage
+        function saveWatchedVideos(videos) {
+            try {
+                localStorage.setItem('flipper_watched_videos', JSON.stringify(videos));
+            } catch (e) {
+                console.error('Error saving watched videos:', e);
+            }
+        }
+
+        // Mark a video as watched for a specific context
+        function markVideoWatched(videoId, topic, smallStep) {
+            const watched = getWatchedVideos();
+            // Check if already present
+            const exists = watched.some(v => v.video_id === videoId && v.topic === topic && v.small_step === smallStep);
+            if (!exists) {
+                watched.push({video_id: videoId, topic: topic, small_step: smallStep});
+                saveWatchedVideos(watched);
+                console.log('Marked as watched:', videoId, topic, smallStep);
+            }
+        }
+
+        // Apply watched styling to videos in parent document
+        function applyWatchedStyling() {
+            const watched = getWatchedVideos();
+            // Remove watched class from all video cards first
+            const allCards = parentDoc.querySelectorAll('.video-card');
+            allCards.forEach(card => card.classList.remove('video-card-watched'));
+            // Add watched class only to matching cards
+            watched.forEach(entry => {
+                const domId = `video-card-${entry.video_id}-${entry.topic}-${entry.small_step}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
+                const card = parentDoc.getElementById(domId);
+                if (card) {
+                    card.classList.add('video-card-watched');
+                }
+            });
+        }
+
+        // Reduce only step-navigation button footprint in results mode.
+        function applyCompactStepNavButtons() {
+            const targets = [
+                'Back to search',
+                '◀  Previous Step',
+                'Next Step  ▶',
+                '◀  Previous Small Step',
+                'Next Small Step  ▶'
+            ];
+            const buttons = parentDoc.querySelectorAll('button');
+            buttons.forEach(btn => {
+                const text = (btn.textContent || '').trim();
+                const isTarget = targets.some(t => text.includes(t));
+                if (isTarget) {
+                    btn.style.fontSize = '0.5em';
+                    btn.style.padding = '0.12rem 0.35rem';
+                    btn.style.minHeight = '1.05rem';
+                    btn.style.lineHeight = '1';
+                }
+            });
+        }
+
+        // Attach click handlers to video links
+        function attachClickHandlers() {
+            const videoLinks = parentDoc.querySelectorAll('a.video-link[data-video-id]');
+            videoLinks.forEach(link => {
+                link.removeEventListener('click', handleVideoClick);
+                link.addEventListener('click', handleVideoClick);
+            });
+        }
+
+        function handleVideoClick(event) {
+            const videoId = this.getAttribute('data-video-id');
+            const topic = this.getAttribute('data-topic') || '';
+            const smallStep = this.getAttribute('data-small-step') || '';
+            if (videoId) {
+                markVideoWatched(videoId, topic, smallStep);
+                // Apply styling immediately
+                const domId = `video-card-${videoId}-${topic}-${smallStep}`.replace(/\\s/g, '_').replace(/"/g, '').replace(/'/g, '');
+                const card = parentDoc.getElementById(domId);
+                if (card) {
+                    card.classList.add('video-card-watched');
+                }
+            }
+        }
+
+        // Initialize
+        function initialize() {
+            applyWatchedStyling();
+            attachClickHandlers();
+            applyCompactStepNavButtons();
+        }
+
+        // Run initialization
+        initialize();
+
+        // Re-run periodically to catch Streamlit updates
+        setInterval(function() {
+            applyWatchedStyling();
+            attachClickHandlers();
+        }, 500);
+
+        // Watch for DOM changes
+        const observer = new MutationObserver(function(mutations) {
+            let needsUpdate = false;
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1 && 
+                        (node.classList?.contains('video-card') || 
+                         node.querySelector?.('.video-card'))) {
+                        needsUpdate = true;
+                    }
+                });
+            });
+            if (needsUpdate) {
+                setTimeout(initialize, 100);
+            }
+        });
+
+        observer.observe(parentDoc.body, {
+            childList: true,
+            subtree: true
+        });
+
+        console.log('Video watch tracker initialized (context-aware)');
+    })();
+    </script>
+    """, height=0)
 
     # Footer
     st.markdown("---")

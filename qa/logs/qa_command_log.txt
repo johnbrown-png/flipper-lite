@@ -442040,3 +442040,50 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-07-22T14:07:59] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Fractions_13_Subtract two fractions
 [2026-07-22T14:09:34] MANUAL OVERRIDE applied for Year 4_8-9_Summer__Shape_4_Triangles
 [2026-07-22T14:10:12] QA REFERENCE PUBLISHED rows=5038 steps=638 wildcards=35 manual=609 skipped=35
+[2026-08-06T11:33:48] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Fractions_1_Recognise a half of an object or a shape
+[2026-08-06T11:34:12] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Fractions_1_Recognise a half of an object or a shape
+[2026-08-06T11:35:23] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Fractions_5_Recognise a quarter of an object or a shape
+[2026-08-06T11:36:25] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Fractions_5_Recognise a quarter of an object or a shape
+[2026-08-06T11:38:17] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Place value within 100_1_Count from 50 to 100
+[2026-08-06T11:39:04] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Place value within 100_1_Count from 50 to 100
+[2026-08-06T11:39:28] MANUAL OVERRIDE applied for Year 1_5-6_Summer__Place value within 100_1_Count from 50 to 100
+[2026-08-06T11:42:16] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Place value_6_Write numbers to 100 in words
+[2026-08-06T11:44:25] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Place value_6_Write numbers to 100 in words
+[2026-08-06T11:45:35] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Place value_8_Write numbers to 100 in expanded form
+[2026-08-06T11:46:05] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Place value_8_Write numbers to 100 in expanded form
+[2026-08-06T11:47:05] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Addition and subtraction_5_Add and subtract 1s
+[2026-08-06T11:48:49] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Addition and subtraction_9_Add across a 10
+[2026-08-06T11:49:48] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Addition and subtraction_18_Subtract two 2-digit numbers (across a 10)
+[2026-08-06T11:51:27] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Addition and subtraction_19_Mixed addition and subtraction
+[2026-08-06T11:52:47] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Shape_3_Count vertices on 2-D shapes
+[2026-08-06T11:54:20] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Shape_4_Draw 2-D shapes
+[2026-08-06T11:55:16] MANUAL OVERRIDE applied for Year 2_6-7_Autumn__Shape_7_Sort 2-D shapes
+[2026-08-06T11:56:38] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Multiplication and division_9_The 2 times-table
+[2026-08-06T11:57:51] MANUAL OVERRIDE applied for Year 2_6-7_Spring__Length and height_3_Compare lengths and heights
+[2026-08-06T11:58:54] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Fractions_2_Equal and unequal parts
+[2026-08-06T12:00:04] MANUAL OVERRIDE applied for Year 2_6-7_Summer__Time_7_Hours in a day
+[2026-08-06T12:01:55] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_4_Hundreds
+[2026-08-06T12:02:54] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_8_Hundreds, tens and ones
+[2026-08-06T12:03:57] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Place value_10_Number line to 1,000
+[2026-08-06T12:04:50] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_6_Add 1s across a 10
+[2026-08-06T12:06:13] MANUAL OVERRIDE applied for Year 3_7-8_Autumn__Addition and subtraction_10_Make connections
+[2026-08-06T12:07:10] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Time_5_Use am and pm
+[2026-08-06T12:08:09] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Shape_8_Draw polygons
+[2026-08-06T12:09:34] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Shape_8_Draw polygons
+[2026-08-06T12:11:30] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Statistics_4_Draw bar charts
+[2026-08-06T12:12:36] MANUAL OVERRIDE applied for Year 3_7-8_Summer__Money_5_Find change
+[2026-08-06T12:13:34] MANUAL OVERRIDE applied for Year 4_8-9_Autumn__Addition and subtraction_8_Efficient subtraction
+[2026-08-06T12:14:47] MANUAL OVERRIDE applied for Year 4_8-9_Spring__Length and perimeter_3_Perimeter on a grid
+[2026-08-06T12:16:45] MANUAL OVERRIDE applied for Year 5_9-10_Autumn__Addition and subtraction_6_Multi-step addition and subtraction problems
+[2026-08-06T12:17:38] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Multiplication and division B_6_Solve problems with multiplication
+[2026-08-06T12:18:28] MANUAL OVERRIDE applied for Year 5_9-10_Spring__Fractions B_2_Multiply a non-unit fraction by an integer
+[2026-08-06T12:19:55] MANUAL OVERRIDE applied for Year 5_9-10_Summer__Negative numbers_5_Find the difference
+[2026-08-06T12:21:05] MANUAL OVERRIDE applied for Year 6_10-11_Spring__Algebra_1_1-step function machines
+[2026-08-06T12:26:57] MANUAL OVERRIDE applied for Year 6_10-11_Summer__Shape_10_Draw shapes accurately
+[2026-08-06T12:29:18] MANUAL OVERRIDE applied for Year 7_11-12_Spring__Directed number_7_Multiply and divide directed numbers
+[2026-08-06T12:30:21] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Proportion and scale_1_Direct proportion
+[2026-08-06T12:31:06] MANUAL OVERRIDE applied for Year 8_12-13_Autumn__Coordinates and graphs_2_Lines parallel to the axes
+[2026-08-06T12:32:17] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Rates_3_Flow problems and their graphs
+[2026-08-06T12:34:37] MANUAL OVERRIDE applied for Year 9_13-14_Autumn__Rates_4_Rates of change and their units
+[2026-08-06T12:35:31] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Ratio and proportion_2_Direct proportion and conversion graphs
+[2026-08-06T12:38:34] QA REFERENCE PUBLISHED rows=5038 steps=654 wildcards=35 manual=628 skipped=35

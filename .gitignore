@@ -31,6 +31,9 @@ env/
 # Environment variables
 .env
 
+# Streamlit secrets (contains dashboard password)
+.streamlit/secrets.toml
+
 # IDE
 .vscode/
 .idea/

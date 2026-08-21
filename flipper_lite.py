@@ -38,6 +38,14 @@ except ImportError:
     THOUGHT_PROMPTS_ENABLED = False
     MathVisualGenerator = None
 
+# Master switch to temporarily hide the "Try Thought Prompt" button everywhere.
+# Set to False to hide it for all small steps regardless of THOUGHT_PROMPT_SMALL_STEP_RANGE.
+SHOW_THOUGHT_PROMPT_BUTTON = True
+
+# Only these small_step_num values currently have authored thought prompt questions
+# (e.g. Place value, age 8-9). The button is hidden for any step outside this range.
+THOUGHT_PROMPT_SMALL_STEP_RANGE = (373, 389)
+
 # Import interactive number line widget
 try:
     from ux.number_line_widget import render_number_line
@@ -450,6 +458,47 @@ def create_circular_progress_svg(score_pct, size=80, text_scale=1.0):
     </svg>
     """
     return svg
+
+
+def get_small_step_num_from_video(video):
+    """Extract small_step_num from a video dict, trying multiple fields/formats."""
+    if not video:
+        return None
+
+    # Method 1: Use global small_step_num (preferred for thought prompts)
+    if 'small_step_num_global' in video:
+        try:
+            return int(float(video['small_step_num_global']))
+        except (ValueError, TypeError):
+            pass
+
+    # Method 2: Try direct small_step_num field (local topic number)
+    if 'small_step_num' in video:
+        try:
+            return int(float(video['small_step_num']))
+        except (ValueError, TypeError):
+            pass
+
+    # Method 3: Parse from small_step_id if format is "ss_XXX"
+    small_step_id = video.get('small_step_id', '')
+    if small_step_id and 'ss_' in small_step_id:
+        try:
+            return int(small_step_id.replace('ss_', '').split('_')[0])
+        except (ValueError, AttributeError):
+            pass
+
+    return None
+
+
+def should_show_thought_prompt_button(video):
+    """Whether the 'Try Thought Prompt' button should be shown for this video."""
+    if not SHOW_THOUGHT_PROMPT_BUTTON:
+        return False
+    small_step_num = get_small_step_num_from_video(video)
+    if small_step_num is None:
+        return False
+    lo, hi = THOUGHT_PROMPT_SMALL_STEP_RANGE
+    return lo <= small_step_num <= hi
 
 
 def get_prompts_for_small_step(prompts_df, small_step_num):
@@ -1065,30 +1114,7 @@ def render_thought_prompt_page():
         return
     
     # Extract small_step_num from current video - try multiple sources
-    small_step_num = None
-    
-    # Method 1: Use global small_step_num (preferred for thought prompts)
-    if 'small_step_num_global' in current_video:
-        try:
-            small_step_num = int(float(current_video['small_step_num_global']))
-        except (ValueError, TypeError):
-            pass
-    
-    # Method 2: Try direct small_step_num field (local topic number)
-    if small_step_num is None and 'small_step_num' in current_video:
-        try:
-            small_step_num = int(float(current_video['small_step_num']))
-        except (ValueError, TypeError):
-            pass
-    
-    # Method 3: Parse from small_step_id if format is "ss_XXX"
-    if small_step_num is None:
-        small_step_id = current_video.get('small_step_id', '')
-        if small_step_id and 'ss_' in small_step_id:
-            try:
-                small_step_num = int(small_step_id.replace('ss_', '').split('_')[0])
-            except (ValueError, AttributeError):
-                pass
+    small_step_num = get_small_step_num_from_video(current_video)
     
     # If we still don't have a small_step_num, show helpful error
     if small_step_num is None:
@@ -1935,7 +1961,8 @@ def main():
             unsafe_allow_html=True
         )
         # Video controls with thought prompt button
-        if THOUGHT_PROMPTS_ENABLED:
+        show_prompt_btn = THOUGHT_PROMPTS_ENABLED and should_show_thought_prompt_button(vid)
+        if show_prompt_btn:
             _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.5, 1, 1.2, 1, 2.5])
         else:
             _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 0, 1, 3])
@@ -1948,7 +1975,7 @@ def main():
                 st.rerun()
     
         with btn_col_prompt:
-            if THOUGHT_PROMPTS_ENABLED:
+            if show_prompt_btn:
                 if st.button("🎯 Try Thought Prompt", key="try_thought_prompt", type="primary", use_container_width=True):
                     track_event("thought_prompt_opened", {"video_id": video_id})
                     st.session_state.showing_thought_prompt = True

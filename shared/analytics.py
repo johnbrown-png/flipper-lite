@@ -60,26 +60,6 @@ def get_analytics_webhook_token() -> str:
         return ""
 
 
-def _mask_preview(value: str) -> str:
-    """Return a short non-secret preview, e.g. 'https://exa...' or last 4 chars."""
-    if not value:
-        return ""
-    if len(value) <= 8:
-        return "*" * len(value)
-    return f"{value[:8]}...({len(value)} chars)"
-
-
-def get_analytics_webhook_config_status() -> dict[str, Any]:
-    """Report whether webhook config is present, without exposing secret values."""
-    url = get_analytics_webhook_url()
-    token = get_analytics_webhook_token()
-    return {
-        "url_configured": bool(url),
-        "url_preview": _mask_preview(url),
-        "token_configured": bool(token),
-    }
-
-
 def _normalize_query_params() -> dict[str, str]:
     """Return a plain dict[str, str] from st.query_params."""
     normalized: dict[str, str] = {}

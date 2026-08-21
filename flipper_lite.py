@@ -22,7 +22,7 @@ import json
 from datetime import datetime
 
 from shared.curriculum_schema import normalize_precomputed_df
-from shared.analytics import init_analytics, track_event
+from shared.analytics import init_analytics, track_event, get_analytics_webhook_config_status
 from shared.step_selection import (
     apply_pending_selector_sync,
     apply_small_step_selection,
@@ -1635,6 +1635,12 @@ def main():
 
     init_analytics("flipper_lite")
     track_event("page_view", {"page": "home"}, once_key="page_view")
+
+    # Hidden diagnostic: visit ?diag=analytics to confirm webhook secrets are configured on this deployment.
+    if st.query_params.get("diag", "") == "analytics":
+        st.subheader("Analytics Webhook Diagnostic")
+        st.json(get_analytics_webhook_config_status())
+        st.stop()
 
     # ==========================================
     # Thought Prompt Full-Screen Check (must come before all chrome)

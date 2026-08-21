@@ -10,9 +10,10 @@ import argparse
 import json
 import sqlite3
 from datetime import datetime, timezone
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -56,6 +57,24 @@ def init_db(db_path: Path) -> None:
             """
         )
         conn.commit()
+
+
+def fetch_recent_events(db_path: Path, limit: int = 20000) -> list[dict]:
+    if not db_path.exists():
+        return []
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.execute(
+            "SELECT payload_json FROM events ORDER BY received_utc ASC LIMIT ?",
+            (limit,),
+        )
+        rows = cursor.fetchall()
+    events: list[dict] = []
+    for (payload_json,) in rows:
+        try:
+            events.append(json.loads(payload_json))
+        except Exception:
+            continue
+    return events
 
 
 def insert_event(db_path: Path, payload: dict) -> bool:
@@ -151,12 +170,33 @@ def build_handler(db_path: Path, token: str):
 
         def do_GET(self) -> None:
             parsed = urlparse(self.path)
-            if parsed.path.rstrip("/") == "/health":
+            route = parsed.path.rstrip("/")
+
+            if route == "/health":
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(b'{"status":"ok"}')
                 return
+
+            if route == "/events":
+                if token:
+                    query_params = parse_qs(parsed.query)
+                    req_token = self.headers.get("X-Analytics-Token", "")
+                    if not req_token:
+                        req_token = (query_params.get("token") or [""])[0]
+                    if req_token != token:
+                        self.send_response(401)
+                        self.end_headers()
+                        self.wfile.write(b"Unauthorized")
+                        return
+                events = fetch_recent_events(db_path)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(events, ensure_ascii=True).encode("utf-8"))
+                return
+
             self.send_response(404)
             self.end_headers()
 
@@ -168,11 +208,13 @@ def build_handler(db_path: Path, token: str):
 
 
 def main() -> None:
+    # Cloud hosts (Render, Fly.io, Railway) inject PORT/ANALYTICS_DB_PATH/ANALYTICS_TOKEN
+    # via environment variables, so env values are used as defaults for CLI args.
     parser = argparse.ArgumentParser(description="Run Flipper analytics webhook receiver.")
     parser.add_argument("--host", default="0.0.0.0", help="Host interface to bind")
-    parser.add_argument("--port", type=int, default=8787, help="Port to bind")
-    parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite DB path")
-    parser.add_argument("--token", default="", help="Shared token for X-Analytics-Token")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8787")), help="Port to bind")
+    parser.add_argument("--db", default=os.environ.get("ANALYTICS_DB_PATH", str(DEFAULT_DB_PATH)), help="SQLite DB path")
+    parser.add_argument("--token", default=os.environ.get("ANALYTICS_TOKEN", ""), help="Shared token for X-Analytics-Token")
     args = parser.parse_args()
 
     db_path = Path(args.db)

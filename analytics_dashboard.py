@@ -7,6 +7,7 @@ import json
 import sqlite3
 from datetime import timedelta
 from pathlib import Path
+from urllib import request, error
 
 import pandas as pd
 import streamlit as st
@@ -129,7 +130,75 @@ def _load_events_from_jsonl(jsonl_path: Path) -> pd.DataFrame:
     return df
 
 
+def _get_remote_url() -> str:
+    env_value = os.getenv("ANALYTICS_REMOTE_URL", "").strip()
+    if env_value:
+        return env_value
+    try:
+        return str(st.secrets.get("ANALYTICS_REMOTE_URL", "")).strip()
+    except Exception:
+        return ""
+
+
+def _get_remote_token() -> str:
+    env_value = os.getenv("ANALYTICS_REMOTE_TOKEN", "").strip()
+    if env_value:
+        return env_value
+    try:
+        return str(st.secrets.get("ANALYTICS_REMOTE_TOKEN", "")).strip()
+    except Exception:
+        return ""
+
+
+def _load_events_from_remote(base_url: str, token: str) -> tuple[pd.DataFrame, str]:
+    """Fetch events from a deployed analytics_webhook_server.py over HTTPS.
+
+    This is what lets a locally run dashboard see traffic from the real,
+    publicly deployed Streamlit Cloud app instead of only this machine's
+    local data/analytics files.
+    """
+    url = base_url.rstrip("/") + "/events"
+    headers = {}
+    if token:
+        headers["X-Analytics-Token"] = token
+    try:
+        req = request.Request(url, headers=headers, method="GET")
+        with request.urlopen(req, timeout=10) as resp:
+            rows = json.loads(resp.read().decode("utf-8"))
+    except (error.URLError, TimeoutError, ValueError) as exc:
+        return pd.DataFrame(), f"Remote fetch failed ({url}): {exc}"
+
+    if not rows:
+        return pd.DataFrame(), ""
+
+    df = pd.json_normalize(rows)
+    if "query.utm_source" not in df.columns:
+        df["query.utm_source"] = ""
+    if "query.utm_medium" not in df.columns:
+        df["query.utm_medium"] = ""
+    if "query.utm_campaign" not in df.columns:
+        df["query.utm_campaign"] = ""
+    if "query.ttclid" not in df.columns:
+        df["query.ttclid"] = ""
+    if "properties.video_id" in df.columns:
+        df["video_id"] = df["properties.video_id"].fillna("")
+    else:
+        df["video_id"] = ""
+    return df, ""
+
+
 def _load_events() -> tuple[pd.DataFrame, str]:
+    remote_url = _get_remote_url()
+    if remote_url:
+        df, fetch_error = _load_events_from_remote(remote_url, _get_remote_token())
+        if fetch_error:
+            st.error(
+                f"ANALYTICS_REMOTE_URL is configured but could not be reached: {fetch_error}\n\n"
+                "Falling back to local files, which will NOT contain traffic from the "
+                "deployed app."
+            )
+        else:
+            return df, "remote"
     if EVENTS_DB.exists():
         return _load_events_from_db(EVENTS_DB), "sqlite"
     return _load_events_from_jsonl(EVENTS_JSONL), "jsonl"
@@ -156,6 +225,13 @@ def _prepare(df: pd.DataFrame) -> pd.DataFrame:
 def _render_dashboard(df: pd.DataFrame, source_backend: str) -> None:
     st.title("Flipper Analytics Dashboard")
     st.caption(f"Data backend: {source_backend} | Rows: {len(df)}")
+    if source_backend in ("sqlite", "jsonl"):
+        st.warning(
+            "Reading from local files on this machine. If flipper_lite.py is deployed "
+            "on Streamlit Community Cloud, that app's events live on Streamlit's own "
+            "servers, not here — set ANALYTICS_REMOTE_URL / ANALYTICS_REMOTE_TOKEN "
+            "(pointing at your deployed analytics_webhook_server.py) to see real traffic."
+        )
 
     if df.empty:
         st.warning("No analytics events found yet.")

@@ -13,7 +13,7 @@ import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib import error, request
+from urllib import request
 
 import streamlit as st
 
@@ -134,10 +134,12 @@ def _send_webhook_event(payload: dict[str, Any]) -> None:
             headers=headers,
             method="POST",
         )
-        with request.urlopen(req, timeout=3):
-            pass
-    except (error.URLError, TimeoutError, ValueError):
-        pass
+        with request.urlopen(req, timeout=5) as resp:
+            resp.read()
+    except Exception as exc:
+        # Surface delivery failures in the app's own logs (e.g. Streamlit Cloud
+        # "Manage app" log viewer) since this is otherwise invisible to the deployer.
+        print(f"[analytics] webhook delivery failed for {webhook_url!r}: {exc!r}")
 
 
 def track_event(event_name: str, properties: dict[str, Any] | None = None, once_key: str | None = None) -> None:

@@ -1965,7 +1965,7 @@ def main():
         if show_prompt_btn:
             _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([2.5, 1, 1.2, 1, 2.5])
         else:
-            _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 0, 1, 3])
+            _btn_spacer_l, btn_col_close, btn_col_prompt, btn_col_next, _btn_spacer_r = st.columns([3, 1, 0.01, 1, 3])
     
         with btn_col_close:
             if st.button("✕  Close video", key="close_inline_video", type="secondary", use_container_width=True):

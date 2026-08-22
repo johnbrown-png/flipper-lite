@@ -232,14 +232,14 @@ class CurriculumAssistant:
         # --- Custom CSS: Make Search buttons red (curriculum navigation only) ---
         st.markdown('''
         <style>
-        /* Red buttons for curriculum navigation Search buttons only */
+        /* Blue buttons for curriculum navigation Watch buttons, matching video-card Watch buttons */
         button[key^="find_step_topic_"] {
-            background-color: #d32f2f !important;
+            background: linear-gradient(135deg, #2c5f8d 0%, #4a90c8 100%) !important;
             color: #fff !important;
             border: none !important;
         }
         button[key^="find_step_topic_"]:hover {
-            background-color: #b71c1c !important;
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5f8d 100%) !important;
             color: #fff !important;
         }
         /* Keep prefix-search Open buttons on one line */
@@ -501,7 +501,7 @@ class CurriculumAssistant:
                             with col_button:
                                 step_id = str(row.get('small_step_id', '')).strip()
                                 button_key = f"find_step_topic_{display_step_num}_{step_id}" if step_id else f"find_step_topic_{display_step_num}"
-                                if st.button("Search", key=button_key, help="Find videos for this step"):
+                                if st.button("Watch", key=button_key, help="Find videos for this step"):
                                     difficulty_val = row.get('difficulty', '')
                                     if pd.isna(difficulty_val):
                                         difficulty_val = ''

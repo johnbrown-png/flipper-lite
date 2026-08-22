@@ -1600,6 +1600,10 @@ def render_result_card(result, compact=False, mobile_viewer_mode=False):
                     create_circular_progress_svg(combined_pct, size=gauge_size, text_scale=0.75 * infographic_scale),
                     unsafe_allow_html=True,
                 )
+                st.markdown(
+                    "<div style='font-size:0.7rem; color:#6c757d; margin-top:2px; white-space:nowrap;'>Match to curriculum</div>",
+                    unsafe_allow_html=True,
+                )
                 st.markdown("</div>", unsafe_allow_html=True)
 
         with col_content:

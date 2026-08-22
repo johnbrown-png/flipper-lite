@@ -32,7 +32,7 @@ def _render_truncated_description(text):
     st.markdown(
         f'''
         <div class="ss-desc-caption">
-            {preview} <details class="ss-desc-details"><summary>...more</summary>{remainder}</details>
+            {preview} <details class="ss-desc-details"><span>{remainder}</span><summary></summary></details>
         </div>
         ''',
         unsafe_allow_html=True,
@@ -286,6 +286,12 @@ class CurriculumAssistant:
             cursor: pointer;
             color: #2c5f8d;
             text-decoration: underline;
+        }
+        .ss-desc-details summary::before {
+            content: "...more";
+        }
+        .ss-desc-details[open] summary::before {
+            content: "...less";
         }
         .ss-desc-details summary::-webkit-details-marker {
             display: none;

@@ -527,17 +527,6 @@ class CurriculumAssistant:
             # Preserve CSV order instead of sorting alphabetically
             topics = filtered_df['topic'].dropna().unique().tolist()
             topic_options = ['Topic ?'] + topics
-            longest_topic_chars = max(len(str(topic)) for topic in topic_options)
-            topic_width_chars = longest_topic_chars + 4
-            st.markdown(f"""
-            <style>
-            div[data-testid="stSelectbox"][aria-label="Topic"] > div:first-child {{
-                width: min({topic_width_chars}ch, 100%) !important;
-                min-width: min({topic_width_chars}ch, 100%) !important;
-                max-width: min({topic_width_chars}ch, 100%) !important;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
             if 'curr_topic' not in st.session_state or st.session_state.curr_topic not in topic_options:
                 st.session_state.curr_topic = 'Topic ?'
             if 'topic_select_topic_search' not in st.session_state or st.session_state.topic_select_topic_search not in topic_options:

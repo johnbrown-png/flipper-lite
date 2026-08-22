@@ -4,6 +4,8 @@ Provides cascading filters for searching curriculum content
 """
 
 
+import html
+
 import pandas as pd
 import streamlit as st
 from pathlib import Path
@@ -13,6 +15,28 @@ from shared.ui_terminology import SELECTOR_CARDS_LABEL
 
 # 'Pick by Small Step' subheading: hidden by default, kept for future re-enable.
 ENABLE_PICK_BY_SMALL_STEP_HEADING = False
+
+# Small-step description preview: number of leading words shown before '...more'.
+SMALL_STEP_DESC_PREVIEW_WORDS = 10
+
+
+def _render_truncated_description(text):
+    """Render description text, truncated to a leading word count with a clickable '...more' disclosure."""
+    words = text.split()
+    if len(words) <= SMALL_STEP_DESC_PREVIEW_WORDS:
+        st.caption(text)
+        return
+
+    preview = html.escape(' '.join(words[:SMALL_STEP_DESC_PREVIEW_WORDS]))
+    remainder = html.escape(' '.join(words[SMALL_STEP_DESC_PREVIEW_WORDS:]))
+    st.markdown(
+        f'''
+        <div class="ss-desc-caption">
+            {preview} <details class="ss-desc-details"><summary>...more</summary>{remainder}</details>
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
 
 
 class CurriculumAssistant:
@@ -246,6 +270,25 @@ class CurriculumAssistant:
         button[key^="open_topic_match_"] {
             white-space: nowrap !important;
             min-width: 7.5rem !important;
+        }
+        /* Small-step description preview with clickable '...more' disclosure */
+        .ss-desc-caption {
+            font-size: 0.875rem;
+            color: rgb(108, 117, 125);
+            line-height: 1.4;
+        }
+        .ss-desc-details {
+            display: inline;
+        }
+        .ss-desc-details summary {
+            display: inline;
+            list-style: none;
+            cursor: pointer;
+            color: #2c5f8d;
+            text-decoration: underline;
+        }
+        .ss-desc-details summary::-webkit-details-marker {
+            display: none;
         }
         </style>
         ''', unsafe_allow_html=True)
@@ -523,7 +566,7 @@ class CurriculumAssistant:
                             with col_content:
                                 st.markdown(f"**{display_step_num}.** {step_text}")
                                 if example_text:
-                                    st.caption(example_text)
+                                    _render_truncated_description(example_text)
                     else:
                         st.caption("No small steps available for this topic.")
                 else:

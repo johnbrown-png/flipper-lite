@@ -493,11 +493,7 @@ class CurriculumAssistant:
                             step_text = str(row['small_step_name']).strip()
                             full_desc = str(row.get('ss_wr_desc', '')).strip()
                             example_text = str(row.get('ss_desc', '')).strip()
-                            col_content, col_button = st.columns([9, 1])
-                            with col_content:
-                                st.markdown(f"**{display_step_num}.** {step_text}")
-                                if example_text:
-                                    st.caption(example_text)
+                            col_button, col_content = st.columns([1, 9])
                             with col_button:
                                 step_id = str(row.get('small_step_id', '')).strip()
                                 button_key = f"find_step_topic_{display_step_num}_{step_id}" if step_id else f"find_step_topic_{display_step_num}"
@@ -524,6 +520,10 @@ class CurriculumAssistant:
                                         'display_text': step_text if not example_text else f"{step_text} - {example_text}"
                                     }
                                     st.rerun()
+                            with col_content:
+                                st.markdown(f"**{display_step_num}.** {step_text}")
+                                if example_text:
+                                    st.caption(example_text)
                     else:
                         st.caption("No small steps available for this topic.")
                 else:

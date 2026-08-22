@@ -60,8 +60,8 @@ except ImportError:
 # Mothballed topic-table search (prefix text box + table): hidden by default.
 ENABLE_TOPIC_TABLE_SEARCH = False
 
-# Natural-language Flipper Search (search_engine.py / streamlit_ui.py): enabled by default.
-ENABLE_FLIPPER_SEARCH = True
+# Natural-language Flipper Search (search_engine.py / streamlit_ui.py): disabled, kept for future re-enable.
+ENABLE_FLIPPER_SEARCH = False
 
 # Toggle temporary payload/nav diagnostics panel.
 ENABLE_SELECTION_DEBUG_PANEL = False

@@ -11,6 +11,9 @@ from pathlib import Path
 from shared.curriculum_schema import curriculum_to_long_df
 from shared.ui_terminology import SELECTOR_CARDS_LABEL
 
+# 'Pick by Small Step' subheading: hidden by default, kept for future re-enable.
+ENABLE_PICK_BY_SMALL_STEP_HEADING = False
+
 
 class CurriculumAssistant:
     """Helper for navigating the White Rose Maths curriculum"""
@@ -376,24 +379,25 @@ class CurriculumAssistant:
             # Ensure hidden topic-table search state does not leak into the visible dropdown flow.
             st.session_state.pending_topic_open = None
 
-        st.markdown(
-            """
-            <p style="
-                font-family: 'Poppins', sans-serif;
-                font-size: 1.2rem;
-                color: #2c5f8d;
-                text-align: left;
-                margin-top: 0.25rem;
-                margin-bottom: 0.15rem;
-                padding: 0;
-                line-height: 1;
-                font-weight: 400;
-            ">
-                Pick by Small Step
-            </p>
-            """,
-            unsafe_allow_html=True,
-        )
+        if ENABLE_PICK_BY_SMALL_STEP_HEADING:
+            st.markdown(
+                """
+                <p style="
+                    font-family: 'Poppins', sans-serif;
+                    font-size: 1.2rem;
+                    color: #2c5f8d;
+                    text-align: left;
+                    margin-top: 0.25rem;
+                    margin-bottom: 0.15rem;
+                    padding: 0;
+                    line-height: 1;
+                    font-weight: 400;
+                ">
+                    Pick by Small Step
+                </p>
+                """,
+                unsafe_allow_html=True,
+            )
 
         # --- Final: Age -> Topic -> Small Steps UI ---
         # Age dropdown

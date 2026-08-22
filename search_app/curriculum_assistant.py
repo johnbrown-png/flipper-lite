@@ -20,11 +20,15 @@ ENABLE_PICK_BY_SMALL_STEP_HEADING = False
 SMALL_STEP_DESC_PREVIEW_WORDS = 10
 
 
-def _render_truncated_description(text):
-    """Render description text, truncated to a leading word count with a clickable '...more' disclosure."""
+def _render_truncated_description(text, title=''):
+    """Render a small-step title and description with an optional '...more' disclosure."""
+    title_html = f'<strong class="ss-desc-title">{html.escape(title)}</strong> ' if title else ''
     words = text.split()
     if len(words) <= SMALL_STEP_DESC_PREVIEW_WORDS:
-        st.caption(text)
+        st.markdown(
+            f'<div class="ss-desc-caption">{title_html}<span class="ss-desc-text">{html.escape(text)}</span></div>',
+            unsafe_allow_html=True,
+        )
         return
 
     preview = html.escape(' '.join(words[:SMALL_STEP_DESC_PREVIEW_WORDS]))
@@ -32,7 +36,7 @@ def _render_truncated_description(text):
     st.markdown(
         f'''
         <div class="ss-desc-caption">
-            {preview} <details class="ss-desc-details"><span>{remainder}</span><summary></summary></details>
+            {title_html}<span class="ss-desc-text">{preview} <details class="ss-desc-details"><span>{remainder}</span><summary></summary></details></span>
         </div>
         ''',
         unsafe_allow_html=True,
@@ -276,6 +280,9 @@ class CurriculumAssistant:
             font-size: 0.875rem;
             color: rgb(108, 117, 125);
             line-height: 1.4;
+        }
+        .ss-desc-title {
+            color: inherit;
         }
         .ss-desc-details {
             display: inline;
@@ -570,9 +577,13 @@ class CurriculumAssistant:
                                     }
                                     st.rerun()
                             with col_content:
-                                st.markdown(f"**{display_step_num}.** {step_text}")
                                 if example_text:
-                                    _render_truncated_description(example_text)
+                                    _render_truncated_description(
+                                        example_text,
+                                        title=f"{display_step_num}. {step_text}",
+                                    )
+                                else:
+                                    st.markdown(f"**{display_step_num}.** {step_text}")
                     else:
                         st.caption("No small steps available for this topic.")
                 else:

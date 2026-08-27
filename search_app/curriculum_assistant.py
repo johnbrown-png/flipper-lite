@@ -184,6 +184,22 @@ class CurriculumAssistant:
         if 'viewing_video' in st.session_state:
             st.session_state.viewing_video = False
 
+    @staticmethod
+    def _reset_curriculum_selection():
+        """Return the curriculum selector and parent page to the landing state."""
+        st.session_state.curr_year = 'Age ?'
+        st.session_state.year_select_topic_search = 'Age ?'
+        st.session_state.curr_difficulty = 'All'
+        st.session_state.difficulty_select_topic_search = 'All'
+        st.session_state.curr_topic = 'Topic ?'
+        st.session_state.topic_select_topic_search = 'Topic ?'
+        st.session_state.topic_prefix_search = ''
+        st.session_state.pending_topic_open = None
+        st.session_state.pending_open_difficulty = 'Foundation'
+        st.session_state.clear_topic_prefix_on_open = False
+        st.session_state.pending_step_nav = None
+        CurriculumAssistant._clear_parent_results_state()
+
     def get_adjacent_steps(self, ctx):
         """Return (prev_step_dict, next_step_dict) for the step described in ctx.
 
@@ -481,13 +497,19 @@ class CurriculumAssistant:
         }
         </style>
         """, unsafe_allow_html=True)
-        age_col, _age_spacer_col = st.columns([1, 6])
+        age_col, reset_col, _age_spacer_col = st.columns([1, 1, 5])
         with age_col:
             selected_year = st.selectbox(
                 "Age",
                 age_options,
                 key="year_select_topic_search",
                 label_visibility="collapsed"
+            )
+        with reset_col:
+            st.button(
+                "Reset",
+                key="reset_curriculum_selection",
+                on_click=self._reset_curriculum_selection,
             )
         if selected_year != st.session_state.curr_year:
             st.session_state.curr_year = selected_year

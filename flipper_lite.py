@@ -19,6 +19,7 @@ import streamlit.components.v1 as components
 import pandas as pd
 import math
 import json
+import html
 from datetime import datetime
 
 from shared.curriculum_schema import normalize_precomputed_df
@@ -1654,6 +1655,165 @@ def render_result_card(result, compact=False, mobile_viewer_mode=False):
             st.markdown("---")
 
 
+def render_landing_demo_frame(recommendations_df):
+    """Show a composed example of the three videos returned for a curriculum step."""
+    demo_rows = recommendations_df[
+        (recommendations_df['age'].astype(str) == '5-6')
+        & (recommendations_df['term'].astype(str) == 'Autumn')
+        & (recommendations_df['topic'].astype(str) == 'Place value within 10')
+        & (recommendations_df['small_step'].astype(str) == 'Sort objects')
+    ].sort_values('rank').head(3)
+
+    if len(demo_rows) != 3:
+        return
+
+    cards = []
+    for _, row in demo_rows.iterrows():
+        video_id = html.escape(str(row.get('video_id', '')).strip(), quote=True)
+        title = html.escape(str(row.get('title', '')).strip())
+        channel = html.escape(str(row.get('channel', '')).replace('_', ' ').strip())
+        duration = html.escape(str(row.get('duration', '')).strip())
+        cards.append(
+            f"""
+            <article class="landing-demo-card">
+                <div class="landing-demo-thumbnail">
+                    <img src="https://img.youtube.com/vi/{video_id}/hqdefault.jpg" alt="YouTube video thumbnail: {title}">
+                    <span class="landing-demo-play" aria-hidden="true">▶</span>
+                </div>
+                <div class="landing-demo-card-body">
+                    <h3>{title}</h3>
+                    <p>{channel} <span aria-hidden="true">·</span> {duration}</p>
+                </div>
+            </article>
+            """
+        )
+
+    st.markdown(
+        f"""
+        <section class="landing-demo-frame" aria-label="Three example video suggestions">
+            <div class="landing-demo-heading">
+                <div>
+                    <p class="landing-demo-eyebrow">What you get</p>
+                    <h2>Three great videos for one White Rose Small Step</h2>
+                </div>
+                <p class="landing-demo-context"><strong>Age 5-6</strong> <span aria-hidden="true">·</span> Autumn <span aria-hidden="true">·</span> Place value within 10 <span aria-hidden="true">·</span> Sort objects</p>
+            </div>
+            <div class="landing-demo-cards">{''.join(cards)}</div>
+        </section>
+        <style>
+            .landing-demo-frame {{
+                min-height: clamp(360px, 50vh, 560px);
+                margin: 1.5rem 0 2rem;
+                padding: clamp(1.25rem, 3vw, 2rem);
+                border: 1px solid rgba(44, 95, 141, 0.24);
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.9);
+                box-shadow: 0 10px 26px rgba(30, 58, 95, 0.12);
+                box-sizing: border-box;
+            }}
+            .landing-demo-heading {{
+                display: flex;
+                align-items: end;
+                justify-content: space-between;
+                gap: 1.5rem;
+                margin-bottom: 1.25rem;
+            }}
+            .landing-demo-eyebrow {{
+                margin: 0 0 0.35rem;
+                color: #4a90c8;
+                font-size: 0.78rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }}
+            .landing-demo-heading h2 {{
+                margin: 0;
+                color: #1e3a5f;
+                font-family: 'Poppins', sans-serif;
+                font-size: clamp(1.2rem, 2vw, 1.7rem);
+                line-height: 1.2;
+            }}
+            .landing-demo-context {{
+                max-width: 32rem;
+                margin: 0;
+                color: #2c5f8d;
+                font-size: 0.9rem;
+                line-height: 1.4;
+                text-align: right;
+            }}
+            .landing-demo-cards {{
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1rem;
+            }}
+            .landing-demo-card {{
+                min-width: 0;
+                overflow: hidden;
+                border: 1px solid rgba(44, 95, 141, 0.2);
+                border-radius: 8px;
+                background: #fff;
+            }}
+            .landing-demo-thumbnail {{
+                position: relative;
+                aspect-ratio: 16 / 9;
+                overflow: hidden;
+                background: #dce8f1;
+            }}
+            .landing-demo-thumbnail img {{
+                display: block;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }}
+            .landing-demo-play {{
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                display: grid;
+                width: 3rem;
+                height: 3rem;
+                transform: translate(-50%, -50%);
+                place-items: center;
+                border-radius: 50%;
+                color: #fff;
+                background: rgba(210, 35, 35, 0.95);
+                font-size: 1.15rem;
+                box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+            }}
+            .landing-demo-card-body {{
+                padding: 0.85rem 0.9rem 1rem;
+            }}
+            .landing-demo-card-body h3 {{
+                display: -webkit-box;
+                min-height: 2.7em;
+                margin: 0 0 0.45rem;
+                overflow: hidden;
+                color: #18324f;
+                font-size: 0.98rem;
+                line-height: 1.35;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 2;
+            }}
+            .landing-demo-card-body p {{
+                margin: 0;
+                color: #5c7185;
+                font-size: 0.78rem;
+                line-height: 1.3;
+            }}
+            @media (max-width: 700px) {{
+                .landing-demo-frame {{ min-height: 0; }}
+                .landing-demo-heading {{ display: block; }}
+                .landing-demo-context {{ margin-top: 0.65rem; text-align: left; }}
+                .landing-demo-cards {{ grid-template-columns: 1fr; }}
+                .landing-demo-card {{ display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }}
+                .landing-demo-card-body {{ align-self: center; }}
+            }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def main():
     """Main application"""
     
@@ -1876,7 +2036,7 @@ def main():
     if recommendations_df is None:
         st.error("❌ Failed to load precomputed recommendations. Please run `precompute_curriculum_recommendations.py` first.")
         st.stop()
-    
+
     # Note: video_inventory.csv no longer needed - channel & duration now in precomputed_recommendations.csv
     
     # Initialize curriculum assistant (uses same dropdown UI as flipper.py)
@@ -2358,6 +2518,9 @@ def main():
                 },
             )
             apply_small_step_selection(text, recommendations_df, curriculum_assistant, lookup_videos_for_step)
+
+    if not results_focus_mode:
+        render_landing_demo_frame(recommendations_df)
 
     # ==========================================
     # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)

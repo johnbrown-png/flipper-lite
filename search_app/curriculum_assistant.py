@@ -463,24 +463,8 @@ class CurriculumAssistant:
 
         # --- Final: Age -> Topic -> Small Steps UI ---
         # Age dropdown
-        st.markdown(
-            """
-            <p style="
-                font-family: 'Poppins', sans-serif;
-                font-size: 1.2rem;
-                color: #2c5f8d;
-                text-align: left;
-                margin-top: 0.25rem;
-                margin-bottom: 0.15rem;
-                padding: 0;
-                line-height: 1.3;
-                font-weight: 400;
-            ">
-                Step 1 of 2, pick the learners age to find great maths videos on topics this age is working on
-            </p>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.subheader("Step 1 of 2")
+        st.markdown("Pick the learner's age to find great maths videos on topics this age is working on.")
         ages = sorted(self.df['age'].dropna().unique(), key=lambda x: int(str(x).split('-')[0]) if '-' in str(x) else 0)
         age_options = ['Age ?'] + ages
         if 'curr_year' not in st.session_state or st.session_state.curr_year not in age_options:
@@ -549,57 +533,16 @@ class CurriculumAssistant:
                 st.session_state.curr_topic = 'Topic ?'
             if 'topic_select_topic_search' not in st.session_state or st.session_state.topic_select_topic_search not in topic_options:
                 st.session_state.topic_select_topic_search = st.session_state.curr_topic
-            st.markdown(
-                """
-                <p style="
-                    font-family: 'Poppins', sans-serif;
-                    font-size: 1.2rem;
-                    color: #2c5f8d;
-                    text-align: left;
-                    margin-top: 0.75rem;
-                    margin-bottom: 0.15rem;
-                    padding: 0;
-                    line-height: 1.3;
-                    font-weight: 400;
-                ">
-                    Step 2 of 2, pick a topic the learner is currently working towards
-                </p>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.subheader("Step 2 of 2")
+            st.markdown("Pick a topic the learner is currently working towards.")
             selected_topic = st.selectbox(
                 "Topic",
                 topic_options,
                 key="topic_select_topic_search",
                 label_visibility="collapsed"
             )
-            st.markdown(
-                """
-                <p style="
-                    font-family: 'Poppins', sans-serif;
-                    font-size: 0.95rem;
-                    color: #2c5f8d;
-                    text-align: left;
-                    margin-top: 0.1rem;
-                    margin-bottom: 0.35rem;
-                    line-height: 1.4;
-                ">
-                    Topics are in the order they are learnt, pick the first if learners are new to the topic, if you are unsure about learners currentl level pick a topic in the middle, if too easy pick lower on the list to extend learners experience
-                </p>
-                <p style="
-                    font-family: 'Poppins', sans-serif;
-                    font-size: 0.95rem;
-                    color: #2c5f8d;
-                    text-align: left;
-                    margin-top: 0;
-                    margin-bottom: 0.75rem;
-                    line-height: 1.4;
-                ">
-                    Teachers - find great videos on the White Rose Small Step learners are currently working on
-                </p>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.markdown("Topics are in the order they are learnt. Pick the first if learners are new to the topic; if you are unsure about learners' current level, pick a topic in the middle; if it is too easy, pick lower on the list to extend learners' experience.")
+            st.markdown("Teachers - find great videos on the White Rose Small Step learners are currently working on.")
             if selected_topic != st.session_state.curr_topic:
                 st.session_state.curr_topic = selected_topic
                 self._clear_parent_results_state()

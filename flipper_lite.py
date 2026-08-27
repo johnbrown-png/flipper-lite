@@ -228,15 +228,24 @@ def load_precomputed_recommendations_flat():
     Cache expires every 5 minutes to pick up updates from precompute_curriculum_recommendations.py runs.
     File modification time is automatically included in Streamlit's cache key.
     """
-    try:
-        qa_csv_path = project_root / 'precomputed_recommendations_flat_qa.csv'
-        base_csv_path = project_root / 'precomputed_recommendations_flat.csv'
-        csv_path = qa_csv_path if qa_csv_path.exists() else base_csv_path
-        df = pd.read_csv(csv_path)
-        return normalize_precomputed_df(df)
-    except Exception as e:
-        st.error(f"Error loading precomputed recommendations: {e}")
-        return None
+    qa_csv_path = project_root / 'precomputed_recommendations_flat_qa.csv'
+    base_csv_path = project_root / 'precomputed_recommendations_flat.csv'
+    load_errors = []
+
+    for csv_path in (qa_csv_path, base_csv_path):
+        if not csv_path.exists():
+            continue
+        try:
+            df = pd.read_csv(csv_path)
+            if df.empty or len(df.columns) == 0:
+                raise pd.errors.EmptyDataError("file contains no recommendation data")
+            return normalize_precomputed_df(df)
+        except (pd.errors.EmptyDataError, pd.errors.ParserError, OSError) as e:
+            load_errors.append(f"{csv_path.name}: {e}")
+
+    detail = "; ".join(load_errors) if load_errors else "no recommendation CSV found"
+    st.error(f"Error loading precomputed recommendations: {detail}")
+    return None
 
 
 @st.cache_data(ttl=300)  # Cache for 5 minutes for consistency
@@ -1977,10 +1986,7 @@ def main():
                 margin-top: 1rem;
                 margin-bottom: 0rem;
                 font-weight: 400;
-            ">
-                High quality Maths videos for each step from age 5 to 15
-                <br>
-                Curated maths videos from YouTube, matched to your curriculum
+            ">Curated maths videos from YouTube, matched to your curriculum, for each step from age 5 to 15
             </p>
             """, unsafe_allow_html=True)
 

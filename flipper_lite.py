@@ -20,6 +20,7 @@ import pandas as pd
 import math
 import json
 import html
+import textwrap
 from datetime import datetime
 
 from shared.curriculum_schema import normalize_precomputed_df
@@ -1682,7 +1683,7 @@ def render_landing_demo_frame(recommendations_df):
         title = html.escape(str(row.get('title', '')).strip())
         channel = html.escape(str(row.get('channel', '')).replace('_', ' ').strip())
         duration = html.escape(str(row.get('duration', '')).strip())
-        cards.append(
+        cards.append(textwrap.dedent(
             f"""
             <article class="landing-demo-card">
                 <div class="landing-demo-thumbnail">
@@ -1695,10 +1696,10 @@ def render_landing_demo_frame(recommendations_df):
                 </div>
             </article>
             """
-        )
+        ))
 
     st.markdown(
-        f"""
+        textwrap.dedent(f"""
         <section class="landing-demo-frame" aria-label="Three example video suggestions">
             <div class="landing-demo-heading">
                 <div>
@@ -1818,7 +1819,7 @@ def render_landing_demo_frame(recommendations_df):
                 .landing-demo-card-body {{ align-self: center; }}
             }}
         </style>
-        """,
+        """),
         unsafe_allow_html=True,
     )
 

@@ -540,7 +540,7 @@ class CurriculumAssistant:
                 key="topic_select_topic_search",
                 label_visibility="collapsed"
             )
-            st.markdown("Topics are in the order they are learnt. Pick the first if learners are new to the topic; if you are unsure about learners' current level, pick a topic in the middle; if it is too easy, pick lower on the list to extend learners' experience.")
+            st.markdown("Topics are in the order they are learnt. Pick the first if learners are new to the topic; if you are unsure about learners' current level, pick a topic in the middle; if it is too easy, pick lower on the list to extend learners' experience. If too hard pick higher.")
             st.markdown("Teachers - find great videos on the White Rose Small Step learners are currently working on.")
             if selected_topic != st.session_state.curr_topic:
                 st.session_state.curr_topic = selected_topic

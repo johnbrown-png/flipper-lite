@@ -1979,6 +1979,8 @@ def main():
                 font-weight: 400;
             ">
                 High quality Maths videos for each step from age 5 to 15
+
+                Curated maths videos from YouTube, matched to your curriculum
             </p>
             """, unsafe_allow_html=True)
 

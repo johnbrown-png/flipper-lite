@@ -91,7 +91,16 @@ def _load_events_from_db(db_path: Path) -> pd.DataFrame:
         except Exception:
             return ""
 
+    def extract_send_status(payload_str: str) -> str:
+        try:
+            payload = json.loads(payload_str)
+            props = payload.get("properties", {}) if isinstance(payload, dict) else {}
+            return str(props.get("send_status", ""))
+        except Exception:
+            return ""
+
     df["video_id"] = df["payload_json"].apply(extract_video_id)
+    df["send_status"] = df["payload_json"].apply(extract_send_status)
     return df
 
 
@@ -127,6 +136,10 @@ def _load_events_from_jsonl(jsonl_path: Path) -> pd.DataFrame:
         df["video_id"] = df["properties.video_id"].fillna("")
     else:
         df["video_id"] = ""
+    if "properties.send_status" in df.columns:
+        df["send_status"] = df["properties.send_status"].fillna("")
+    else:
+        df["send_status"] = ""
     return df
 
 
@@ -184,6 +197,10 @@ def _load_events_from_remote(base_url: str, token: str) -> tuple[pd.DataFrame, s
         df["video_id"] = df["properties.video_id"].fillna("")
     else:
         df["video_id"] = ""
+    if "properties.send_status" in df.columns:
+        df["send_status"] = df["properties.send_status"].fillna("")
+    else:
+        df["send_status"] = ""
     return df, ""
 
 
@@ -298,13 +315,15 @@ def _render_dashboard(df: pd.DataFrame, source_backend: str) -> None:
     page_views = int((filtered["event_name"] == "page_view").sum())
     searches = int((filtered["event_name"] == "search_submitted").sum())
     video_events = int(filtered[filtered["event_name"].isin(["video_opened", "video_link_clicked"])].shape[0])
+    email_requests = int((filtered["event_name"] == "email_recommendations_requested").sum())
 
-    k1, k2, k3, k4, k5 = st.columns(5)
+    k1, k2, k3, k4, k5, k6 = st.columns(6)
     k1.metric("Events", f"{total_events:,}")
     k2.metric("Sessions", f"{unique_sessions:,}")
     k3.metric("Page views", f"{page_views:,}")
     k4.metric("Searches", f"{searches:,}")
     k5.metric("Video actions", f"{video_events:,}")
+    k6.metric("Email requests", f"{email_requests:,}")
 
     trend = filtered.groupby("date").agg(events=("event_name", "count"), sessions=("session_id", "nunique")).reset_index()
     st.subheader("Daily Trend")
@@ -360,6 +379,22 @@ def _render_dashboard(df: pd.DataFrame, source_backend: str) -> None:
         .head(20)
     )
     st.dataframe(top_videos, use_container_width=True)
+
+    st.subheader("Email Recommendations")
+    email_events = filtered[filtered["event_name"] == "email_recommendations_requested"]
+    if email_events.empty:
+        st.info("No 'email me these videos' requests in the current filter. No email addresses are ever stored — only a one-way hash is recorded per request.")
+    else:
+        sent = int((email_events["send_status"] == "sent").sum())
+        failed = int((email_events["send_status"] == "failed").sum())
+        unique_requesters = int(email_events["session_id"].nunique())
+        ec1, ec2, ec3 = st.columns(3)
+        ec1.metric("Requests", f"{len(email_events):,}")
+        ec2.metric("Sent OK", f"{sent:,}")
+        ec3.metric("Failed", f"{failed:,}")
+        st.caption(f"From {unique_requesters:,} distinct sessions. Address is never stored — only a SHA-256 hash is logged per request.")
+        email_trend = email_events.groupby("date").size().reset_index(name="requests")
+        st.line_chart(email_trend.set_index("date")["requests"])
 
     export_df = filtered.copy()
     csv_data = export_df.to_csv(index=False)

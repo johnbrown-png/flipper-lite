@@ -6,6 +6,8 @@ educational videos without runtime semantic search or LLM operations.
 """
 
 import sys
+import re
+import hashlib
 from pathlib import Path
 
 # Add search_app to path for curriculum assistant import
@@ -25,6 +27,7 @@ from datetime import datetime
 
 from shared.curriculum_schema import normalize_precomputed_df
 from shared.analytics import init_analytics, track_event
+from shared.email_sender import send_video_recommendations_email
 from shared.step_selection import (
     apply_pending_selector_sync,
     apply_small_step_selection,
@@ -1524,6 +1527,81 @@ def render_video_player(video_data):
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+_EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _is_valid_email(value):
+    return bool(_EMAIL_PATTERN.match(str(value).strip()))
+
+
+def render_email_recommendations_popover(ctx):
+    """Popover letting a visitor email themselves the current top 3 video links.
+
+    The address is used only for this one transactional send; only a
+    one-way SHA-256 hash of it is ever passed to analytics (see track_event
+    call below), so no plaintext email is stored in Flipper's own systems.
+    """
+    videos = st.session_state.get('display_results', [])[:3]
+    if not videos:
+        return
+
+    step_label_parts = []
+    if ctx:
+        if ctx.get('topic'):
+            step_label_parts.append(str(ctx['topic']))
+        if ctx.get('small_step'):
+            step_label_parts.append(str(ctx['small_step']))
+    step_label = " - ".join(step_label_parts) if step_label_parts else "your selected step"
+    small_step_desc = str(ctx.get('small_step_desc') or '').strip() if ctx else ""
+
+    feedback_key = "email_recs_feedback"
+
+    with st.popover("✉️ Email me these", use_container_width=True):
+        st.markdown("**Get these 3 video links by email**")
+        email_value = st.text_input(
+            "Your email address",
+            key="email_recs_input",
+            placeholder="you@example.com",
+        )
+        consent = st.checkbox(
+            "Send me these video links by email. My address is used only to send this one email and is not stored.",
+            key="email_recs_consent",
+        )
+        if st.button("Send email", key="email_recs_send", type="primary"):
+            email_clean = email_value.strip()
+            if not consent:
+                st.session_state[feedback_key] = ("error", "Please tick the consent box to continue.")
+            elif not _is_valid_email(email_clean):
+                st.session_state[feedback_key] = ("error", "Please enter a valid email address.")
+            else:
+                success, err = send_video_recommendations_email(email_clean, step_label, small_step_desc, videos)
+                email_hash = hashlib.sha256(email_clean.lower().encode("utf-8")).hexdigest()
+                track_event(
+                    "email_recommendations_requested",
+                    {
+                        "email_hash": email_hash,
+                        "send_status": "sent" if success else "failed",
+                        "video_count": len(videos),
+                        "small_step": ctx.get("small_step", "") if ctx else "",
+                        "small_step_id": ctx.get("small_step_id", "") if ctx else "",
+                        "topic": ctx.get("topic", "") if ctx else "",
+                        "age": ctx.get("age", "") if ctx else "",
+                    },
+                )
+                if success:
+                    st.session_state[feedback_key] = ("success", "Sent! Check your inbox (and spam folder).")
+                else:
+                    st.session_state[feedback_key] = ("error", f"Could not send email: {err}")
+
+        feedback = st.session_state.get(feedback_key)
+        if feedback:
+            level, message = feedback
+            if level == "success":
+                st.success(message)
+            else:
+                st.error(message)
+
+
 def render_result_card(result, compact=False, mobile_viewer_mode=False):
     """Render a single Video card."""
     
@@ -2229,9 +2307,9 @@ def main():
             if results_focus_mode and results_header_slot is not None:
                 with results_header_slot:
                     if show_step_nav:
-                        brand_col, nav_home_col, nav_back_col, nav_next_col = st.columns([7.8, 1.3, 1.35, 1.35])
+                        brand_col, email_col, nav_home_col, nav_back_col, nav_next_col = st.columns([6.5, 1.3, 1.3, 1.35, 1.35])
                     else:
-                        brand_col = st.columns([1])[0]
+                        brand_col, email_col = st.columns([8.5, 1.5])
 
                     with brand_col:
                         st.markdown(
@@ -2243,6 +2321,9 @@ def main():
                             """,
                             unsafe_allow_html=True,
                         )
+
+                    with email_col:
+                        render_email_recommendations_popover(ctx)
 
                     if show_step_nav:
                         with nav_home_col:

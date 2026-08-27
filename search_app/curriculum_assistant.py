@@ -463,8 +463,7 @@ class CurriculumAssistant:
 
         # --- Final: Age -> Topic -> Small Steps UI ---
         # Age dropdown
-        st.subheader("Step 1 of 2 Pick the learner's age to find great maths videos...")
-        st.markdown("...on topics this age is working on.")
+        st.subheader("Step 1 of 2 Pick the learner's age to find great maths videos on topics this age is working on")
         ages = sorted(self.df['age'].dropna().unique(), key=lambda x: int(str(x).split('-')[0]) if '-' in str(x) else 0)
         age_options = ['Age ?'] + ages
         if 'curr_year' not in st.session_state or st.session_state.curr_year not in age_options:

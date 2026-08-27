@@ -100,6 +100,10 @@ def send_video_recommendations_email(
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
+                "Accept": "application/json",
+                # Cloudflare (fronting api.resend.com) blocks the default
+                # Python-urllib user agent as a bot (HTTP 403, "error code: 1010").
+                "User-Agent": "FlipperSchool/1.0 (+https://flipper.school)",
             },
             method="POST",
         )

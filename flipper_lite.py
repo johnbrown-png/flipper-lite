@@ -1778,6 +1778,7 @@ def render_landing_demo_frame(recommendations_df):
 
     st.markdown(
         textwrap.dedent(f"""
+        <div class="landing-demo-frame-outer">
         <section class="landing-demo-frame" aria-label="Three example video suggestions">
             <div class="landing-demo-heading">
                 <div>
@@ -1788,8 +1789,16 @@ def render_landing_demo_frame(recommendations_df):
             </div>
             <div class="landing-demo-cards">{''.join(cards)}</div>
         </section>
+        </div>
         <style>
+            .landing-demo-frame-outer {{
+                display: flex;
+                justify-content: center;
+            }}
             .landing-demo-frame {{
+                width: 100%;
+                /* Reduce the whole "What you get" demo frame by 40% (to 60% of its original size). */
+                zoom: 0.6;
                 min-height: clamp(360px, 50vh, 560px);
                 margin: 1.5rem 0 2rem;
                 padding: clamp(1.25rem, 3vw, 2rem);
@@ -1798,6 +1807,13 @@ def render_landing_demo_frame(recommendations_df):
                 background: rgba(255, 255, 255, 0.9);
                 box-shadow: 0 10px 26px rgba(30, 58, 95, 0.12);
                 box-sizing: border-box;
+            }}
+            /* Fallback for browsers without CSS zoom support (e.g. older Firefox). */
+            @supports not (zoom: 1) {{
+                .landing-demo-frame {{
+                    transform: scale(0.6);
+                    transform-origin: top center;
+                }}
             }}
             .landing-demo-heading {{
                 display: flex;

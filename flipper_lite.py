@@ -2025,7 +2025,7 @@ def main():
                 letter-spacing: -0.5px;
             ">
                 <span style="
-                    font-size: 3.2rem;
+                    font-size: 2.6rem;
                     font-weight: 600;
                     background: {HEADER_GRADIENT};
                     -webkit-background-clip: text;

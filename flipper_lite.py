@@ -1846,6 +1846,11 @@ def render_landing_demo_frame(recommendations_df):
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
+                filter: grayscale(0.35) saturate(0.65) brightness(1.02);
+                transition: filter 0.2s ease;
+            }}
+            .landing-demo-thumbnail img:hover {{
+                filter: none;
             }}
             .landing-demo-play {{
                 position: absolute;

@@ -1763,7 +1763,6 @@ def render_landing_demo_frame(recommendations_df):
                 </div>
                 <div class="landing-demo-card-body">
                     <h3>{title}</h3>
-                    <p>{channel} <span aria-hidden="true">·</span> {duration}</p>
                 </div>
             </article>
             """

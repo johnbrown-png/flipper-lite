@@ -1842,8 +1842,8 @@ def render_landing_demo_frame(recommendations_df):
             }}
             .landing-demo-thumbnail img {{
                 display: block;
-                width: 50%;
-                height: 50%;
+                width: 100%;
+                height: 100%;
                 object-fit: cover;
             }}
             .landing-demo-play {{

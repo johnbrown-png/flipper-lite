@@ -188,8 +188,8 @@ class CurriculumAssistant:
     @staticmethod
     def _reset_curriculum_selection():
         """Return the curriculum selector and parent page to the landing state."""
-        st.session_state.curr_year = 'Age ?'
-        st.session_state.year_select_topic_search = 'Age ?'
+        st.session_state.curr_year = 'Learner\'s Age?'
+        st.session_state.year_select_topic_search = 'Learner\'s Age?'
         st.session_state.curr_difficulty = 'All'
         st.session_state.difficulty_select_topic_search = 'All'
         st.session_state.curr_topic = 'Topic ?'
@@ -526,9 +526,9 @@ class CurriculumAssistant:
             unsafe_allow_html=True,
         )
         ages = sorted(self.df['age'].dropna().unique(), key=lambda x: int(str(x).split('-')[0]) if '-' in str(x) else 0)
-        age_options = ['Age ?'] + ages
+        age_options = ['Learner\'s Age?'] + ages
         if 'curr_year' not in st.session_state or st.session_state.curr_year not in age_options:
-            st.session_state.curr_year = 'Age ?'
+            st.session_state.curr_year = 'Learner\'s Age?'
         if 'year_select_topic_search' not in st.session_state or st.session_state.year_select_topic_search not in age_options:
             st.session_state.year_select_topic_search = st.session_state.curr_year
         age_col, reset_col, _age_spacer_col = st.columns([1, 1, 5])
@@ -553,7 +553,7 @@ class CurriculumAssistant:
             st.session_state.difficulty_select_topic_search = 'All'
             st.session_state.topic_select_topic_search = 'Topic ?'
             self._clear_parent_results_state()
-            if selected_year != 'Age ?':
+            if selected_year != 'Learner\'s Age?':
                 track_event("age_selected", {"age": selected_year})
             st.rerun()
 
@@ -579,7 +579,7 @@ class CurriculumAssistant:
                 st.rerun()
 
         # Only show Topic dropdown after Age is selected (and difficulty if required)
-        if st.session_state.curr_year != 'Age ?' and (not show_difficulty or st.session_state.curr_difficulty != 'All'):
+        if st.session_state.curr_year != 'Learner\'s Age?' and (not show_difficulty or st.session_state.curr_difficulty != 'All'):
             filtered_df = self.df[self.df['age'] == st.session_state.curr_year]
             if show_difficulty:
                 filtered_df = filtered_df[filtered_df['difficulty'] == st.session_state.curr_difficulty]

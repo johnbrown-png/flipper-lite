@@ -2334,8 +2334,8 @@ def main():
                                 st.session_state.current_video = None
                                 st.session_state.current_video_index = 0
 
-                                st.session_state.curr_year = 'Age ?'
-                                st.session_state.year_select_topic_search = 'Age ?'
+                                st.session_state.curr_year = 'Learner\'s Age?'
+                                st.session_state.year_select_topic_search = 'Learner\'s Age?'
                                 st.session_state.curr_difficulty = 'All'
                                 st.session_state.difficulty_select_topic_search = 'All'
                                 st.session_state.curr_topic = 'Topic ?'
@@ -2487,8 +2487,8 @@ def main():
                         st.session_state.current_video = None
                         st.session_state.current_video_index = 0
 
-                        st.session_state.curr_year = 'Age ?'
-                        st.session_state.year_select_topic_search = 'Age ?'
+                        st.session_state.curr_year = 'Learner\'s Age?'
+                        st.session_state.year_select_topic_search = 'Learner\'s Age?'
                         st.session_state.curr_difficulty = 'All'
                         st.session_state.difficulty_select_topic_search = 'All'
                         st.session_state.curr_topic = 'Topic ?'

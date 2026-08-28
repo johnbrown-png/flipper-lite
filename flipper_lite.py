@@ -2058,7 +2058,7 @@ def main():
                 margin-top: 1rem;
                 margin-bottom: 0rem;
                 font-weight: 400;
-            ">The best Maths videos from YouTube, matched to a world leading curriculum, for each lesson from age 5 to 15
+            ">The best Maths videos from YouTube, matched by transcript to a world leading curriculum, for each lesson from age 5 to 15
             </p>
             """, unsafe_allow_html=True)
 

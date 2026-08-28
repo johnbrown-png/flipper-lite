@@ -2057,7 +2057,7 @@ def main():
                 font-size: 1.2rem;
                 color: #2c5f8d;
                 text-align: centre;
-                margin-top: 1rem;
+                margin-top: 0rem;
                 margin-bottom: 0rem;
                 font-weight: 400;
             ">The best Maths videos on YouTube, transcript matched to a world leading curriculum, for each lesson from age 5 to 15

@@ -326,13 +326,22 @@ class CurriculumAssistant:
         .ss-desc-details summary::-webkit-details-marker {
             display: none;
         }
-        /* Dropdown menus (Age / Difficulty / Topic): white background instead of blue */
+        /* Dropdown menus (Age / Difficulty / Topic): white background + dark border for attention */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
             background-color: #ffffff !important;
+            border: 2px solid #1e3a5f !important;
+            border-radius: 8px !important;
+        }
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
+            border-color: #2c5f8d !important;
+            box-shadow: 0 0 0 3px rgba(44, 95, 141, 0.25) !important;
         }
         div[data-baseweb="popover"] ul[data-baseweb="menu"],
         ul[data-baseweb="menu"] {
             background-color: #ffffff !important;
+            border: 2px solid #1e3a5f !important;
+            border-radius: 8px !important;
         }
         ul[data-baseweb="menu"] li {
             background-color: #ffffff !important;
@@ -523,6 +532,12 @@ class CurriculumAssistant:
         if 'year_select_topic_search' not in st.session_state or st.session_state.year_select_topic_search not in age_options:
             st.session_state.year_select_topic_search = st.session_state.curr_year
         age_col, reset_col, _age_spacer_col = st.columns([1, 1, 5])
+        with age_col:
+            selected_year = st.selectbox(
+                "Learner age",
+                age_options,
+                key="year_select_topic_search",
+            )
         with reset_col:
             st.button(
                 "Reset",

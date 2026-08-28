@@ -326,6 +326,17 @@ class CurriculumAssistant:
         .ss-desc-details summary::-webkit-details-marker {
             display: none;
         }
+        /* Dropdown menus (Age / Difficulty / Topic): white background instead of blue */
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+            background-color: #ffffff !important;
+        }
+        div[data-baseweb="popover"] ul[data-baseweb="menu"],
+        ul[data-baseweb="menu"] {
+            background-color: #ffffff !important;
+        }
+        ul[data-baseweb="menu"] li {
+            background-color: #ffffff !important;
+        }
         </style>
         ''', unsafe_allow_html=True)
 
@@ -512,12 +523,6 @@ class CurriculumAssistant:
         if 'year_select_topic_search' not in st.session_state or st.session_state.year_select_topic_search not in age_options:
             st.session_state.year_select_topic_search = st.session_state.curr_year
         age_col, reset_col, _age_spacer_col = st.columns([1, 1, 5])
-        with age_col:
-            selected_year = st.selectbox(
-                "Learner age",
-                age_options,
-                key="year_select_topic_search",
-            )
         with reset_col:
             st.button(
                 "Reset",

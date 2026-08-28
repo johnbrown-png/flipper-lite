@@ -534,9 +534,10 @@ class CurriculumAssistant:
         age_col, reset_col, _age_spacer_col = st.columns([1, 1, 5])
         with age_col:
             selected_year = st.selectbox(
-                "Learner age",
+                "",
                 age_options,
                 key="year_select_topic_search",
+                label_visibility="collapsed",
             )
         with reset_col:
             st.button(

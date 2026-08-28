@@ -2058,7 +2058,7 @@ def main():
                 margin-top: 1rem;
                 margin-bottom: 0rem;
                 font-weight: 400;
-            ">Curated maths videos from YouTube, matched to your curriculum, for each step from age 5 to 15
+            ">High quality Maths videos from YouTube, selected by semantic match between transcript and a world leading curriculum, White Rose Maths, for each lesson from age 5 to 15
             </p>
             """, unsafe_allow_html=True)
 

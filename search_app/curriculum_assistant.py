@@ -479,23 +479,38 @@ class CurriculumAssistant:
             )
 
         # --- Final: Age -> Topic -> Small Steps UI ---
-        # Age dropdown
-        st.subheader("Step 1 of 2: Pick the learner's age to find great maths videos on topics this age is working on")
+        # Age dropdown: render the Step 1 heading flush against the age control
+        # (no extra vertical gap) and keep the control at a consistent 44px height.
+        st.markdown(
+            """
+            <style>
+            /* Keep the Step 1 heading flush against the age dropdown. */
+            div[data-testid="stElementContainer"]:has(.step-one-heading) {
+                margin-bottom: 0 !important;
+            }
+            .step-one-heading {
+                font-size: 1.75rem;
+                font-weight: 600;
+                line-height: 1.2;
+                letter-spacing: -0.005em;
+                color: inherit;
+                margin: 0;
+                padding: 0.75rem 0 0 0;
+            }
+            div[data-testid="stSelectbox"]:has(label[data-testid="stWidgetLabel"]) div[data-baseweb="select"] > div {
+                min-height: 44px;
+            }
+            </style>
+            <h3 class="step-one-heading">Step 1 of 2: Pick the learner's age to find great maths videos on topics this age is working on</h3>
+            """,
+            unsafe_allow_html=True,
+        )
         ages = sorted(self.df['age'].dropna().unique(), key=lambda x: int(str(x).split('-')[0]) if '-' in str(x) else 0)
         age_options = ['Age ?'] + ages
         if 'curr_year' not in st.session_state or st.session_state.curr_year not in age_options:
             st.session_state.curr_year = 'Age ?'
         if 'year_select_topic_search' not in st.session_state or st.session_state.year_select_topic_search not in age_options:
             st.session_state.year_select_topic_search = st.session_state.curr_year
-        # Age dropdown: render a visible 'Learner age' label above the control
-        # and give the control a consistent 44px height.
-        st.markdown("""
-        <style>
-        div[data-testid="stSelectbox"]:has(label[data-testid="stWidgetLabel"]) div[data-baseweb="select"] > div {
-            min-height: 44px;
-        }
-        </style>
-        """, unsafe_allow_html=True)
         age_col, reset_col, _age_spacer_col = st.columns([1, 1, 5])
         with age_col:
             selected_year = st.selectbox(

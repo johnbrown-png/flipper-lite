@@ -1836,7 +1836,7 @@ def render_landing_demo_frame(recommendations_df):
             }}
             .landing-demo-thumbnail {{
                 position: relative;
-                aspect-ratio: 2 / 1;
+                aspect-ratio: 16 / 9;
                 overflow: hidden;
                 background: #dce8f1;
             }}

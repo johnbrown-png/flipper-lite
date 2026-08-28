@@ -230,6 +230,10 @@ def _prepare(df: pd.DataFrame) -> pd.DataFrame:
     out = out.dropna(subset=["timestamp_utc"])
     out["date"] = out["timestamp_utc"].dt.date
 
+    if "app" not in out.columns:
+        out["app"] = ""
+    out["app"] = out["app"].fillna("").astype(str)
+
     out["source"] = out["query.utm_source"].astype(str).str.strip()
     out.loc[out["source"] == "", "source"] = "direct_or_unknown"
 
@@ -272,6 +276,8 @@ def _render_dashboard(df: pd.DataFrame, source_backend: str) -> None:
         )
     with col_right:
         source_filter = st.multiselect("Source", options=sorted(df["source"].unique()), default=sorted(df["source"].unique()))
+        app_options = sorted(df["app"].unique())
+        app_filter = st.multiselect("App", options=app_options, default=app_options)
 
     # Streamlit date_input can return scalar date, list/tuple, or nested tuple/list.
     raw_range = date_range
@@ -304,6 +310,8 @@ def _render_dashboard(df: pd.DataFrame, source_backend: str) -> None:
     filtered = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
     if source_filter:
         filtered = filtered[filtered["source"].isin(source_filter)]
+    if app_filter:
+        filtered = filtered[filtered["app"].isin(app_filter)]
 
     if filtered.empty:
         st.info(
@@ -313,32 +321,41 @@ def _render_dashboard(df: pd.DataFrame, source_backend: str) -> None:
     total_events = int(len(filtered))
     unique_sessions = int(filtered["session_id"].nunique())
     page_views = int((filtered["event_name"] == "page_view").sum())
-    searches = int((filtered["event_name"] == "search_submitted").sum())
-    video_events = int(filtered[filtered["event_name"].isin(["video_opened", "video_link_clicked"])].shape[0])
+    age_selected = int((filtered["event_name"] == "age_selected").sum())
+    topic_selected = int((filtered["event_name"] == "topic_selected").sum())
+    step_watch_clicks = int((filtered["event_name"] == "step_watch_clicked").sum())
+    video_opened = int((filtered["event_name"] == "video_opened").sum())
     email_requests = int((filtered["event_name"] == "email_recommendations_requested").sum())
 
-    k1, k2, k3, k4, k5, k6 = st.columns(6)
+    k1, k2, k3, k4, k5, k6, k7, k8 = st.columns(8)
     k1.metric("Events", f"{total_events:,}")
     k2.metric("Sessions", f"{unique_sessions:,}")
     k3.metric("Page views", f"{page_views:,}")
-    k4.metric("Searches", f"{searches:,}")
-    k5.metric("Video actions", f"{video_events:,}")
-    k6.metric("Email requests", f"{email_requests:,}")
+    k4.metric("Age selected", f"{age_selected:,}")
+    k5.metric("Topic selected", f"{topic_selected:,}")
+    k6.metric("Step watch clicks", f"{step_watch_clicks:,}")
+    k7.metric("Video opened", f"{video_opened:,}")
+    k8.metric("Email requests", f"{email_requests:,}")
 
     trend = filtered.groupby("date").agg(events=("event_name", "count"), sessions=("session_id", "nunique")).reset_index()
     st.subheader("Daily Trend")
     st.line_chart(trend.set_index("date")[["events", "sessions"]])
 
-    st.subheader("Event Funnel")
-    funnel_order = ["page_view", "search_submitted", "search_results_rendered", "video_opened", "video_link_clicked"]
-    funnel = (
-        filtered[filtered["event_name"].isin(funnel_order)]
-        .groupby("event_name")
-        .size()
-        .reindex(funnel_order, fill_value=0)
-        .reset_index(name="count")
+    st.subheader("Flipper Lite Journey Funnel")
+    st.caption(
+        "Unique sessions reaching each stage of the first-time journey. "
+        "The drop-off between stages shows where users leave before watching a video."
     )
-    st.bar_chart(funnel.set_index("event_name")["count"])
+    funnel_stages = ["page_view", "age_selected", "topic_selected", "step_watch_clicked", "video_opened"]
+    funnel_sessions = [int(filtered[filtered["event_name"] == s]["session_id"].nunique()) for s in funnel_stages]
+    funnel = pd.DataFrame({"stage": funnel_stages, "sessions": funnel_sessions})
+    first = funnel_sessions[0] if funnel_sessions else 0
+    funnel["% of first"] = ((funnel["sessions"] / first) * 100).round(1) if first else 0
+    prev = funnel["sessions"].shift(1)
+    funnel["% of previous"] = funnel["sessions"].div(prev.where(prev != 0)).mul(100).round(1)
+    funnel["drop_off"] = prev.sub(funnel["sessions"]).fillna(0).astype(int)
+    st.bar_chart(funnel.set_index("stage")["sessions"])
+    st.dataframe(funnel, use_container_width=True)
 
     st.subheader("Source Performance")
     source_perf = (

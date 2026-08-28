@@ -2601,6 +2601,7 @@ def main():
                 "step_selection_applied",
                 {
                     "source": "curriculum_assistant",
+                    "selection_source": text.get("selection_source", "selector"),
                     "small_step": text.get("small_step", ""),
                     "small_step_id": text.get("small_step_id", ""),
                     "topic": text.get("topic", ""),

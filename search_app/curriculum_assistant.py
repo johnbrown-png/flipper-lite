@@ -12,6 +12,7 @@ from pathlib import Path
 
 from shared.curriculum_schema import curriculum_to_long_df
 from shared.ui_terminology import SELECTOR_CARDS_LABEL
+from shared.analytics import track_event
 
 # 'Pick by Small Step' subheading: hidden by default, kept for future re-enable.
 ENABLE_PICK_BY_SMALL_STEP_HEADING = False
@@ -519,6 +520,8 @@ class CurriculumAssistant:
             st.session_state.difficulty_select_topic_search = 'All'
             st.session_state.topic_select_topic_search = 'Topic ?'
             self._clear_parent_results_state()
+            if selected_year != 'Age ?':
+                track_event("age_selected", {"age": selected_year})
             st.rerun()
 
         # Difficulty dropdown for ages 14-15 and 15-16
@@ -567,6 +570,15 @@ class CurriculumAssistant:
             if selected_topic != st.session_state.curr_topic:
                 st.session_state.curr_topic = selected_topic
                 self._clear_parent_results_state()
+                if selected_topic != 'Topic ?':
+                    track_event(
+                        "topic_selected",
+                        {
+                            "age": st.session_state.curr_year,
+                            "topic": selected_topic,
+                            "difficulty": st.session_state.curr_difficulty if show_difficulty else "",
+                        },
+                    )
                 st.rerun()
 
             # Show small steps if topic selected
@@ -608,6 +620,17 @@ class CurriculumAssistant:
                                         'age': row['age'],
                                         'display_text': step_text if not example_text else f"{step_text} - {example_text}"
                                     }
+                                    track_event(
+                                        "step_watch_clicked",
+                                        {
+                                            "small_step": step_text,
+                                            "small_step_id": row['small_step_id'],
+                                            "topic": row['topic'],
+                                            "age": row['age'],
+                                            "difficulty": difficulty_val,
+                                            "term": row['term'],
+                                        },
+                                    )
                                     st.rerun()
                             with col_content:
                                 if example_text:

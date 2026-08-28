@@ -590,8 +590,7 @@ class CurriculumAssistant:
                 st.session_state.curr_topic = 'Topic ?'
             if 'topic_select_topic_search' not in st.session_state or st.session_state.topic_select_topic_search not in topic_options:
                 st.session_state.topic_select_topic_search = st.session_state.curr_topic
-            st.subheader("Step 2 of 2")
-            st.markdown("Pick a topic the learner is currently working towards.")
+            st.subheader("Step 2 of 2: Pick a topic the learner is currently working towards")
             selected_topic = st.selectbox(
                 "Topic",
                 topic_options,

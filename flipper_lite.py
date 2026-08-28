@@ -1784,7 +1784,7 @@ def render_landing_demo_frame(recommendations_df):
         <style>
             .landing-demo-frame {{
                 min-height: clamp(360px, 50vh, 560px);
-                margin: 0.5rem 0 2rem;
+                margin: 0rem 0 2rem;
                 padding: clamp(1.25rem, 3vw, 2rem);
                 border: 1px solid rgba(44, 95, 141, 0.24);
                 border-radius: 12px;

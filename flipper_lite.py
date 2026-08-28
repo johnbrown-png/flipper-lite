@@ -2036,7 +2036,7 @@ def main():
                     Flipper School
                 </span>
                 <span style="
-                    font-size: 1.8rem;
+                    font-size: 1.2rem;
                     font-weight: 600;
                     background: {HEADER_GRADIENT};
                     -webkit-background-clip: text;

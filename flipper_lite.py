@@ -1837,6 +1837,7 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-thumbnail {{
                 position: relative;
                 aspect-ratio: 16 / 9;
+                max-height: 180px;
                 overflow: hidden;
                 background: #dce8f1;
             }}

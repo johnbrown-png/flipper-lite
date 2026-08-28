@@ -79,15 +79,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Add custom CSS for Age dropdown width (7ch)
-st.markdown("""
-<style>
-div[data-testid="stSelectbox"] label[aria-label="Age"] ~ div:first-child,
-div[data-testid="stSelectbox"][aria-label="Age"] > div:first-child {
-    width: 7ch !important; min-width: 7ch !important; max-width: 7ch !important;
-}
-</style>
-""", unsafe_allow_html=True)
+# Age dropdown styling (visible 'Learner age' label and 44px height) is
+# handled inside CurriculumAssistant.render(), shared with flipper.py.
 
 # Add custom CSS for more compact layout
 st.markdown("""

@@ -487,24 +487,21 @@ class CurriculumAssistant:
             st.session_state.curr_year = 'Age ?'
         if 'year_select_topic_search' not in st.session_state or st.session_state.year_select_topic_search not in age_options:
             st.session_state.year_select_topic_search = st.session_state.curr_year
-        # Keep Age control compact on every rerun.
+        # Age dropdown: render a visible 'Learner age' label above the control
+        # and give the control a consistent 44px height.
         st.markdown("""
         <style>
-        div[data-testid="stSelectbox"] label[aria-label="Age"] ~ div:first-child,
-        div[data-testid="stSelectbox"][aria-label="Age"] > div:first-child {
-            width: 8ch !important;
-            min-width: 8ch !important;
-            max-width: 8ch !important;
+        div[data-testid="stSelectbox"]:has(label[data-testid="stWidgetLabel"]) div[data-baseweb="select"] > div {
+            min-height: 44px;
         }
         </style>
         """, unsafe_allow_html=True)
         age_col, reset_col, _age_spacer_col = st.columns([1, 1, 5])
         with age_col:
             selected_year = st.selectbox(
-                "Age",
+                "Learner age",
                 age_options,
                 key="year_select_topic_search",
-                label_visibility="collapsed"
             )
         with reset_col:
             st.button(

@@ -1826,7 +1826,7 @@ def render_landing_demo_frame(recommendations_df):
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
                 gap: 1rem;
-                max-width: 760px;
+                max-width: 1000px;
                 margin: 0 auto;
             }}
             .landing-demo-card {{

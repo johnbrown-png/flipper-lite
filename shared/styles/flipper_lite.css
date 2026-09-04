@@ -1,0 +1,131 @@
+/* Flipper Lite page-wide styles. Loaded by flipper_lite.py at startup. */
+
+/* Hide Streamlit header */
+header[data-testid="stHeader"] {
+    display: none;
+}
+
+/* Page-wide background - Balanced blue tone */
+.stApp {
+    background:
+        linear-gradient(135deg, rgba(30, 58, 95, 0.08) 0%, rgba(74, 144, 200, 0.12) 100%),
+        linear-gradient(to bottom, #f0f5f9 0%, #e0ecf4 100%);
+    background-attachment: fixed;
+}
+
+/* Top accent bar */
+.stApp::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, #1e3a5f, #2c5f8d, #4a90c8);
+    z-index: 9999;
+}
+
+/* Reduce padding around main content */
+.block-container {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(30, 58, 95, 0.12);
+    backdrop-filter: blur(10px);
+}
+
+/* Reduce spacing between elements */
+.element-container {
+    margin-bottom: 0.5rem;
+}
+
+/* Make headers more compact */
+h1, h2, h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+/* Reduce expander padding */
+.streamlit-expanderHeader {
+    font-size: 14px;
+}
+
+/* Compact metrics */
+[data-testid="stMetric"] {
+    padding: 0;
+}
+
+/* Enhanced loading spinner styling - Blue theme */
+div[data-testid="stSpinner"] > div {
+    border: 4px solid #e8f1f7;
+    border-top: 4px solid #2c5f8d;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Spinner container styling */
+div[data-testid="stSpinner"] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(30, 58, 95, 0.1);
+    margin: 1rem 0;
+}
+
+/* Watch tracking - subtle opacity for watched videos */
+.video-card-watched {
+    opacity: 0.65;
+    filter: saturate(0.7);
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.video-card-watched:hover {
+    opacity: 0.85;
+    filter: saturate(0.85);
+}
+
+/* Style Watch buttons - make them compact and elegant */
+button[key^="play_"] {
+    background: linear-gradient(135deg, #2c5f8d 0%, #4a90c8 100%) !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    transition: all 0.2s ease !important;
+    margin-top: 0.3rem !important;
+}
+
+button[key^="play_"]:hover {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5f8d 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
+}
+
+button[key^="play_"]:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+
+/* Thumbnail hover effect */
+.video-thumbnail-container img {
+    transition: filter 0.3s ease;
+}
+
+.video-thumbnail-container:hover img {
+    filter: brightness(1.05);
+}

@@ -63,6 +63,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Google Search Console verification meta tag
+st.markdown(
+    '<meta name="google-site-verification" content="hZoD7f-tydJYJLtgqKrh9TBrfUMyzEHwtptBtIvnoNY" />',
+    unsafe_allow_html=True
+)
+
 # Age dropdown styling (visible 'Learner age' label and 44px height) is
 # handled inside CurriculumAssistant.render(), shared with flipper.py.
 

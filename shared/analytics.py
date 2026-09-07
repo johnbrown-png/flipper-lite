@@ -60,28 +60,36 @@ def get_analytics_webhook_token() -> str:
         return ""
 
 
-def get_analytics_excluded_ip() -> str:
-    """Read the owner's own IP address to exclude from analytics entirely."""
-    env_value = os.getenv("FLIPPER_ANALYTICS_EXCLUDE_IP", "").strip()
+def get_analytics_owner_token() -> str:
+    """Read the secret token that, when present in the URL, marks the owner's own visits."""
+    env_value = os.getenv("FLIPPER_ANALYTICS_OWNER_TOKEN", "").strip()
     if env_value:
         return env_value
     try:
-        secret_value = str(st.secrets.get("FLIPPER_ANALYTICS_EXCLUDE_IP", "")).strip()
+        secret_value = str(st.secrets.get("FLIPPER_ANALYTICS_OWNER_TOKEN", "")).strip()
         return secret_value
     except Exception:
         return ""
 
 
 def _is_excluded_visitor() -> bool:
-    """True if the current visitor's IP matches the configured owner IP to exclude."""
-    excluded_ip = get_analytics_excluded_ip()
-    if not excluded_ip:
+    """True if the current visit is tagged with the owner's ?owner=<token> URL marker.
+
+    IP-based exclusion isn't viable on Streamlit Community Cloud: neither
+    st.context.ip_address nor X-Forwarded-For expose the real client IP there
+    (only internal proxy-chain addresses), so a bookmarked URL token is used
+    instead.
+    """
+    owner_token = get_analytics_owner_token()
+    if not owner_token:
         return False
     try:
-        visitor_ip = getattr(getattr(st, "context", None), "ip_address", None)
+        visitor_token = st.query_params.get("owner", "")
     except Exception:
         return False
-    return bool(visitor_ip) and visitor_ip == excluded_ip
+    if isinstance(visitor_token, list):
+        visitor_token = visitor_token[0] if visitor_token else ""
+    return str(visitor_token) == owner_token
 
 
 def _normalize_query_params() -> dict[str, str]:

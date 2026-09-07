@@ -692,6 +692,8 @@ def main():
     # TEMP DEBUG (remove after confirming FLIPPER_ANALYTICS_EXCLUDE_IP value): visit ?show_ip=1
     if st.query_params.get("show_ip") == "1":
         st.caption(f"DEBUG st.context.ip_address = {getattr(getattr(st, 'context', None), 'ip_address', None)!r}")
+        _debug_headers = dict(getattr(getattr(st, "context", None), "headers", {}) or {})
+        st.caption(f"DEBUG headers = {_debug_headers!r}")
 
     # ==========================================
     # Thought Prompt Full-Screen Check (must come before all chrome)

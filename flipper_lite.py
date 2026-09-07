@@ -689,6 +689,10 @@ def main():
     init_analytics("flipper_lite")
     track_event("page_view", {"page": "home"}, once_key="page_view")
 
+    # TEMP DEBUG (remove after confirming FLIPPER_ANALYTICS_EXCLUDE_IP value): visit ?show_ip=1
+    if st.query_params.get("show_ip") == "1":
+        st.caption(f"DEBUG st.context.ip_address = {getattr(getattr(st, 'context', None), 'ip_address', None)!r}")
+
     # ==========================================
     # Thought Prompt Full-Screen Check (must come before all chrome)
     # ==========================================

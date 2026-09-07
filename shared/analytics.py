@@ -60,6 +60,30 @@ def get_analytics_webhook_token() -> str:
         return ""
 
 
+def get_analytics_excluded_ip() -> str:
+    """Read the owner's own IP address to exclude from analytics entirely."""
+    env_value = os.getenv("FLIPPER_ANALYTICS_EXCLUDE_IP", "").strip()
+    if env_value:
+        return env_value
+    try:
+        secret_value = str(st.secrets.get("FLIPPER_ANALYTICS_EXCLUDE_IP", "")).strip()
+        return secret_value
+    except Exception:
+        return ""
+
+
+def _is_excluded_visitor() -> bool:
+    """True if the current visitor's IP matches the configured owner IP to exclude."""
+    excluded_ip = get_analytics_excluded_ip()
+    if not excluded_ip:
+        return False
+    try:
+        visitor_ip = getattr(getattr(st, "context", None), "ip_address", None)
+    except Exception:
+        return False
+    return bool(visitor_ip) and visitor_ip == excluded_ip
+
+
 def _normalize_query_params() -> dict[str, str]:
     """Return a plain dict[str, str] from st.query_params."""
     normalized: dict[str, str] = {}
@@ -152,6 +176,9 @@ def track_event(event_name: str, properties: dict[str, Any] | None = None, once_
     """
     session = st.session_state.get("analytics_session")
     if not session:
+        return
+
+    if _is_excluded_visitor():
         return
 
     once_keys = session.get("once_keys", set())

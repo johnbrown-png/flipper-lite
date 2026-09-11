@@ -442101,3 +442101,6 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-08-12T11:09:49] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Transformations_4_Reflection
 [2026-08-12T11:10:36] MANUAL OVERRIDE applied for Year 11_15-16_Spring_Higher_Transformations_4_Reflection
 [2026-08-12T11:14:10] QA REFERENCE PUBLISHED rows=5038 steps=661 wildcards=35 manual=635 skipped=35
+[2026-09-10T16:33:27] MANUAL OVERRIDE applied for Year 8_12-13_Spring__Equations and inequalities_10_Solve inequalities with unknowns on both sides E
+[2026-09-11T10:16:00] MANUAL OVERRIDE applied for Year 9_13-14_Spring__Algebraic manipulation_5_Use identities
+[2026-09-11T10:17:51] QA REFERENCE PUBLISHED rows=5038 steps=663 wildcards=35 manual=637 skipped=35

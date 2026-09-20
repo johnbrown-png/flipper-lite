@@ -227,9 +227,18 @@ div[data-testid="stElementContainer"]:has(.curriculum-assistant-chrome) {
     flex: 1 1 auto;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     min-width: 0;
     margin: 0;
+}
+
+.flipper-nav-gap {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.flipper-nav-end-space {
+    flex: 0.5 1 0;
+    min-width: 0;
 }
 
 .flipper-nav-link {
@@ -262,11 +271,12 @@ div[data-testid="stElementContainer"]:has(.step-one-heading) {
     scroll-margin-top: 8.5rem;
 }
 
-.audience-section {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.95fr);
-    gap: clamp(1rem, 2.4vw, 2rem);
+.audience-section,
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) {
+    display: flex;
+    flex-wrap: nowrap !important;
     align-items: center;
+    gap: clamp(1rem, 2.4vw, 2rem);
     margin: 0 0 1.5rem;
     padding: clamp(1rem, 2vw, 1.5rem);
     border: 1px solid rgba(44, 95, 141, 0.22);
@@ -275,7 +285,12 @@ div[data-testid="stElementContainer"]:has(.step-one-heading) {
     box-shadow: 0 8px 22px rgba(30, 58, 95, 0.08);
 }
 
-.audience-photo {
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) > div {
+    min-width: 0 !important;
+}
+
+.audience-photo,
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) img {
     display: block;
     width: 100%;
     height: 18.5rem;
@@ -283,6 +298,11 @@ div[data-testid="stElementContainer"]:has(.step-one-heading) {
     object-position: center;
     border-radius: 10px;
     box-shadow: 0 8px 18px rgba(30, 58, 95, 0.14);
+}
+
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="stBaseButton-elementToolbar"],
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) button[aria-label="Fullscreen"] {
+    display: none !important;
 }
 
 .audience-title {
@@ -358,14 +378,21 @@ div[data-testid="stElementContainer"]:has(.step-one-heading) {
         width: 100%;
         gap: 0.45rem 1rem;
     }
+
+    .flipper-nav-gap,
+    .flipper-nav-end-space {
+        display: none;
+    }
 }
 
 @media (max-width: 640px) {
-    .audience-section {
-        grid-template-columns: 1fr;
+    .audience-section,
+    div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) {
+        flex-wrap: wrap !important;
     }
 
-    .audience-photo {
+    .audience-photo,
+    div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) img {
         height: 16rem;
     }
 }

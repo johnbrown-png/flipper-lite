@@ -548,7 +548,7 @@ def render_landing_demo_frame(recommendations_df):
             <div class="landing-demo-heading">
                 <div>
                     <p class="landing-demo-eyebrow">What you get</p>
-                    <h2>Three great videos for every step learning maths from age 5 to 15</h2>
+                    <h2>Three great videos for every step in maths from age 5 to 15</h2>
                 </div>
                 <p class="landing-demo-context"><strong>Age 5-6</strong> <span aria-hidden="true">·</span> Autumn <span aria-hidden="true">·</span> Place value within 10 <span aria-hidden="true">·</span> Sort objects</p>
             </div>
@@ -556,7 +556,11 @@ def render_landing_demo_frame(recommendations_df):
         </section>
         <style>
             .landing-demo-frame {{
+                display: flex;
+                flex-direction: column;
                 min-height: clamp(430px, 58vh, 670px);
+                height: clamp(430px, 58vh, 670px);
+                max-height: clamp(430px, 58vh, 670px);
                 margin: 0rem 0 2rem;
                 padding: clamp(1.25rem, 3vw, 2rem);
                 border: 1px solid rgba(44, 95, 141, 0.24);
@@ -569,8 +573,9 @@ def render_landing_demo_frame(recommendations_df):
                 display: flex;
                 align-items: end;
                 justify-content: space-between;
+                flex: 0 0 auto;
                 gap: 1.5rem;
-                margin-bottom: 1.25rem;
+                margin-bottom: 0.85rem;
             }}
             .landing-demo-eyebrow {{
                 margin: 0 0 0.35rem;
@@ -598,10 +603,13 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-cards {{
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 3.2rem;
-                max-width: 1080px;
+                gap: 1.15rem;
+                max-width: none;
                 width: 100%;
-                margin: 0 auto;
+                flex: 1 1 auto;
+                min-height: 0;
+                margin: 0;
+                align-content: start;
             }}
             .landing-demo-card {{
                 min-width: 0;
@@ -613,6 +621,7 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-thumbnail {{
                 position: relative;
                 aspect-ratio: 16 / 9;
+                width: 100%;
                 overflow: hidden;
                 background: #dce8f1;
             }}
@@ -643,7 +652,7 @@ def render_landing_demo_frame(recommendations_df):
                 box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
             }}
             .landing-demo-card-body {{
-                padding: 0.85rem 0.9rem 1rem;
+                padding: 0.55rem 0.75rem 0.65rem;
             }}
             .landing-demo-card-body h3 {{
                 display: -webkit-box;
@@ -664,7 +673,7 @@ def render_landing_demo_frame(recommendations_df):
                 line-height: 1.3;
             }}
             @media (max-width: 700px) {{
-                .landing-demo-frame {{ min-height: 0; }}
+                .landing-demo-frame {{ min-height: 0; height: auto; max-height: none; }}
                 .landing-demo-heading {{ display: block; }}
                 .landing-demo-context {{ margin-top: 0.65rem; text-align: left; }}
                 .landing-demo-cards {{ grid-template-columns: 1fr; }}
@@ -712,9 +721,8 @@ LANDING_ABOUT_HTML = """
 
 
 @st.cache_data(show_spinner=False)
-def _landing_photo_data_uri(image_path: str, max_width: int = 900) -> str:
-    """Return a resized JPEG data URI so audience photos can sit in HTML two-column cards."""
-    import base64
+def _landing_photo_bytes(image_path: str, max_width: int = 900) -> bytes:
+    """Return a resized JPEG so landing photos can be served by Streamlit."""
     import io
 
     from PIL import Image
@@ -726,9 +734,8 @@ def _landing_photo_data_uri(image_path: str, max_width: int = 900) -> str:
         ratio = max_width / float(img.width)
         img = img.resize((max_width, int(img.height * ratio)), Image.Resampling.LANCZOS)
     buffer = io.BytesIO()
-    img.save(buffer, format="JPEG", quality=72, optimize=True)
-    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-    return f"data:image/jpeg;base64,{encoded}"
+    img.save(buffer, format="JPEG", quality=78, optimize=True)
+    return buffer.getvalue()
 
 
 def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
@@ -747,9 +754,13 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                 <p class="flipper-sticky-tagline">The best Maths teaching on YouTube for age 5 to 15</p>
                 <nav class="flipper-sticky-nav" aria-label="Landing sections">
                     <a class="flipper-nav-link" href="#teacher">Teacher</a>
+                    <span class="flipper-nav-gap" aria-hidden="true"></span>
                     <a class="flipper-nav-link" href="#parent">Parent</a>
+                    <span class="flipper-nav-gap" aria-hidden="true"></span>
                     <a class="flipper-nav-link" href="#homeschooling">Homeschooling</a>
+                    <span class="flipper-nav-gap" aria-hidden="true"></span>
                     <a class="flipper-nav-link" href="#about">About</a>
+                    <span class="flipper-nav-end-space" aria-hidden="true"></span>
                 </nav>
             </div>
         </div>
@@ -889,25 +900,28 @@ def render_landing_audience_sections():
             f'<p class="audience-copy">{html.escape(paragraph)}</p>'
             for paragraph in section["paragraphs"]
         )
-        image_html = ""
-        if section["image"].exists():
-            uri = _landing_photo_data_uri(str(section["image"]))
-            image_html = (
-                f'<img class="audience-photo" src="{uri}" '
-                f'alt="{html.escape(section["alt"])}">'
-            )
         st.markdown(
-            f"""
-            <section id="{html.escape(section["id"])}" class="audience-section audience-anchor" aria-label="{html.escape(section["title"])}">
+            f'<div id="{html.escape(section["id"])}" class="audience-anchor"></div>',
+            unsafe_allow_html=True,
+        )
+        text_col, image_col = st.columns([1.2, 0.95], gap="large", vertical_alignment="center")
+        with text_col:
+            st.markdown(
+                f"""
                 <div class="audience-copy-block">
                     <div class="audience-title" role="heading" aria-level="2">{html.escape(section["title"])}</div>
                     {paragraphs}
                 </div>
-                {image_html}
-            </section>
-            """,
-            unsafe_allow_html=True,
-        )
+                """,
+                unsafe_allow_html=True,
+            )
+        with image_col:
+            if section["image"].exists():
+                st.image(
+                    _landing_photo_bytes(str(section["image"])),
+                    width="stretch",
+                    output_format="JPEG",
+                )
 
     st.markdown(LANDING_ABOUT_HTML, unsafe_allow_html=True)
 

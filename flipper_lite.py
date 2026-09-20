@@ -712,8 +712,11 @@ LANDING_ABOUT_HTML = """
 
 
 @st.cache_data(show_spinner=False)
-def _landing_photo(image_path: str, max_width: int = 960):
-    """Return a web-sized RGB photo for the landing audience sections."""
+def _landing_photo_data_uri(image_path: str, max_width: int = 900) -> str:
+    """Return a resized JPEG data URI so audience photos can sit in HTML two-column cards."""
+    import base64
+    import io
+
     from PIL import Image
 
     img = Image.open(image_path)
@@ -722,7 +725,10 @@ def _landing_photo(image_path: str, max_width: int = 960):
     if img.width > max_width:
         ratio = max_width / float(img.width)
         img = img.resize((max_width, int(img.height * ratio)), Image.Resampling.LANCZOS)
-    return img
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=72, optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
 
 
 def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
@@ -842,6 +848,7 @@ def render_landing_audience_sections():
             "id": "teacher",
             "title": "Teacher",
             "image": project_root / "images" / "teacher.jpg",
+            "alt": "Teacher presenting a lesson to a class",
             "paragraphs": [
                 "Find a video on a specific topic for catch-up, homework, pre-learning, small group work or to help kids catch up after being away, or any other uses, it's up to you.",
                 "Using White Rose curriculum? Find 3 videos for every White Rose Small Step for age 5 to 15.",
@@ -853,6 +860,7 @@ def render_landing_audience_sections():
             "id": "parent",
             "title": "Parent",
             "image": project_root / "images" / "parent.jpg",
+            "alt": "Child learning from a video lesson at home",
             "paragraphs": [
                 "Harness screentime for learning. Support progress and momentum with quick lessons when it suits.",
                 "Notice a gap in understanding? Find a video on that exact sticking point.",
@@ -864,6 +872,7 @@ def render_landing_audience_sections():
             "id": "homeschooling",
             "title": "Homeschooling",
             "image": project_root / "images" / "homeschool.jpg",
+            "alt": "Parent and child learning together at a laptop",
             "paragraphs": [
                 "Costly curriculums? Not sure what to teach next? A topic you are not confident in? Tuition on flipper.school is already organised by one of the world's most detailed and thoroughly developed curriculums, White Rose.",
                 "Follow or dip into the UKs most popular maths curriculum for free.",
@@ -877,24 +886,25 @@ def render_landing_audience_sections():
             f'<p class="audience-copy">{html.escape(paragraph)}</p>'
             for paragraph in section["paragraphs"]
         )
+        image_html = ""
+        if section["image"].exists():
+            uri = _landing_photo_data_uri(str(section["image"]))
+            image_html = (
+                f'<img class="audience-photo" src="{uri}" '
+                f'alt="{html.escape(section["alt"])}">'
+            )
         st.markdown(
-            f'<div id="{html.escape(section["id"])}" class="audience-anchor"></div>',
-            unsafe_allow_html=True,
-        )
-        text_col, image_col = st.columns([1.15, 0.9], gap="large")
-        with text_col:
-            st.markdown(
-                f"""
+            f"""
+            <section id="{html.escape(section["id"])}" class="audience-section audience-anchor" aria-label="{html.escape(section["title"])}">
                 <div class="audience-copy-block">
                     <div class="audience-title" role="heading" aria-level="2">{html.escape(section["title"])}</div>
                     {paragraphs}
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with image_col:
-            if section["image"].exists():
-                st.image(_landing_photo(str(section["image"])), width="stretch")
+                {image_html}
+            </section>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown(LANDING_ABOUT_HTML, unsafe_allow_html=True)
 

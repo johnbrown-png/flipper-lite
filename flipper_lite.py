@@ -527,18 +527,16 @@ def render_landing_demo_frame(recommendations_df):
     cards = []
     for _, row in demo_rows.iterrows():
         video_id = html.escape(str(row.get('video_id', '')).strip(), quote=True)
-        title = html.escape(str(row.get('title', '')).strip())
         channel = html.escape(str(row.get('channel', '')).replace('_', ' ').strip())
-        duration = html.escape(str(row.get('duration', '')).strip())
         cards.append(textwrap.dedent(
             f"""
             <article class="landing-demo-card">
                 <div class="landing-demo-thumbnail">
-                    <img src="https://img.youtube.com/vi/{video_id}/hqdefault.jpg" alt="YouTube video thumbnail: {title}">
+                    <img src="https://img.youtube.com/vi/{video_id}/hqdefault.jpg" alt="YouTube video thumbnail from {channel}">
                     <span class="landing-demo-play" aria-hidden="true">▶</span>
                 </div>
                 <div class="landing-demo-card-body">
-                    <h3>{title}</h3>
+                    <h3>{channel}</h3>
                 </div>
             </article>
             """
@@ -648,14 +646,15 @@ def render_landing_demo_frame(recommendations_df):
             }}
             .landing-demo-card-body h3 {{
                 display: -webkit-box;
-                min-height: 2.7em;
-                margin: 0 0 0.45rem;
+                min-height: 1.35em;
+                margin: 0;
                 overflow: hidden;
                 color: #18324f;
                 font-size: 0.98rem;
+                font-weight: 600;
                 line-height: 1.35;
                 -webkit-box-orient: vertical;
-                -webkit-line-clamp: 2;
+                -webkit-line-clamp: 1;
             }}
             .landing-demo-card-body p {{
                 margin: 0;
@@ -743,13 +742,15 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                     - Cur<span class="flipper-sticky-brand-ai">AI</span>ted Education Videos
                 </span>
             </div>
-            <p class="flipper-sticky-tagline">The best Maths teaching on YouTube for age 5 to 15</p>
-            <nav class="flipper-sticky-nav" aria-label="Landing sections">
-                <a class="flipper-nav-link" href="#teacher">Teacher</a>
-                <a class="flipper-nav-link" href="#parent">Parent</a>
-                <a class="flipper-nav-link" href="#homeschooling">Homeschooling</a>
-                <a class="flipper-nav-link" href="#about">About</a>
-            </nav>
+            <div class="flipper-sticky-subrow">
+                <p class="flipper-sticky-tagline">The best Maths teaching on YouTube for age 5 to 15</p>
+                <nav class="flipper-sticky-nav" aria-label="Landing sections">
+                    <a class="flipper-nav-link" href="#teacher">Teacher</a>
+                    <a class="flipper-nav-link" href="#parent">Parent</a>
+                    <a class="flipper-nav-link" href="#homeschooling">Homeschooling</a>
+                    <a class="flipper-nav-link" href="#about">About</a>
+                </nav>
+            </div>
         </div>
         <style>
             .flipper-sticky-brand-main,
@@ -790,8 +791,9 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                     wrap.style.zIndex = '1000';
                     wrap.style.background = '#f4f8fb';
                     wrap.style.borderBottom = '1px solid rgba(44, 95, 141, 0.28)';
-                    wrap.style.paddingTop = '0.7rem';
-                    wrap.style.paddingBottom = '0.85rem';
+                    wrap.style.paddingTop = '0.65rem';
+                    wrap.style.paddingBottom = '0.25rem';
+                    wrap.style.marginBottom = '0';
                 }
 
                 function scrollRoot() {

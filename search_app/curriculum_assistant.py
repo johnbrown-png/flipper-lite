@@ -279,6 +279,7 @@ class CurriculumAssistant:
         """
         # --- Custom CSS: Make Search buttons red (curriculum navigation only) ---
         st.markdown('''
+        <div class="curriculum-assistant-chrome" hidden></div>
         <style>
         /* Blue buttons for curriculum navigation Watch buttons, matching video-card Watch buttons */
         button[key^="find_step_topic_"] {

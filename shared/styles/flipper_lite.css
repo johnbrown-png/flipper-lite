@@ -142,8 +142,8 @@ div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
     background: #f4f8fb;
     border-bottom: 1px solid rgba(44, 95, 141, 0.28);
     box-shadow: 0 4px 12px rgba(30, 58, 95, 0.06);
-    padding: 0.75rem 0.25rem 0.9rem;
-    margin-bottom: 0.45rem;
+    padding: 0.65rem 0.25rem 0.28rem;
+    margin-bottom: 0 !important;
 }
 
 div[data-testid="stVerticalBlock"]:has(.flipper-sticky-header),
@@ -151,25 +151,26 @@ section.main:has(.flipper-sticky-header) {
     overflow: visible;
 }
 
-div[data-testid="stElementContainer"]:has(iframe[height="0"]) {
+div[data-testid="stElementContainer"]:has(iframe[height="0"]),
+div[data-testid="stElementContainer"]:has(#flipper-video-results-top),
+div[data-testid="stElementContainer"]:has(.curriculum-assistant-chrome) {
+    position: absolute !important;
+    width: 0 !important;
     height: 0 !important;
     min-height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden;
+    overflow: hidden !important;
+    pointer-events: none;
 }
 
 .flipper-sticky-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    column-gap: 1.5rem;
-    row-gap: 0.55rem;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .flipper-sticky-brand {
-    grid-column: 1 / -1;
     min-width: 0;
     font-family: 'Poppins', sans-serif;
     font-weight: 600;
@@ -202,25 +203,30 @@ div[data-testid="stElementContainer"]:has(iframe[height="0"]) {
     background: none;
 }
 
+.flipper-sticky-subrow {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 1.25rem;
+}
+
 .flipper-sticky-tagline {
-    grid-column: 1;
-    grid-row: 2;
+    flex: 0 0 auto;
     margin: 0;
     font-family: 'Poppins', sans-serif;
     font-size: clamp(1rem, 1.6vw, 1.2rem);
     font-weight: 400;
     line-height: 1.3;
     color: #2c5f8d;
+    white-space: nowrap;
 }
 
 .flipper-sticky-nav {
-    grid-column: 2;
-    grid-row: 2;
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
-    align-self: center;
-    flex-wrap: nowrap;
-    gap: 0.2rem 0.95rem;
+    justify-content: space-between;
+    min-width: 0;
     margin: 0;
 }
 
@@ -239,6 +245,15 @@ div[data-testid="stElementContainer"]:has(iframe[height="0"]) {
 .flipper-nav-link:focus {
     color: #1e3a5f !important;
     border-bottom-color: #4a90c8;
+}
+
+div[data-testid="stElementContainer"]:has(.step-one-heading) {
+    margin-top: -1rem !important;
+    margin-bottom: 0 !important;
+}
+
+.step-one-heading {
+    padding-top: 0.15rem !important;
 }
 
 .audience-anchor {
@@ -327,21 +342,18 @@ div[data-testid="stElementContainer"]:has(iframe[height="0"]) {
 }
 
 @media (max-width: 800px) {
-    .flipper-sticky-header {
-        grid-template-columns: 1fr;
-    }
-
-    .flipper-sticky-brand {
+    .flipper-sticky-brand,
+    .flipper-sticky-tagline {
         white-space: normal;
     }
 
-    .flipper-sticky-tagline,
+    .flipper-sticky-subrow,
     .flipper-sticky-nav {
-        grid-column: 1;
+        flex-wrap: wrap;
     }
 
     .flipper-sticky-nav {
-        flex-wrap: wrap;
+        width: 100%;
         gap: 0.45rem 1rem;
     }
 }

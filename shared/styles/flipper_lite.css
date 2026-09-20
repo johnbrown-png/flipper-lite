@@ -129,3 +129,212 @@ button[key^="play_"]:active {
 .video-thumbnail-container:hover img {
     filter: brightness(1.05);
 }
+
+/* Sticky landing banner + in-page audience sections */
+html {
+    scroll-behavior: smooth;
+}
+
+div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #f4f8fb;
+    border-bottom: 1px solid rgba(44, 95, 141, 0.28);
+    box-shadow: 0 4px 12px rgba(30, 58, 95, 0.06);
+    padding: 0.45rem 0.25rem 0.55rem;
+    margin-bottom: 0.35rem;
+}
+
+div[data-testid="stVerticalBlock"]:has(.flipper-sticky-header),
+section.main:has(.flipper-sticky-header) {
+    overflow: visible;
+}
+
+div[data-testid="stElementContainer"]:has(iframe[height="0"]) {
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.flipper-sticky-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.25rem;
+    flex-wrap: nowrap;
+}
+
+.flipper-sticky-brand {
+    min-width: 0;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.flipper-sticky-brand-main,
+.flipper-sticky-brand-sub {
+    background: linear-gradient(to right, #1e3a5f, #2c5f8d, #4a90c8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.flipper-sticky-brand-main {
+    font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+}
+
+.flipper-sticky-brand-sub {
+    font-size: clamp(0.78rem, 1.4vw, 1.05rem);
+    font-weight: 600;
+    margin-left: 0.15rem;
+}
+
+.flipper-sticky-brand-ai {
+    color: #FFD700;
+    -webkit-text-fill-color: #FFD700;
+    background: none;
+}
+
+.flipper-sticky-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.2rem 0.95rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.flipper-nav-link {
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(0.88rem, 1.2vw, 1.08rem);
+    font-weight: 600;
+    color: #2c5f8d !important;
+    text-decoration: none !important;
+    padding: 0.15rem 0;
+    border-bottom: 2px solid transparent;
+}
+
+.flipper-nav-link:hover,
+.flipper-nav-link:focus {
+    color: #1e3a5f !important;
+    border-bottom-color: #4a90c8;
+}
+
+.audience-anchor {
+    scroll-margin-top: 5.75rem;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) {
+    align-items: center;
+    margin: 0 0 1.5rem;
+    padding: clamp(1rem, 2vw, 1.5rem);
+    border: 1px solid rgba(44, 95, 141, 0.22);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 8px 22px rgba(30, 58, 95, 0.08);
+}
+
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) img {
+    width: 100%;
+    height: 18.5rem;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 10px;
+    box-shadow: 0 8px 18px rgba(30, 58, 95, 0.14);
+}
+
+.audience-title {
+    margin: 0 0 0.85rem;
+    color: #1e3a5f;
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(1.85rem, 3.2vw, 2.55rem);
+    font-weight: 600;
+    line-height: 1.15;
+}
+
+.audience-copy {
+    margin: 0 0 0.85rem;
+    color: #1e3a5f;
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(1.12rem, 1.85vw, 1.42rem);
+    font-weight: 400;
+    line-height: 1.55;
+}
+
+.audience-copy:last-child {
+    margin-bottom: 0;
+}
+
+.audience-photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 28rem;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 8px 18px rgba(30, 58, 95, 0.14);
+}
+
+.about-section {
+    margin: 0 0 1.75rem;
+    padding: clamp(1.15rem, 2.4vw, 1.85rem);
+    border: 1px solid rgba(44, 95, 141, 0.22);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 8px 22px rgba(30, 58, 95, 0.08);
+}
+
+.about-kicker {
+    margin: 0 0 0.85rem;
+    color: #1e3a5f;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.about-subhead {
+    margin: 1.15rem 0 0.4rem;
+    color: #2c5f8d;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.02rem;
+    font-weight: 600;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="StyledFullScreenButton"],
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="stBaseButton-elementToolbar"],
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) button[aria-label="Fullscreen"] {
+    display: none !important;
+}
+
+.about-section p {
+    margin: 0 0 0.65rem;
+    color: #24384d;
+    font-size: 1.02rem;
+    line-height: 1.55;
+}
+
+.about-section a {
+    color: #2c5f8d;
+}
+
+@media (max-width: 800px) {
+    .flipper-sticky-header,
+    .flipper-sticky-nav {
+        flex-wrap: wrap;
+    }
+
+    .flipper-sticky-brand {
+        white-space: normal;
+    }
+
+    .flipper-sticky-nav {
+        width: 100%;
+        margin-left: 0;
+        gap: 0.45rem 1rem;
+    }
+}

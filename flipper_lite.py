@@ -677,6 +677,227 @@ def render_landing_demo_frame(recommendations_df):
     )
 
 
+LANDING_ABOUT_HTML = """
+<section id="about" class="about-section audience-anchor" aria-label="About Flipper School">
+    <div class="audience-title" role="heading" aria-level="2">About</div>
+    <div class="about-kicker" role="heading" aria-level="3">Flipper School - Cur<em>AI</em>ted Education Videos</div>
+    <div class="about-subhead" role="heading" aria-level="4">Our goal:</div>
+    <p>Flipper School aims to support maths learning by making it easier for educators
+    everywhere to find the best instructional videos linked to highly regarded curriculum White Rose
+    based on the UK National Curriculum and Singapore Mastery learning (depth before speed)
+    Concrete → Pictorial → Abstract (CPA) progression. Via videos we aim to provide some context
+    and quick/light introductions to topics to complement other forms of learning.</p>
+    <div class="about-subhead" role="heading" aria-level="4">Why flipped/ flipped classroom:</div>
+    <p>Flipper School was named after flipped classrooms the idea of reversing the learning of introductory concepts
+    back onto the learner. This harnesses evolving use of new mediums for aquiring knowledge and frees up instructional time to be more efficient, allowing it to focus on what its best for,
+    embedding, exploration, elaboration and mastery.</p>
+    <div class="about-subhead" role="heading" aria-level="4">How our service works:</div>
+    <p>At Flipper School, experienced education researchers find the best education videos on youtube,
+    selecting those that are safe, most relevant to learning maths and provide the highest
+    instructional quality. We use advanced language processing to match video content to the
+    White Rose Mathematics curriculum. The most relevant videos are shortlisted and then scored
+    for instructional quality using AI, the top three videos are presented.</p>
+    <div class="about-subhead" role="heading" aria-level="4">How it might be used:</div>
+    <p>As the White Rose curriculum is sequential and later topics require mastery of earlier topics
+    we recommend users find the latest topic the learner has mastered then view following videos
+    in order, at the pace that suits other teaching.</p>
+    <div class="about-subhead" role="heading" aria-level="4">Feedback:</div>
+    <p>We are keen to hear any views you have on Flipper Schools to help us improve our contribution
+    to learning. Please contact <a href="mailto:John.Brown@flipper.school">John.Brown@flipper.school</a></p>
+    <div class="about-subhead" role="heading" aria-level="4">Contact:</div>
+    <p>FLIPPER EDUCATION LTD Company number: SC882978
+    Registered in Scotland, Edinburgh, EH15 2BG <a href="mailto:John.Brown@flipper.school">John.Brown@flipper.school</a></p>
+</section>
+"""
+
+
+@st.cache_data(show_spinner=False)
+def _landing_photo(image_path: str, max_width: int = 960):
+    """Return a web-sized RGB photo for the landing audience sections."""
+    from PIL import Image
+
+    img = Image.open(image_path)
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    if img.width > max_width:
+        ratio = max_width / float(img.width)
+        img = img.resize((max_width, int(img.height * ratio)), Image.Resampling.LANCZOS)
+    return img
+
+
+def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
+    """Render the landing banner with in-page jumps, kept visible while scrolling."""
+    st.markdown(
+        f"""
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+        <div class="flipper-sticky-header">
+            <div class="flipper-sticky-brand">
+                <span class="flipper-sticky-brand-main">Flipper School</span>
+                <span class="flipper-sticky-brand-sub">
+                    - Cur<span class="flipper-sticky-brand-ai">AI</span>ted Education Videos
+                </span>
+            </div>
+            <nav class="flipper-sticky-nav" aria-label="Landing sections">
+                <a class="flipper-nav-link" href="#teacher">Teacher</a>
+                <a class="flipper-nav-link" href="#parent">Parent</a>
+                <a class="flipper-nav-link" href="#homeschooling">Homeschooling</a>
+                <a class="flipper-nav-link" href="#about">About</a>
+            </nav>
+        </div>
+        <style>
+            .flipper-sticky-brand-main,
+            .flipper-sticky-brand-sub {{
+                background: {header_gradient};
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }}
+            .flipper-sticky-brand-ai {{
+                color: {ai_accent_color};
+                -webkit-text-fill-color: {ai_accent_color};
+                background: none;
+            }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    components.html(
+        """
+        <script>
+        (function() {
+            const doc = window.parent.document;
+
+            function init(attempt) {
+                const header = doc.querySelector('.flipper-sticky-header');
+                if (!header) {
+                    if (attempt < 25) {
+                        setTimeout(function() { init(attempt + 1); }, 80);
+                    }
+                    return;
+                }
+
+                const wrap = header.closest('[data-testid="stElementContainer"]') || header.parentElement;
+                if (wrap) {
+                    wrap.style.position = 'sticky';
+                    wrap.style.top = '0px';
+                    wrap.style.zIndex = '1000';
+                    wrap.style.background = '#f4f8fb';
+                    wrap.style.borderBottom = '1px solid rgba(44, 95, 141, 0.28)';
+                    wrap.style.paddingTop = '0.35rem';
+                    wrap.style.paddingBottom = '0.5rem';
+                }
+
+                function scrollRoot() {
+                    const candidates = [
+                        doc.querySelector('[data-testid="stMain"]'),
+                        doc.querySelector('section.main'),
+                        doc.querySelector('[data-testid="stAppViewContainer"]'),
+                        doc.scrollingElement,
+                        doc.documentElement
+                    ];
+                    for (const node of candidates) {
+                        if (node && node.scrollHeight > node.clientHeight + 24) return node;
+                    }
+                    return doc.scrollingElement || doc.documentElement;
+                }
+
+                function headerOffset() {
+                    return ((wrap && wrap.getBoundingClientRect().height) || 72) + 10;
+                }
+
+                function jumpTo(id) {
+                    const target = doc.getElementById(id);
+                    if (!target) return;
+                    const root = scrollRoot();
+                    const rootTop = root.getBoundingClientRect ? root.getBoundingClientRect().top : 0;
+                    const y = target.getBoundingClientRect().top - rootTop + (root.scrollTop || 0) - headerOffset();
+                    if (typeof root.scrollTo === 'function') {
+                        root.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                    }
+                }
+
+                doc.querySelectorAll('.flipper-nav-link').forEach(function(link) {
+                    link.onclick = function(event) {
+                        const href = link.getAttribute('href') || '';
+                        if (href.charAt(0) !== '#') return;
+                        event.preventDefault();
+                        jumpTo(href.slice(1));
+                    };
+                });
+            }
+
+            init(0);
+        })();
+        </script>
+        """,
+        height=0,
+    )
+
+
+def render_landing_audience_sections():
+    """Audience sections below the What you get demo, targeted by the sticky nav."""
+    sections = [
+        {
+            "id": "teacher",
+            "title": "Teacher",
+            "image": project_root / "images" / "teacher.jpg",
+            "paragraphs": [
+                "Find a video on a specific topic for catch-up, homework, pre-learning, small group work or to help kids catch up after being away, or any other uses, it's up to you.",
+                "Using White Rose curriculum? Find 3 videos for every White Rose Small Step for age 5 to 15.",
+                "Quickly find topic specific learning materials for learners who have missed a key lesson.",
+                "Introducing a new topic? Why not start with a short video to set context?",
+            ],
+        },
+        {
+            "id": "parent",
+            "title": "Parent",
+            "image": project_root / "images" / "parent.jpg",
+            "paragraphs": [
+                "Harness screentime for learning. Support progress and momentum with quick lessons when it suits.",
+                "Notice a gap in understanding? Find a video on that exact sticking point.",
+                "Convert screen time into learn time, mix up screen time with 5 min of engaging tuition.",
+                "Encourage learning exploration by interspersing entertainment with entertaining instruction.",
+            ],
+        },
+        {
+            "id": "homeschooling",
+            "title": "Homeschooling",
+            "image": project_root / "images" / "homeschool.jpg",
+            "paragraphs": [
+                "Costly curriculums? Not sure what to teach next? A topic you are not confident in? Tuition on flipper.school is already organised by one of the world's most detailed and thoroughly developed curriculums, White Rose.",
+                "Follow or dip into the UKs most popular maths curriculum for free.",
+                "Every lesson from age 5 to 15 leading to GCSE Maths.",
+            ],
+        },
+    ]
+
+    for section in sections:
+        paragraphs = "".join(
+            f'<p class="audience-copy">{html.escape(paragraph)}</p>'
+            for paragraph in section["paragraphs"]
+        )
+        st.markdown(
+            f'<div id="{html.escape(section["id"])}" class="audience-anchor"></div>',
+            unsafe_allow_html=True,
+        )
+        text_col, image_col = st.columns([1.15, 0.9], gap="large")
+        with text_col:
+            st.markdown(
+                f"""
+                <div class="audience-copy-block">
+                    <div class="audience-title" role="heading" aria-level="2">{html.escape(section["title"])}</div>
+                    {paragraphs}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with image_col:
+            if section["image"].exists():
+                st.image(_landing_photo(str(section["image"])), width="stretch")
+
+    st.markdown(LANDING_ABOUT_HTML, unsafe_allow_html=True)
+
+
 def main():
     """Main application"""
     
@@ -790,107 +1011,19 @@ def main():
         )
         results_header_slot = st.container()
     else:
-        # Custom Styled Header
-        col1, col2 = st.columns([0.95, 0.05])
-
-        with col1:
-            st.markdown(f"""
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-        <div style="margin-bottom: 0rem;">
-            <h1 style="
-                font-family: 'Poppins', sans-serif;
-                font-weight: 550;
-                font-size: 2.5rem;
-                margin: 0;
-                letter-spacing: -0.5px;
-            ">
-                <span style="
-                    font-size: 2.6rem;
-                    font-weight: 600;
-                    background: {HEADER_GRADIENT};
-                    -webkit-background-clip: text;
-                    background-clip: text;
-                    color: transparent;
-                    text-shadow: 0 0 0 rgba(30, 58, 95, 0.02);
-                ">
-                    Flipper School
-                </span>
-                <span style="
-                    font-size: 1.2rem;
-                    font-weight: 600;
-                    background: {HEADER_GRADIENT};
-                    -webkit-background-clip: text;
-                    background-clip: text;
-                    color: transparent;
-                    text-shadow: 0 0 0 rgba(30, 58, 95, 0.02);
-                ">
-                     - Cur<span style="color: {AI_ACCENT_COLOR};">AI</span>ted Education Videos
-                </span>
-            </h1>
-        </div>
+        render_sticky_landing_header(HEADER_GRADIENT, AI_ACCENT_COLOR)
+        st.markdown("""
+        <p style="
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            color: #2c5f8d;
+            text-align: centre;
+            margin-top: 0rem;
+            margin-bottom: 0rem;
+            font-weight: 400;
+        ">The best Maths teaching on YouTube for age 5 to 15
+        </p>
         """, unsafe_allow_html=True)
-        
-            # Subheading below banner
-            st.markdown("""
-            <p style="
-                font-family: 'Poppins', sans-serif;
-                font-size: 1.2rem;
-                color: #2c5f8d;
-                text-align: centre;
-                margin-top: 0rem;
-                margin-bottom: 0rem;
-                font-weight: 400;
-            ">The best Maths teaching on YouTube for age 5 to 15
-            </p>
-            """, unsafe_allow_html=True)
-
-        with col2:
-            with st.popover("ℹ️", use_container_width=True):
-                st.markdown("### Flipper School - Cur*AI*ted Education Videos")
-                
-                st.markdown("#### Our goal:")
-                st.markdown("""
-                Flipper School aims to support maths learning by making it easier for educators 
-                everywhere to find the best instructional videos linked to highly regarded curriculum White Rose 
-                based on the UK National Curriculum and Singapore Mastery learning (depth before speed) 
-                Concrete → Pictorial → Abstract (CPA) progression. Via videos we aim to provide some context 
-                and quick/light introductions to topics to complement other forms of learning.
-                """)
-
-                st.markdown("#### Why flipped/ flipped classroom:")
-                st.markdown("""
-                Flipper School was named after flipped classrooms the idea of reversing the learning of introductory concepts 
-                back onto the learner. This harnesses evolving use of new mediums for aquiring knowledge and frees up instructional time to be more efficient, allowing it to focus on what its best for,
-                embedding, exploration, elaboration and mastery.                                  .
-                """)
-                
-                st.markdown("#### How our service works:")
-                st.markdown("""
-                At Flipper School, experienced education researchers find the best education videos on youtube, 
-                selecting those that are safe, most relevant to learning maths and provide the highest 
-                instructional quality. We use advanced language processing to match video content to the 
-                White Rose Mathematics curriculum. The most relevant videos are shortlisted and then scored 
-                for instructional quality using AI, the top three videos are presented.
-                """)
-                
-                st.markdown("#### How it might be used:")
-                st.markdown("""
-                As the White Rose curriculum is sequential and later topics require mastery of earlier topics 
-                we recommend users find the latest topic the learner has mastered then view following videos 
-                in order, at the pace that suits other teaching.
-                """)
-                
-                st.markdown("#### Feedback:")
-                st.markdown("""
-                We are keen to hear any views you have on Flipper Schools to help us improve our contribution 
-                to learning. Please contact [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
-                """)
-                
-                st.markdown("#### Contact:")
-                st.markdown("""
-                FLIPPER EDUCATION LTD Company number: SC882978
-                Registered in Scotland, Edinburgh, EH15 2BG [John.Brown@flipper.school](mailto:John.Brown@flipper.school)
-                """)
     
     # Load precomputed recommendations
     recommendations_df = load_precomputed_recommendations_flat()
@@ -1377,6 +1510,7 @@ def main():
 
     if not results_focus_mode:
         render_landing_demo_frame(recommendations_df)
+        render_landing_audience_sections()
 
     # ==========================================
     # NATURAL LANGUAGE TOPIC SEARCH (Flipper Search)

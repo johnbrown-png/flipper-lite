@@ -142,7 +142,7 @@ div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
     background: #f4f8fb;
     border-bottom: 1px solid rgba(44, 95, 141, 0.28);
     box-shadow: 0 4px 12px rgba(30, 58, 95, 0.06);
-    padding: 0.65rem 0.25rem 0.28rem;
+    padding: 0.7rem 0.25rem 1.45rem;
     margin-bottom: 0 !important;
 }
 
@@ -167,7 +167,8 @@ div[data-testid="stElementContainer"]:has(.curriculum-assistant-chrome) {
 .flipper-sticky-header {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.55rem;
+    padding-bottom: 0.35rem;
 }
 
 .flipper-sticky-brand {
@@ -188,11 +189,11 @@ div[data-testid="stElementContainer"]:has(.curriculum-assistant-chrome) {
 }
 
 .flipper-sticky-brand-main {
-    font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+    font-size: clamp(1.6rem, 2.86vw, 2.37rem);
 }
 
 .flipper-sticky-brand-sub {
-    font-size: clamp(0.78rem, 1.4vw, 1.05rem);
+    font-size: clamp(0.86rem, 1.54vw, 1.16rem);
     font-weight: 600;
     margin-left: 0.15rem;
 }
@@ -207,7 +208,8 @@ div[data-testid="stElementContainer"]:has(.curriculum-assistant-chrome) {
     display: flex;
     align-items: center;
     width: 100%;
-    gap: 1.25rem;
+    gap: 15vw;
+    padding-bottom: 0.2rem;
 }
 
 .flipper-sticky-tagline {
@@ -257,7 +259,7 @@ div[data-testid="stElementContainer"]:has(.step-one-heading) {
 }
 
 .audience-anchor {
-    scroll-margin-top: 7.5rem;
+    scroll-margin-top: 8.5rem;
 }
 
 .audience-section {

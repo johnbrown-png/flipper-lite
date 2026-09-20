@@ -556,7 +556,7 @@ def render_landing_demo_frame(recommendations_df):
         </section>
         <style>
             .landing-demo-frame {{
-                min-height: clamp(360px, 50vh, 560px);
+                min-height: clamp(430px, 58vh, 670px);
                 margin: 0rem 0 2rem;
                 padding: clamp(1.25rem, 3vw, 2rem);
                 border: 1px solid rgba(44, 95, 141, 0.24);
@@ -598,8 +598,9 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-cards {{
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 4rem;
-                max-width: 900px;
+                gap: 3.2rem;
+                max-width: 1080px;
+                width: 100%;
                 margin: 0 auto;
             }}
             .landing-demo-card {{
@@ -631,14 +632,14 @@ def render_landing_demo_frame(recommendations_df):
                 left: 50%;
                 top: 50%;
                 display: grid;
-                width: 3rem;
-                height: 3rem;
+                width: 3.6rem;
+                height: 3.6rem;
                 transform: translate(-50%, -50%);
                 place-items: center;
                 border-radius: 50%;
                 color: #fff;
                 background: rgba(210, 35, 35, 0.95);
-                font-size: 1.15rem;
+                font-size: 1.38rem;
                 box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
             }}
             .landing-demo-card-body {{
@@ -791,8 +792,8 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                     wrap.style.zIndex = '1000';
                     wrap.style.background = '#f4f8fb';
                     wrap.style.borderBottom = '1px solid rgba(44, 95, 141, 0.28)';
-                    wrap.style.paddingTop = '0.65rem';
-                    wrap.style.paddingBottom = '0.25rem';
+                    wrap.style.paddingTop = '0.7rem';
+                    wrap.style.paddingBottom = '1.45rem';
                     wrap.style.marginBottom = '0';
                 }
 

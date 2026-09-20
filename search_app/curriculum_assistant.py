@@ -677,7 +677,6 @@ class CurriculumAssistant:
                 else:
                     st.caption("No non-duplicate small steps available for this topic.")
         return None, None
-        return None, None
     
     def get_stats(self):
         """Get curriculum statistics"""

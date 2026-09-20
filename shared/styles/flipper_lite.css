@@ -265,6 +265,25 @@ div[data-testid="stElementContainer"]:has(.step-one-heading) {
 
 .step-one-heading {
     padding-top: 0.15rem !important;
+    scroll-margin-top: 8.5rem;
+}
+
+@keyframes flipper-age-nudge {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(44, 95, 141, 0); }
+    40% { box-shadow: 0 0 0 4px rgba(74, 144, 200, 0.85); }
+}
+
+.flipper-age-nudge-target div[data-baseweb="select"] > div {
+    animation: flipper-age-nudge 1s ease-in-out 3;
+}
+
+div[data-testid="stElementContainer"]:has(#flipper-age-select-marker) {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
 }
 
 .audience-anchor {

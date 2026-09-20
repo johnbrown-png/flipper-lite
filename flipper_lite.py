@@ -531,7 +531,7 @@ def render_landing_demo_frame(recommendations_df):
         cards.append(textwrap.dedent(
             f"""
             <article class="landing-demo-card">
-                <div class="landing-demo-thumbnail">
+                <div class="landing-demo-thumbnail landing-demo-thumbnail-nudge" role="button" tabindex="0" aria-label="Choose an age to get videos">
                     <img src="https://img.youtube.com/vi/{video_id}/hqdefault.jpg" alt="YouTube video thumbnail from {channel}">
                     <span class="landing-demo-play" aria-hidden="true">▶</span>
                 </div>
@@ -625,6 +625,13 @@ def render_landing_demo_frame(recommendations_df):
                 overflow: hidden;
                 background: #dce8f1;
             }}
+            .landing-demo-thumbnail-nudge {{
+                cursor: pointer;
+            }}
+            .landing-demo-thumbnail-nudge img,
+            .landing-demo-thumbnail-nudge .landing-demo-play {{
+                pointer-events: none;
+            }}
             .landing-demo-thumbnail img {{
                 display: block;
                 width: 100%;
@@ -683,6 +690,96 @@ def render_landing_demo_frame(recommendations_df):
         </style>
         """),
         unsafe_allow_html=True,
+    )
+    components.html(
+        """
+        <script>
+        (function() {
+            const doc = window.parent.document;
+            if (window.parent.__flipperAgeNudgeBound) return;
+
+            function findAgeSelectbox() {
+                const marker = doc.getElementById('flipper-age-select-marker');
+                if (marker) {
+                    const col = marker.closest('[data-testid="stColumn"]')
+                        || marker.closest('[data-testid="column"]')
+                        || marker.closest('[data-testid="stHorizontalBlock"]');
+                    if (col) {
+                        const box = col.querySelector('[data-testid="stSelectbox"]');
+                        if (box) return box;
+                    }
+                }
+                return doc.querySelector('[data-testid="stSelectbox"]');
+            }
+
+            function ageIsPlaceholder(selectbox) {
+                const text = ((selectbox && selectbox.innerText) || '').replace(/\\s+/g, ' ').trim();
+                return text.indexOf("Learner's Age?") !== -1;
+            }
+
+            function ageNudgeScrollRoot() {
+                const candidates = [
+                    doc.querySelector('[data-testid="stMain"]'),
+                    doc.querySelector('section.main'),
+                    doc.querySelector('[data-testid="stAppViewContainer"]'),
+                    doc.scrollingElement,
+                    doc.documentElement
+                ];
+                for (const node of candidates) {
+                    if (node && node.scrollHeight > node.clientHeight + 24) return node;
+                }
+                return doc.scrollingElement || doc.documentElement;
+            }
+
+            function ageNudgeHeaderOffset() {
+                const header = doc.querySelector('.flipper-sticky-header');
+                const wrap = header && (header.closest('[data-testid="stElementContainer"]') || header.parentElement);
+                return ((wrap && wrap.getBoundingClientRect().height) || 110) + 10;
+            }
+
+            function scrollAgeIntoView(target) {
+                if (!target) return;
+                const root = ageNudgeScrollRoot();
+                const rootTop = root.getBoundingClientRect ? root.getBoundingClientRect().top : 0;
+                const y = target.getBoundingClientRect().top - rootTop + (root.scrollTop || 0) - ageNudgeHeaderOffset();
+                if (typeof root.scrollTo === 'function') {
+                    root.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                }
+            }
+
+            function pulseAgeSelect() {
+                const box = findAgeSelectbox();
+                if (!box || !ageIsPlaceholder(box)) return;
+                const heading = doc.querySelector('.step-one-heading');
+                scrollAgeIntoView(heading || box);
+                setTimeout(function() {
+                    box.classList.remove('flipper-age-nudge-target');
+                    void box.offsetWidth;
+                    box.classList.add('flipper-age-nudge-target');
+                    setTimeout(function() {
+                        box.classList.remove('flipper-age-nudge-target');
+                    }, 3100);
+                }, 500);
+            }
+
+            window.parent.__flipperAgeNudgeBound = true;
+            doc.addEventListener('click', function(event) {
+                const thumb = event.target.closest('.landing-demo-thumbnail-nudge');
+                if (!thumb) return;
+                event.preventDefault();
+                pulseAgeSelect();
+            }, true);
+            doc.addEventListener('keydown', function(event) {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                const thumb = event.target.closest('.landing-demo-thumbnail-nudge');
+                if (!thumb) return;
+                event.preventDefault();
+                pulseAgeSelect();
+            }, true);
+        })();
+        </script>
+        """,
+        height=0,
     )
 
 
@@ -837,6 +934,87 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                         jumpTo(href.slice(1));
                     };
                 });
+            }
+
+            function findAgeSelectbox() {
+                const marker = doc.getElementById('flipper-age-select-marker');
+                if (marker) {
+                    const col = marker.closest('[data-testid="stColumn"]')
+                        || marker.closest('[data-testid="column"]')
+                        || marker.closest('[data-testid="stHorizontalBlock"]');
+                    if (col) {
+                        const box = col.querySelector('[data-testid="stSelectbox"]');
+                        if (box) return box;
+                    }
+                }
+                return doc.querySelector('[data-testid="stSelectbox"]');
+            }
+
+            function ageIsPlaceholder(selectbox) {
+                const text = ((selectbox && selectbox.innerText) || '').replace(/\\s+/g, ' ').trim();
+                return text.indexOf("Learner's Age?") !== -1;
+            }
+
+            function ageNudgeScrollRoot() {
+                const candidates = [
+                    doc.querySelector('[data-testid="stMain"]'),
+                    doc.querySelector('section.main'),
+                    doc.querySelector('[data-testid="stAppViewContainer"]'),
+                    doc.scrollingElement,
+                    doc.documentElement
+                ];
+                for (const node of candidates) {
+                    if (node && node.scrollHeight > node.clientHeight + 24) return node;
+                }
+                return doc.scrollingElement || doc.documentElement;
+            }
+
+            function ageNudgeHeaderOffset() {
+                const header = doc.querySelector('.flipper-sticky-header');
+                const wrap = header && (header.closest('[data-testid="stElementContainer"]') || header.parentElement);
+                return ((wrap && wrap.getBoundingClientRect().height) || 110) + 10;
+            }
+
+            function scrollAgeIntoView(target) {
+                if (!target) return;
+                const root = ageNudgeScrollRoot();
+                const rootTop = root.getBoundingClientRect ? root.getBoundingClientRect().top : 0;
+                const y = target.getBoundingClientRect().top - rootTop + (root.scrollTop || 0) - ageNudgeHeaderOffset();
+                if (typeof root.scrollTo === 'function') {
+                    root.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                }
+            }
+
+            function pulseAgeSelect() {
+                const box = findAgeSelectbox();
+                if (!box || !ageIsPlaceholder(box)) return;
+                const heading = doc.querySelector('.step-one-heading');
+                scrollAgeIntoView(heading || box);
+                setTimeout(function() {
+                    box.classList.remove('flipper-age-nudge-target');
+                    void box.offsetWidth;
+                    box.classList.add('flipper-age-nudge-target');
+                    setTimeout(function() {
+                        box.classList.remove('flipper-age-nudge-target');
+                    }, 3100);
+                }, 500);
+            }
+
+            if (!window.parent.__flipperAgeNudgeBound) {
+                window.parent.__flipperAgeNudgeBound = true;
+                doc.addEventListener('click', function(event) {
+                    const thumb = event.target.closest('.landing-demo-thumbnail-nudge');
+                    if (!thumb) return;
+                    event.preventDefault();
+                    pulseAgeSelect();
+                }, true);
+                doc.addEventListener('keydown', function(event) {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    const thumb = event.target.closest('.landing-demo-thumbnail-nudge');
+                    if (!thumb) return;
+                    event.preventDefault();
+                    pulseAgeSelect();
+                }, true);
             }
 
             init(0);

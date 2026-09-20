@@ -534,6 +534,10 @@ class CurriculumAssistant:
             st.session_state.year_select_topic_search = st.session_state.curr_year
         age_col, reset_col, _age_spacer_col = st.columns([1, 1, 5])
         with age_col:
+            st.markdown(
+                '<div id="flipper-age-select-marker" class="flipper-age-select-marker"></div>',
+                unsafe_allow_html=True,
+            )
             selected_year = st.selectbox(
                 "",
                 age_options,

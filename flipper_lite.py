@@ -817,9 +817,8 @@ LANDING_ABOUT_HTML = """
 """
 
 
-@st.cache_data(show_spinner=False)
 def _landing_photo_path(filename: str) -> str:
-    """Return a modest web JPEG path Streamlit can serve (not the gitignored originals)."""
+    """Return a local landing JPEG path for st.image (not the gitignored originals)."""
     static_path = project_root / "static" / "landing" / filename
     if static_path.exists():
         return str(static_path)
@@ -899,6 +898,7 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
 
                 function scrollRoot() {
                     const candidates = [
+                        doc.querySelector('section.stMain'),
                         doc.querySelector('[data-testid="stMain"]'),
                         doc.querySelector('section.main'),
                         doc.querySelector('[data-testid="stAppViewContainer"]'),
@@ -908,11 +908,18 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                     for (const node of candidates) {
                         if (node && node.scrollHeight > node.clientHeight + 24) return node;
                     }
-                    return doc.scrollingElement || doc.documentElement;
+                    return doc.querySelector('section.stMain')
+                        || doc.scrollingElement
+                        || doc.documentElement;
                 }
 
                 function headerOffset() {
-                    return ((wrap && wrap.getBoundingClientRect().height) || 110) + 10;
+                    const currentHeader = doc.querySelector('.flipper-sticky-header');
+                    const currentWrap = currentHeader && (
+                        currentHeader.closest('[data-testid="stElementContainer"]')
+                        || currentHeader.parentElement
+                    );
+                    return ((currentWrap && currentWrap.getBoundingClientRect().height) || 110) + 10;
                 }
 
                 function jumpTo(id) {
@@ -926,14 +933,17 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                     }
                 }
 
-                doc.querySelectorAll('.flipper-nav-link').forEach(function(link) {
-                    link.onclick = function(event) {
+                if (!window.parent.__flipperNavBound) {
+                    window.parent.__flipperNavBound = true;
+                    doc.addEventListener('click', function(event) {
+                        const link = event.target.closest('.flipper-nav-link');
+                        if (!link) return;
                         const href = link.getAttribute('href') || '';
                         if (href.charAt(0) !== '#') return;
                         event.preventDefault();
                         jumpTo(href.slice(1));
-                    };
-                });
+                    }, true);
+                }
             }
 
             function findAgeSelectbox() {
@@ -1071,25 +1081,24 @@ def render_landing_audience_sections():
             for paragraph in section["paragraphs"]
         )
         photo_path = _landing_photo_path(section["image"])
-        image_html = ""
-        if photo_path:
-            static_url = f"/app/static/landing/{html.escape(section['image'], quote=True)}"
-            image_html = (
-                f'<img class="audience-photo" src="{static_url}" '
-                f'alt="{html.escape(section["alt"])}">'
-            )
         st.markdown(
-            f"""
-            <section id="{html.escape(section["id"])}" class="audience-section audience-anchor" aria-label="{html.escape(section["title"])}">
-                {image_html}
+            f'<div id="{html.escape(section["id"])}" class="audience-section-marker audience-anchor"></div>',
+            unsafe_allow_html=True,
+        )
+        photo_col, copy_col = st.columns([0.95, 1.2], gap="medium", vertical_alignment="center")
+        with photo_col:
+            if photo_path:
+                st.image(photo_path, width="stretch")
+        with copy_col:
+            st.markdown(
+                f"""
                 <div class="audience-copy-block">
                     <div class="audience-title" role="heading" aria-level="2">{html.escape(section["title"])}</div>
                     {paragraphs}
                 </div>
-            </section>
-            """,
-            unsafe_allow_html=True,
-        )
+                """,
+                unsafe_allow_html=True,
+            )
 
     st.markdown(LANDING_ABOUT_HTML, unsafe_allow_html=True)
 

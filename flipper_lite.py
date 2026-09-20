@@ -721,21 +721,13 @@ LANDING_ABOUT_HTML = """
 
 
 @st.cache_data(show_spinner=False)
-def _landing_photo_bytes(image_path: str, max_width: int = 900) -> bytes:
-    """Return a resized JPEG so landing photos can be served by Streamlit."""
-    import io
-
-    from PIL import Image
-
-    img = Image.open(image_path)
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-    if img.width > max_width:
-        ratio = max_width / float(img.width)
-        img = img.resize((max_width, int(img.height * ratio)), Image.Resampling.LANCZOS)
-    buffer = io.BytesIO()
-    img.save(buffer, format="JPEG", quality=78, optimize=True)
-    return buffer.getvalue()
+def _landing_photo_path(filename: str) -> str:
+    """Return a modest web JPEG path Streamlit can serve (not the gitignored originals)."""
+    static_path = project_root / "static" / "landing" / filename
+    if static_path.exists():
+        return str(static_path)
+    original = project_root / "images" / filename
+    return str(original) if original.exists() else ""
 
 
 def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
@@ -861,7 +853,7 @@ def render_landing_audience_sections():
         {
             "id": "teacher",
             "title": "Teacher",
-            "image": project_root / "images" / "teacher.jpg",
+            "image": "teacher.jpg",
             "alt": "Teacher presenting a lesson to a class",
             "paragraphs": [
                 "Find a video on a specific topic for catch-up, homework, pre-learning, small group work or to help kids catch up after being away, or any other uses, it's up to you.",
@@ -873,7 +865,7 @@ def render_landing_audience_sections():
         {
             "id": "parent",
             "title": "Parent",
-            "image": project_root / "images" / "parent.jpg",
+            "image": "parent.jpg",
             "alt": "Child learning from a video lesson at home",
             "paragraphs": [
                 "Harness screentime for learning. Support progress and momentum with quick lessons when it suits.",
@@ -885,7 +877,7 @@ def render_landing_audience_sections():
         {
             "id": "homeschooling",
             "title": "Homeschooling",
-            "image": project_root / "images" / "homeschool.jpg",
+            "image": "homeschool.jpg",
             "alt": "Parent and child learning together at a laptop",
             "paragraphs": [
                 "Costly curriculums? Not sure what to teach next? A topic you are not confident in? Tuition on flipper.school is already organised by one of the world's most detailed and thoroughly developed curriculums, White Rose.",
@@ -900,28 +892,26 @@ def render_landing_audience_sections():
             f'<p class="audience-copy">{html.escape(paragraph)}</p>'
             for paragraph in section["paragraphs"]
         )
+        photo_path = _landing_photo_path(section["image"])
+        image_html = ""
+        if photo_path:
+            static_url = f"/app/static/landing/{html.escape(section['image'], quote=True)}"
+            image_html = (
+                f'<img class="audience-photo" src="{static_url}" '
+                f'alt="{html.escape(section["alt"])}">'
+            )
         st.markdown(
-            f'<div id="{html.escape(section["id"])}" class="audience-anchor"></div>',
-            unsafe_allow_html=True,
-        )
-        image_col, text_col = st.columns([0.95, 1.2], gap="large", vertical_alignment="center")
-        with image_col:
-            if section["image"].exists():
-                st.image(
-                    _landing_photo_bytes(str(section["image"])),
-                    width="stretch",
-                    output_format="JPEG",
-                )
-        with text_col:
-            st.markdown(
-                f"""
+            f"""
+            <section id="{html.escape(section["id"])}" class="audience-section audience-anchor" aria-label="{html.escape(section["title"])}">
+                {image_html}
                 <div class="audience-copy-block">
                     <div class="audience-title" role="heading" aria-level="2">{html.escape(section["title"])}</div>
                     {paragraphs}
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            </section>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown(LANDING_ABOUT_HTML, unsafe_allow_html=True)
 

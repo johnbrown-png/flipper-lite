@@ -271,10 +271,9 @@ div[data-testid="stElementContainer"]:has(.step-one-heading) {
     scroll-margin-top: 8.5rem;
 }
 
-.audience-section,
-div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) {
-    display: flex;
-    flex-wrap: nowrap !important;
+.audience-section {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.95fr) minmax(0, 1.2fr);
     align-items: center;
     gap: clamp(1rem, 2.4vw, 2rem);
     margin: 0 0 1.5rem;
@@ -285,12 +284,7 @@ div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) {
     box-shadow: 0 8px 22px rgba(30, 58, 95, 0.08);
 }
 
-div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) > div {
-    min-width: 0 !important;
-}
-
-.audience-photo,
-div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) img {
+.audience-photo {
     display: block;
     width: 100%;
     height: 18.5rem;
@@ -298,11 +292,7 @@ div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) img {
     object-position: center;
     border-radius: 10px;
     box-shadow: 0 8px 18px rgba(30, 58, 95, 0.14);
-}
-
-div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="stBaseButton-elementToolbar"],
-div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) button[aria-label="Fullscreen"] {
-    display: none !important;
+    background: #dce8f1;
 }
 
 .audience-title {
@@ -386,13 +376,11 @@ div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) button[aria-label
 }
 
 @media (max-width: 640px) {
-    .audience-section,
-    div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) {
-        flex-wrap: wrap !important;
+    .audience-section {
+        grid-template-columns: 1fr;
     }
 
-    .audience-photo,
-    div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) img {
+    .audience-photo {
         height: 16rem;
     }
 }

@@ -737,6 +737,7 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                     - Cur<span class="flipper-sticky-brand-ai">AI</span>ted Education Videos
                 </span>
             </div>
+            <p class="flipper-sticky-tagline">The best Maths teaching on YouTube for age 5 to 15</p>
             <nav class="flipper-sticky-nav" aria-label="Landing sections">
                 <a class="flipper-nav-link" href="#teacher">Teacher</a>
                 <a class="flipper-nav-link" href="#parent">Parent</a>
@@ -783,8 +784,8 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                     wrap.style.zIndex = '1000';
                     wrap.style.background = '#f4f8fb';
                     wrap.style.borderBottom = '1px solid rgba(44, 95, 141, 0.28)';
-                    wrap.style.paddingTop = '0.35rem';
-                    wrap.style.paddingBottom = '0.5rem';
+                    wrap.style.paddingTop = '0.7rem';
+                    wrap.style.paddingBottom = '0.85rem';
                 }
 
                 function scrollRoot() {
@@ -802,7 +803,7 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                 }
 
                 function headerOffset() {
-                    return ((wrap && wrap.getBoundingClientRect().height) || 72) + 10;
+                    return ((wrap && wrap.getBoundingClientRect().height) || 110) + 10;
                 }
 
                 function jumpTo(id) {
@@ -1012,18 +1013,6 @@ def main():
         results_header_slot = st.container()
     else:
         render_sticky_landing_header(HEADER_GRADIENT, AI_ACCENT_COLOR)
-        st.markdown("""
-        <p style="
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.2rem;
-            color: #2c5f8d;
-            text-align: centre;
-            margin-top: 0rem;
-            margin-bottom: 0rem;
-            font-weight: 400;
-        ">The best Maths teaching on YouTube for age 5 to 15
-        </p>
-        """, unsafe_allow_html=True)
     
     # Load precomputed recommendations
     recommendations_df = load_precomputed_recommendations_flat()

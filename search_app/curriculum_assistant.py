@@ -521,7 +521,7 @@ class CurriculumAssistant:
                 min-height: 44px;
             }
             </style>
-            <h3 class="step-one-heading">Step 1 of 2: Pick the learner's age</h3>
+            <h3 class="step-one-heading">Step 1 of 2: Pick the learner's age to get great teaching videos</h3>
             """,
             unsafe_allow_html=True,
         )

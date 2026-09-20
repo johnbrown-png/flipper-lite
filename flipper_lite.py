@@ -550,7 +550,7 @@ def render_landing_demo_frame(recommendations_df):
             <div class="landing-demo-heading">
                 <div>
                     <p class="landing-demo-eyebrow">What you get</p>
-                    <h2>Three great videos for every White Rose Small Step</h2>
+                    <h2>Three great videos for every step learning maths from age 5 to 15</h2>
                 </div>
                 <p class="landing-demo-context"><strong>Age 5-6</strong> <span aria-hidden="true">·</span> Autumn <span aria-hidden="true">·</span> Place value within 10 <span aria-hidden="true">·</span> Sort objects</p>
             </div>

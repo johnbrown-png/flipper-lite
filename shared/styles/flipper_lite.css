@@ -320,6 +320,15 @@ div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="stI
     background: #dce8f1;
 }
 
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block--parent) [data-testid="stImage"] {
+    width: 70%;
+    margin: 0 auto;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.audience-copy-block--parent) [data-testid="stImage"] img {
+    height: 12.95rem;
+}
+
 div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="StyledFullScreenButton"] {
     display: none !important;
 }
@@ -417,5 +426,9 @@ div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="Sty
 
     div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="stImage"] img {
         height: 16rem;
+    }
+
+    div[data-testid="stHorizontalBlock"]:has(.audience-copy-block--parent) [data-testid="stImage"] img {
+        height: 11.2rem;
     }
 }

@@ -1092,7 +1092,7 @@ def render_landing_audience_sections():
         with copy_col:
             st.markdown(
                 f"""
-                <div class="audience-copy-block">
+                <div class="audience-copy-block audience-copy-block--{html.escape(section['id'])}">
                     <div class="audience-title" role="heading" aria-level="2">{html.escape(section["title"])}</div>
                     {paragraphs}
                 </div>

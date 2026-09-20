@@ -904,7 +904,14 @@ def render_landing_audience_sections():
             f'<div id="{html.escape(section["id"])}" class="audience-anchor"></div>',
             unsafe_allow_html=True,
         )
-        text_col, image_col = st.columns([1.2, 0.95], gap="large", vertical_alignment="center")
+        image_col, text_col = st.columns([0.95, 1.2], gap="large", vertical_alignment="center")
+        with image_col:
+            if section["image"].exists():
+                st.image(
+                    _landing_photo_bytes(str(section["image"])),
+                    width="stretch",
+                    output_format="JPEG",
+                )
         with text_col:
             st.markdown(
                 f"""
@@ -915,13 +922,6 @@ def render_landing_audience_sections():
                 """,
                 unsafe_allow_html=True,
             )
-        with image_col:
-            if section["image"].exists():
-                st.image(
-                    _landing_photo_bytes(str(section["image"])),
-                    width="stretch",
-                    output_format="JPEG",
-                )
 
     st.markdown(LANDING_ABOUT_HTML, unsafe_allow_html=True)
 

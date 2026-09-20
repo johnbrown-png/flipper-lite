@@ -320,19 +320,6 @@ div[data-testid="stHorizontalBlock"]:has(.audience-copy-block) [data-testid="stI
     background: #dce8f1;
 }
 
-div[data-testid="stHorizontalBlock"]:has(.audience-copy-block--parent) [data-testid="stColumn"]:first-child [data-testid="stVerticalBlock"] {
-    align-items: center;
-}
-
-div[data-testid="stHorizontalBlock"]:has(.audience-copy-block--parent) [data-testid="stImage"],
-div[data-testid="stHorizontalBlock"]:has(.audience-copy-block--parent) [data-testid="stImageContainer"] {
-    display: flex;
-    justify-content: center;
-    width: auto !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
-
 div[data-testid="stHorizontalBlock"]:has(.audience-copy-block--parent) [data-testid="stImage"] img {
     width: auto !important;
     max-width: 100%;

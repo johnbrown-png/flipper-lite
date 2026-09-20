@@ -1085,7 +1085,8 @@ def render_landing_audience_sections():
             f'<div id="{html.escape(section["id"])}" class="audience-section-marker audience-anchor"></div>',
             unsafe_allow_html=True,
         )
-        photo_col, copy_col = st.columns([0.95, 1.2], gap="medium", vertical_alignment="center")
+        column_spec = [0.42, 1.73] if section["id"] == "parent" else [0.95, 1.2]
+        photo_col, copy_col = st.columns(column_spec, gap="medium", vertical_alignment="center")
         with photo_col:
             if photo_path:
                 st.image(photo_path, width="stretch")

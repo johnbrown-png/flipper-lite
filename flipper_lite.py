@@ -906,13 +906,14 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str, inc
 
                 const wrap = header.closest('[data-testid="stElementContainer"]') || header.parentElement;
                 if (wrap) {
+                    const resultsMode = !!doc.querySelector('.flipper-results-actions-hr');
                     wrap.style.position = 'sticky';
                     wrap.style.top = '0px';
                     wrap.style.zIndex = '1000';
                     wrap.style.background = '#f4f8fb';
                     wrap.style.borderBottom = '1px solid rgba(44, 95, 141, 0.28)';
                     wrap.style.paddingTop = '0.56rem';
-                    wrap.style.paddingBottom = '1.16rem';
+                    wrap.style.paddingBottom = resultsMode ? '0.25rem' : '1.16rem';
                     wrap.style.marginBottom = '0';
                 }
 

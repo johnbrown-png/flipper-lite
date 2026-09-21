@@ -182,15 +182,30 @@ body:has(.flipper-results-actions-hr) [data-testid="stMainBlockContainer"] > [da
     gap: 0.25rem !important;
 }
 
-div[data-testid="stLayoutWrapper"]:has(> [data-testid="stVerticalBlock"] .flipper-results-actions-hr) {
+body:has(.flipper-results-actions-hr) [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > [data-testid="stLayoutWrapper"]:has(.flipper-results-actions-hr) {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
 }
 
-div[data-testid="stVerticalBlock"]:has(> [data-testid="stLayoutWrapper"] > [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) {
+div[data-testid="stLayoutWrapper"]:has(> [data-testid="stVerticalBlock"] .flipper-results-actions-hr),
+div[data-testid="stLayoutWrapper"]:has(> [data-testid="stHorizontalBlock"]):has(+ [data-testid="stElementContainer"] .flipper-results-actions-hr) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+[data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:has(.flipper-results-actions-hr) {
     gap: 0 !important;
+}
+
+div[data-testid="stElementContainer"]:has(> .stMarkdown .flipper-results-actions-hr) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 div[data-testid="stHorizontalBlock"]:has([class*="st-key-step_nav_home_top"]),

@@ -325,7 +325,7 @@ def render_email_recommendations_popover(ctx):
 
     feedback_key = "email_recs_feedback"
 
-    with st.popover("✉️ Email me these", use_container_width=True):
+    with st.popover("✉️ Email me these videos", use_container_width=True):
         st.markdown("**Get these 3 video links by email**")
         email_value = st.text_input(
             "Your email address",
@@ -1209,6 +1209,9 @@ def main():
             .block-container {
                 padding-top: 0 !important;
             }
+            [data-testid="stPopover"] button {
+                white-space: nowrap !important;
+            }
             </style>
             """,
             unsafe_allow_html=True,
@@ -1395,9 +1398,9 @@ def main():
             if results_focus_mode and results_header_slot is not None:
                 with results_header_slot:
                     if show_step_nav:
-                        _spacer_col, email_col, nav_home_col, nav_back_col, nav_next_col = st.columns([4, 1.3, 1.3, 1.35, 1.35])
+                        email_col, nav_home_col, nav_back_col, nav_next_col = st.columns([2.4, 1.35, 1.45, 1.45])
                     else:
-                        _spacer_col, email_col = st.columns([8.5, 1.5])
+                        email_col, _email_spacer_col = st.columns([2.4, 6.9])
 
                     with email_col:
                         render_email_recommendations_popover(ctx)

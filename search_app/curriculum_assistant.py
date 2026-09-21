@@ -761,6 +761,7 @@ class CurriculumAssistant:
             st.session_state.curr_topic = selected_topic
             self._clear_parent_results_state()
             if selected_topic != 'Topic ?':
+                st.session_state.flipper_lite_scroll_to_topic_steps = True
                 track_event(
                     "topic_selected",
                     {
@@ -773,6 +774,10 @@ class CurriculumAssistant:
 
         # Show small steps if topic selected
         if topics_ready and st.session_state.curr_topic != 'Topic ?':
+            st.markdown(
+                '<div id="flipper-topic-steps-top" class="flipper-topic-steps-top"></div>',
+                unsafe_allow_html=True,
+            )
             topic_steps = self._get_topic_steps(
                 age=st.session_state.curr_year,
                 topic=st.session_state.curr_topic,
@@ -834,6 +839,48 @@ class CurriculumAssistant:
                     st.caption("No small steps available for this topic.")
             else:
                 st.caption("No non-duplicate small steps available for this topic.")
+            if st.session_state.get('flipper_lite_scroll_to_topic_steps'):
+                components.html(
+                    """
+                    <script>
+                    setTimeout(function() {
+                        const doc = window.parent.document;
+                        const target = doc.getElementById('flipper-topic-steps-top');
+                        if (!target) return;
+                        const candidates = [
+                            doc.querySelector('section.stMain'),
+                            doc.querySelector('[data-testid="stMain"]'),
+                            doc.querySelector('section.main'),
+                            doc.querySelector('[data-testid="stAppViewContainer"]'),
+                            doc.scrollingElement,
+                            doc.documentElement
+                        ];
+                        let root = doc.querySelector('section.stMain')
+                            || doc.scrollingElement
+                            || doc.documentElement;
+                        for (const node of candidates) {
+                            if (node && node.scrollHeight > node.clientHeight + 24) {
+                                root = node;
+                                break;
+                            }
+                        }
+                        const header = doc.querySelector('.flipper-sticky-header');
+                        const wrap = header && (
+                            header.closest('[data-testid="stElementContainer"]')
+                            || header.parentElement
+                        );
+                        const headerOffset = ((wrap && wrap.getBoundingClientRect().height) || 110) + 10;
+                        const rootTop = root.getBoundingClientRect ? root.getBoundingClientRect().top : 0;
+                        const y = target.getBoundingClientRect().top - rootTop + (root.scrollTop || 0) - headerOffset;
+                        if (typeof root.scrollTo === 'function') {
+                            root.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                        }
+                    }, 150);
+                    </script>
+                    """,
+                    height=0,
+                )
+                st.session_state.flipper_lite_scroll_to_topic_steps = False
         return None, None
     
     def get_stats(self):

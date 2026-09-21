@@ -329,6 +329,20 @@ div[data-testid="stElementContainer"]:has(#flipper-topic-select-marker) {
     scroll-margin-top: 8.5rem;
 }
 
+.flipper-topic-steps-top {
+    scroll-margin-top: 8.5rem;
+    height: 0;
+    overflow: hidden;
+}
+
+div[data-testid="stElementContainer"]:has(#flipper-topic-steps-top) {
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
 div[data-testid="stElementContainer"]:has(.audience-section-marker) {
     height: 0 !important;
     min-height: 0 !important;

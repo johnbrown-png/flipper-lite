@@ -142,7 +142,7 @@ div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
     background: #f4f8fb;
     border-bottom: 1px solid rgba(44, 95, 141, 0.28);
     box-shadow: 0 4px 12px rgba(30, 58, 95, 0.06);
-    padding: 0.56rem 0.25rem 0.16rem;
+    padding: 0.56rem 0.25rem 1.16rem;
     margin-bottom: 0 !important;
 }
 

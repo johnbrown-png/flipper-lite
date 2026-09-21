@@ -8,6 +8,7 @@ import html
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 from pathlib import Path
 
 from shared.curriculum_schema import curriculum_to_long_df
@@ -505,12 +506,14 @@ class CurriculumAssistant:
         st.markdown(
             """
             <style>
-            /* Keep the Step 1 heading flush against the age dropdown. */
-            div[data-testid="stElementContainer"]:has(.step-one-heading) {
+            /* Keep step headings flush against their dropdowns. */
+            div[data-testid="stElementContainer"]:has(.step-one-heading),
+            div[data-testid="stElementContainer"]:has(.step-two-heading) {
                 margin-bottom: 0 !important;
             }
-            .step-one-heading {
-                font-size: 1.75rem;
+            .step-one-heading,
+            .step-two-heading {
+                font-size: 1.4rem !important;
                 font-weight: 600;
                 line-height: 1.2;
                 letter-spacing: -0.005em;
@@ -583,104 +586,191 @@ class CurriculumAssistant:
                 self._clear_parent_results_state()
                 st.rerun()
 
-        # Only show Topic dropdown after Age is selected (and difficulty if required)
-        if st.session_state.curr_year != 'Learner\'s Age?' and (not show_difficulty or st.session_state.curr_difficulty != 'All'):
+        # Topic dropdown stays visible on the landing page; options fill after age
+        # (and Foundation/Higher for GCSE) is chosen so lists are not mixed.
+        topics_ready = (
+            st.session_state.curr_year != 'Learner\'s Age?'
+            and (not show_difficulty or st.session_state.curr_difficulty != 'All')
+        )
+        if topics_ready:
             filtered_df = self.df[self.df['age'] == st.session_state.curr_year]
             if show_difficulty:
                 filtered_df = filtered_df[filtered_df['difficulty'] == st.session_state.curr_difficulty]
             # Preserve CSV order instead of sorting alphabetically
             topics = filtered_df['topic'].dropna().unique().tolist()
             topic_options = ['Topic ?'] + topics
-            if 'curr_topic' not in st.session_state or st.session_state.curr_topic not in topic_options:
-                st.session_state.curr_topic = 'Topic ?'
-            if 'topic_select_topic_search' not in st.session_state or st.session_state.topic_select_topic_search not in topic_options:
-                st.session_state.topic_select_topic_search = st.session_state.curr_topic
-            st.subheader("Step 2 of 2: Pick a topic the learner is currently working towards")
-            selected_topic = st.selectbox(
-                "Topic",
-                topic_options,
-                key="topic_select_topic_search",
-                label_visibility="collapsed"
-            )
-            st.markdown("Topics are in the order they are learnt. Pick the first if learners are new to the topic; if you are unsure about learners' current level, pick a topic in the middle; if it is too easy, pick lower on the list to extend learners' experience. If too hard pick higher.")
-            st.markdown("Teachers - find great videos on the White Rose Small Step learners are currently working on.")
-            if selected_topic != st.session_state.curr_topic:
-                st.session_state.curr_topic = selected_topic
-                self._clear_parent_results_state()
-                if selected_topic != 'Topic ?':
-                    track_event(
-                        "topic_selected",
-                        {
-                            "age": st.session_state.curr_year,
-                            "topic": selected_topic,
-                            "difficulty": st.session_state.curr_difficulty if show_difficulty else "",
-                        },
-                    )
-                st.rerun()
+        else:
+            topic_options = ['Topic ?']
+        if 'curr_topic' not in st.session_state or st.session_state.curr_topic not in topic_options:
+            st.session_state.curr_topic = 'Topic ?'
+        if 'topic_select_topic_search' not in st.session_state or st.session_state.topic_select_topic_search not in topic_options:
+            st.session_state.topic_select_topic_search = st.session_state.curr_topic
+        st.markdown(
+            """
+            <h3 class="step-two-heading">Step 2 of 2: Pick a topic they have not mastered yet</h3>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div id="flipper-topic-select-marker" class="flipper-topic-select-marker"></div>',
+            unsafe_allow_html=True,
+        )
+        selected_topic = st.selectbox(
+            "Topic",
+            topic_options,
+            key="topic_select_topic_search",
+            label_visibility="collapsed"
+        )
+        components.html(
+            """
+            <script>
+            (function() {
+                const doc = window.parent.document;
+                const TOOLTIP_TEXT = "Topics are in the order of learning. Try higher and lower on the list to find learners level";
 
-            # Show small steps if topic selected
-            if st.session_state.curr_topic != 'Topic ?':
-                topic_steps = self._get_topic_steps(
-                    age=st.session_state.curr_year,
-                    topic=st.session_state.curr_topic,
-                    difficulty=st.session_state.curr_difficulty if show_difficulty else '',
+                function findTopicSelectbox() {
+                    const marker = doc.getElementById('flipper-topic-select-marker');
+                    if (!marker) return null;
+                    const container = marker.closest('[data-testid="stElementContainer"]');
+                    let node = container ? container.nextElementSibling : null;
+                    while (node) {
+                        const box = (node.matches && node.matches('[data-testid="stSelectbox"]'))
+                            ? node
+                            : node.querySelector('[data-testid="stSelectbox"]');
+                        if (box) return box;
+                        node = node.nextElementSibling;
+                    }
+                    return null;
+                }
+
+                function ensureTooltip() {
+                    let tip = doc.getElementById('flipper-topic-tooltip');
+                    if (tip) return tip;
+                    tip = doc.createElement('div');
+                    tip.id = 'flipper-topic-tooltip';
+                    tip.className = 'flipper-topic-tooltip';
+                    tip.setAttribute('role', 'tooltip');
+                    tip.textContent = TOOLTIP_TEXT;
+                    doc.body.appendChild(tip);
+                    return tip;
+                }
+
+                function placeTooltip(box) {
+                    const tip = ensureTooltip();
+                    const rect = box.getBoundingClientRect();
+                    tip.classList.add('is-visible');
+                    const width = tip.offsetWidth || 280;
+                    const maxLeft = Math.max(12, (window.parent.innerWidth || 0) - width - 12);
+                    tip.style.top = (rect.bottom + 8) + 'px';
+                    tip.style.left = Math.max(12, Math.min(rect.left, maxLeft)) + 'px';
+                }
+
+                function hideTooltip() {
+                    const tip = doc.getElementById('flipper-topic-tooltip');
+                    if (tip) tip.classList.remove('is-visible');
+                }
+
+                if (window.parent.__flipperTopicTooltipBound) return;
+                window.parent.__flipperTopicTooltipBound = true;
+
+                doc.addEventListener('mouseover', function(event) {
+                    const box = findTopicSelectbox();
+                    if (!box) return;
+                    if (box.contains(event.target)) {
+                        placeTooltip(box);
+                    }
+                }, true);
+
+                doc.addEventListener('mouseout', function(event) {
+                    const box = findTopicSelectbox();
+                    if (!box) return;
+                    const leftFor = event.relatedTarget;
+                    if (box.contains(event.target) && !box.contains(leftFor)) {
+                        hideTooltip();
+                    }
+                }, true);
+            })();
+            </script>
+            """,
+            height=0,
+        )
+        if selected_topic != st.session_state.curr_topic:
+            st.session_state.curr_topic = selected_topic
+            self._clear_parent_results_state()
+            if selected_topic != 'Topic ?':
+                track_event(
+                    "topic_selected",
+                    {
+                        "age": st.session_state.curr_year,
+                        "topic": selected_topic,
+                        "difficulty": st.session_state.curr_difficulty if show_difficulty else "",
+                    },
                 )
-                if not topic_steps.empty:
-                    if len(topic_steps) > 0:
-                        for display_step_num, (_, row) in enumerate(topic_steps.iterrows(), start=1):
-                            step_text = str(row['small_step_name']).strip()
-                            full_desc = str(row.get('ss_wr_desc', '')).strip()
-                            example_text = str(row.get('ss_desc', '')).strip()
-                            col_button, col_content = st.columns([1, 9])
-                            with col_button:
-                                step_id = str(row.get('small_step_id', '')).strip()
-                                button_key = f"find_step_topic_{display_step_num}_{step_id}" if step_id else f"find_step_topic_{display_step_num}"
-                                if st.button("Watch", key=button_key, help="Find videos for this step"):
-                                    difficulty_val = row.get('difficulty', '')
-                                    if pd.isna(difficulty_val):
-                                        difficulty_val = ''
-                                    # Keep payload fields aligned with docs/SMALL_STEP_PAYLOAD_CONTRACT.md.
-                                    st.session_state.pending_insertion = {
-                                        'action': 'small_step_search',
-                                        'selection_source': 'selector',
-                                        'year': row['year'],
-                                        'term': row['term'],
-                                        'difficulty': difficulty_val,
-                                        'topic': row['topic'],
-                                        'small_step': step_text,
-                                        'small_step_desc': example_text if example_text else full_desc,
-                                        'small_step_full_desc': full_desc,
-                                        'small_step_id': row['small_step_id'],
-                                        'small_step_num': int(row['small_step_num']),
-                                        'small_step_num_in_topic': int(row['small_step_num_in_topic']),
-                                        'display_small_step_num_in_topic': display_step_num,
-                                        'age': row['age'],
-                                        'display_text': step_text if not example_text else f"{step_text} - {example_text}"
-                                    }
-                                    track_event(
-                                        "step_watch_clicked",
-                                        {
-                                            "small_step": step_text,
-                                            "small_step_id": row['small_step_id'],
-                                            "topic": row['topic'],
-                                            "age": row['age'],
-                                            "difficulty": difficulty_val,
-                                            "term": row['term'],
-                                        },
-                                    )
-                                    st.rerun()
-                            with col_content:
-                                if example_text:
-                                    _render_truncated_description(
-                                        example_text,
-                                        title=f"{display_step_num}. {step_text}",
-                                    )
-                                else:
-                                    st.markdown(f"**{display_step_num}.** {step_text}")
-                    else:
-                        st.caption("No small steps available for this topic.")
+            st.rerun()
+
+        # Show small steps if topic selected
+        if topics_ready and st.session_state.curr_topic != 'Topic ?':
+            topic_steps = self._get_topic_steps(
+                age=st.session_state.curr_year,
+                topic=st.session_state.curr_topic,
+                difficulty=st.session_state.curr_difficulty if show_difficulty else '',
+            )
+            if not topic_steps.empty:
+                if len(topic_steps) > 0:
+                    for display_step_num, (_, row) in enumerate(topic_steps.iterrows(), start=1):
+                        step_text = str(row['small_step_name']).strip()
+                        full_desc = str(row.get('ss_wr_desc', '')).strip()
+                        example_text = str(row.get('ss_desc', '')).strip()
+                        col_button, col_content = st.columns([1, 9])
+                        with col_button:
+                            step_id = str(row.get('small_step_id', '')).strip()
+                            button_key = f"find_step_topic_{display_step_num}_{step_id}" if step_id else f"find_step_topic_{display_step_num}"
+                            if st.button("Watch", key=button_key, help="Find videos for this step"):
+                                difficulty_val = row.get('difficulty', '')
+                                if pd.isna(difficulty_val):
+                                    difficulty_val = ''
+                                # Keep payload fields aligned with docs/SMALL_STEP_PAYLOAD_CONTRACT.md.
+                                st.session_state.pending_insertion = {
+                                    'action': 'small_step_search',
+                                    'selection_source': 'selector',
+                                    'year': row['year'],
+                                    'term': row['term'],
+                                    'difficulty': difficulty_val,
+                                    'topic': row['topic'],
+                                    'small_step': step_text,
+                                    'small_step_desc': example_text if example_text else full_desc,
+                                    'small_step_full_desc': full_desc,
+                                    'small_step_id': row['small_step_id'],
+                                    'small_step_num': int(row['small_step_num']),
+                                    'small_step_num_in_topic': int(row['small_step_num_in_topic']),
+                                    'display_small_step_num_in_topic': display_step_num,
+                                    'age': row['age'],
+                                    'display_text': step_text if not example_text else f"{step_text} - {example_text}"
+                                }
+                                track_event(
+                                    "step_watch_clicked",
+                                    {
+                                        "small_step": step_text,
+                                        "small_step_id": row['small_step_id'],
+                                        "topic": row['topic'],
+                                        "age": row['age'],
+                                        "difficulty": difficulty_val,
+                                        "term": row['term'],
+                                    },
+                                )
+                                st.rerun()
+                        with col_content:
+                            if example_text:
+                                _render_truncated_description(
+                                    example_text,
+                                    title=f"{display_step_num}. {step_text}",
+                                )
+                            else:
+                                st.markdown(f"**{display_step_num}.** {step_text}")
                 else:
-                    st.caption("No non-duplicate small steps available for this topic.")
+                    st.caption("No small steps available for this topic.")
+            else:
+                st.caption("No non-duplicate small steps available for this topic.")
         return None, None
     
     def get_stats(self):

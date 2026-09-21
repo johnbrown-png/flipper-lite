@@ -258,12 +258,15 @@ div[data-testid="stElementContainer"]:has(.curriculum-assistant-chrome) {
     border-bottom-color: #4a90c8;
 }
 
-div[data-testid="stElementContainer"]:has(.step-one-heading) {
-    margin-top: -1rem !important;
+div[data-testid="stElementContainer"]:has(.step-one-heading),
+div[data-testid="stElementContainer"]:has(.step-two-heading) {
+    margin-top: 0.15rem !important;
     margin-bottom: 0 !important;
 }
 
-.step-one-heading {
+h3.step-one-heading,
+h3.step-two-heading {
+    font-size: 1.4rem !important;
     padding-top: 0.15rem !important;
     scroll-margin-top: 8.5rem;
 }
@@ -277,13 +280,38 @@ div[data-testid="stElementContainer"]:has(.step-one-heading) {
     animation: flipper-age-nudge 1s ease-in-out 3;
 }
 
-div[data-testid="stElementContainer"]:has(#flipper-age-select-marker) {
+div[data-testid="stElementContainer"]:has(#flipper-age-select-marker),
+div[data-testid="stElementContainer"]:has(#flipper-topic-select-marker) {
     display: none !important;
     height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
     min-height: 0 !important;
     overflow: hidden !important;
+}
+
+.flipper-topic-tooltip {
+    position: fixed;
+    z-index: 100000;
+    max-width: 22rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid rgba(44, 95, 141, 0.28);
+    border-radius: 8px;
+    background: #fff;
+    color: #18324f;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.86rem;
+    line-height: 1.35;
+    box-shadow: 0 8px 20px rgba(30, 58, 95, 0.16);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease;
+}
+
+.flipper-topic-tooltip.is-visible {
+    opacity: 1;
+    visibility: visible;
 }
 
 .audience-anchor {

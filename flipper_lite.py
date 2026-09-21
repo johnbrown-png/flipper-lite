@@ -558,11 +558,11 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-frame {{
                 display: flex;
                 flex-direction: column;
-                min-height: clamp(430px, 58vh, 670px);
-                height: clamp(430px, 58vh, 670px);
-                max-height: clamp(430px, 58vh, 670px);
-                margin: 0rem 0 2rem;
-                padding: clamp(1.25rem, 3vw, 2rem);
+                min-height: clamp(280px, 40vh, 480px);
+                height: clamp(280px, 40vh, 480px);
+                max-height: clamp(280px, 40vh, 480px);
+                margin: 0rem 0 0.4rem;
+                padding: clamp(0.85rem, 2vw, 1.35rem);
                 border: 1px solid rgba(44, 95, 141, 0.24);
                 border-radius: 12px;
                 background: rgba(255, 255, 255, 0.9);
@@ -574,13 +574,13 @@ def render_landing_demo_frame(recommendations_df):
                 align-items: end;
                 justify-content: space-between;
                 flex: 0 0 auto;
-                gap: 1.5rem;
-                margin-bottom: 0.85rem;
+                gap: 1.2rem;
+                margin-bottom: 0.68rem;
             }}
             .landing-demo-eyebrow {{
-                margin: 0 0 0.35rem;
+                margin: 0 0 0.28rem;
                 color: #4a90c8;
-                font-size: 0.78rem;
+                font-size: 0.624rem;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
@@ -589,26 +589,26 @@ def render_landing_demo_frame(recommendations_df):
                 margin: 0;
                 color: #1e3a5f;
                 font-family: 'Poppins', sans-serif;
-                font-size: clamp(1.2rem, 2vw, 1.7rem);
+                font-size: clamp(0.96rem, 1.6vw, 1.36rem);
                 line-height: 1.2;
             }}
             .landing-demo-context {{
                 max-width: 32rem;
                 margin: 0;
                 color: #2c5f8d;
-                font-size: 0.9rem;
+                font-size: 0.72rem;
                 line-height: 1.4;
                 text-align: right;
             }}
             .landing-demo-cards {{
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 1.15rem;
-                max-width: none;
-                width: 100%;
+                gap: 0.92rem;
+                max-width: 80%;
+                width: 80%;
                 flex: 1 1 auto;
                 min-height: 0;
-                margin: 0;
+                margin: 0 auto;
                 align-content: start;
             }}
             .landing-demo-card {{
@@ -648,18 +648,18 @@ def render_landing_demo_frame(recommendations_df):
                 left: 50%;
                 top: 50%;
                 display: grid;
-                width: 3.6rem;
-                height: 3.6rem;
+                width: 2.88rem;
+                height: 2.88rem;
                 transform: translate(-50%, -50%);
                 place-items: center;
                 border-radius: 50%;
                 color: #fff;
                 background: rgba(210, 35, 35, 0.95);
-                font-size: 1.38rem;
+                font-size: 1.104rem;
                 box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
             }}
             .landing-demo-card-body {{
-                padding: 0.55rem 0.75rem 0.65rem;
+                padding: 0.44rem 0.6rem 0.52rem;
             }}
             .landing-demo-card-body h3 {{
                 display: -webkit-box;
@@ -667,7 +667,7 @@ def render_landing_demo_frame(recommendations_df):
                 margin: 0;
                 overflow: hidden;
                 color: #18324f;
-                font-size: 0.98rem;
+                font-size: 0.784rem;
                 font-weight: 600;
                 line-height: 1.35;
                 -webkit-box-orient: vertical;
@@ -676,7 +676,7 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-card-body p {{
                 margin: 0;
                 color: #5c7185;
-                font-size: 0.78rem;
+                font-size: 0.624rem;
                 line-height: 1.3;
             }}
             @media (max-width: 700px) {{
@@ -1683,8 +1683,11 @@ def main():
         apply_small_step_selection(nav, recommendations_df, curriculum_assistant, lookup_videos_for_step)
 
     # ==========================================
-    # CURRICULUM ASSISTANT (Below results)
+    # LANDING DEMO, THEN CURRICULUM ASSISTANT
     # ==========================================
+    if not results_focus_mode:
+        render_landing_demo_frame(recommendations_df)
+
     if curriculum_assistant:
         # Use the same dropdown UI as flipper.py via CurriculumAssistant.render()
         action, text = curriculum_assistant.render(show_topic_table_search=ENABLE_TOPIC_TABLE_SEARCH)
@@ -1703,7 +1706,6 @@ def main():
             apply_small_step_selection(text, recommendations_df, curriculum_assistant, lookup_videos_for_step)
 
     if not results_focus_mode:
-        render_landing_demo_frame(recommendations_df)
         render_landing_audience_sections()
 
     # ==========================================

@@ -146,6 +146,67 @@ div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
     margin-bottom: 0 !important;
 }
 
+/* Results-view action buttons: collapse chrome above/below so video cards dominate. */
+body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
+    padding-bottom: 0.25rem !important;
+    margin-bottom: 0 !important;
+}
+
+body:has(.flipper-results-actions-hr) .flipper-sticky-header {
+    padding-bottom: 0 !important;
+}
+
+body:has(.flipper-results-actions-hr) .flipper-sticky-subrow {
+    padding-bottom: 0 !important;
+}
+
+div[data-testid="stElementContainer"]:has(.flipper-results-actions-hr) {
+    margin-top: -0.75rem !important;
+    margin-bottom: -0.75rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+div[data-testid="stElementContainer"]:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(.flipper-results-actions-hr) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) {
+    gap: 0 !important;
+}
+
+div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) > [data-testid="stHorizontalBlock"] {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) [data-testid="stColumn"],
+div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) [data-testid="stButton"],
+div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) [data-testid="stPopover"] {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) button {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0.12rem !important;
+    padding-bottom: 0.12rem !important;
+    min-height: 0 !important;
+    line-height: 1.15 !important;
+}
+
+.flipper-results-actions-hr {
+    margin: 0.15rem 0 !important;
+}
+
 div[data-testid="stVerticalBlock"]:has(.flipper-sticky-header),
 section.main:has(.flipper-sticky-header) {
     overflow: visible;

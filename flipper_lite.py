@@ -1469,7 +1469,7 @@ def main():
                                 st.rerun()
 
                     st.markdown(
-                        "<hr style='margin: 0.15rem 0 0.3rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.2);'>",
+                        "<hr class='flipper-results-actions-hr' style='margin: 0.15rem 0; border: 0; border-top: 1px solid rgba(44, 95, 141, 0.2);'>",
                         unsafe_allow_html=True,
                     )
 
@@ -1837,6 +1837,7 @@ def main():
         // Reduce only step-navigation button footprint in results mode.
         function applyCompactStepNavButtons() {
             const targets = [
+                'Email me these',
                 'Back to search',
                 '◀  Previous Step',
                 'Next Step  ▶',

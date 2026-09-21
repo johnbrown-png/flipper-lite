@@ -175,7 +175,9 @@ body:has(.flipper-results-actions-hr) .flipper-sticky-header,
     white-space: nowrap;
 }
 
-body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has([data-testid="stIFrame"]) {
+/* Hide the landing-header script iframe (default height 150) without killing
+   the height=1 Watch-click scroll hook that must still execute. */
+body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(iframe[height="150"]) {
     display: none !important;
     height: 0 !important;
     margin: 0 !important;
@@ -183,6 +185,26 @@ body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(
     min-height: 0 !important;
     overflow: hidden !important;
     pointer-events: none;
+}
+
+div[data-testid="stElementContainer"]:has(iframe[height="1"]) {
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* 0.25rem here plus the results-view 0.25rem vertical gap = 0.5rem below the breadcrumb. */
+div[data-testid="stElementContainer"]:has(.flipper-results-breadcrumb) {
+    margin-top: 0 !important;
+    margin-bottom: 0.25rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.flipper-results-breadcrumb {
+    margin: 0 !important;
 }
 
 body:has(.flipper-results-actions-hr) [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] {

@@ -296,6 +296,58 @@ def render_video_player(video_data):
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def emit_smooth_scroll_to_page_top():
+    """Smooth-scroll the Streamlit view to the top of the video-cards page."""
+    components.html(
+        """
+        <script>
+        (function() {
+            const win = window.parent;
+            const doc = win.document;
+
+            function scrollRoot() {
+                const candidates = [
+                    doc.querySelector('section.stMain'),
+                    doc.querySelector('[data-testid="stMain"]'),
+                    doc.querySelector('section.main'),
+                    doc.querySelector('[data-testid="stAppViewContainer"]'),
+                    doc.scrollingElement,
+                    doc.documentElement
+                ];
+                for (const node of candidates) {
+                    if (node && node.scrollHeight > node.clientHeight + 24) return node;
+                }
+                return doc.querySelector('section.stMain')
+                    || doc.scrollingElement
+                    || doc.documentElement;
+            }
+
+            function go(attempt) {
+                const root = scrollRoot();
+                try {
+                    if (root && typeof root.scrollTo === 'function') {
+                        root.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else if (root) {
+                        root.scrollTop = 0;
+                    }
+                    if (typeof win.scrollTo === 'function') {
+                        win.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                } catch (e) {}
+                const pos = (root && (root.scrollTop || 0)) || win.scrollY || 0;
+                if (attempt < 10 && pos > 4) {
+                    setTimeout(function() { go(attempt + 1); }, 140);
+                }
+            }
+
+            setTimeout(function() { go(0); }, 120);
+        })();
+        </script>
+        """,
+        height=1,
+    )
+
+
 _EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -442,7 +494,7 @@ def render_result_card(result, compact=False, mobile_viewer_mode=False):
                     idx = 0
                 st.session_state.current_video_index = idx
                 st.session_state.current_video = result
-                st.session_state.flipper_lite_scroll_to_player = True
+                st.session_state.flipper_lite_scroll_to_video_cards = True
                 st.rerun()
         
         if show_score_infographic:
@@ -1333,21 +1385,6 @@ def main():
                     st.session_state.current_video = next_video
                     st.rerun()
         st.markdown("---")
-        if st.session_state.get('flipper_lite_scroll_to_player'):
-            components.html(
-                """
-                <script>
-                setTimeout(function() {
-                    const target = window.parent.document.getElementById('flipper-video-player');
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 150);
-                </script>
-                """,
-                height=0,
-            )
-            st.session_state.flipper_lite_scroll_to_player = False
 
     st.markdown('<div id="flipper-video-results-top"></div>', unsafe_allow_html=True)
 
@@ -1363,20 +1400,10 @@ def main():
     elif st.session_state.display_status == 'complete':
         # Results state - show Video cards
         if st.session_state.display_results:
-            if st.session_state.get('flipper_lite_scroll_to_video_cards'):
-                components.html(
-                    """
-                    <script>
-                    const rootWin = window.parent;
-                    const target = rootWin.document.getElementById('flipper-video-results-top');
-                    if (target && typeof target.scrollIntoView === 'function') {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                    </script>
-                    """,
-                    height=0,
-                )
+            if st.session_state.get('flipper_lite_scroll_to_video_cards') or st.session_state.get('flipper_lite_scroll_to_player'):
+                emit_smooth_scroll_to_page_top()
                 st.session_state.flipper_lite_scroll_to_video_cards = False
+                st.session_state.flipper_lite_scroll_to_player = False
             ctx = st.session_state.get('curriculum_context')
             prev_step = None
             next_step = None
@@ -1496,7 +1523,7 @@ def main():
                     if results_focus_mode:
                         st.markdown(
                             f"""
-                            <div style='font-size:0.84rem; margin:0 0 0.35rem 0; white-space:normal; overflow-wrap:anywhere;' title='{breadcrumb_text_plain}'>
+                            <div class="flipper-results-breadcrumb" style='font-size:0.84rem; margin:0; white-space:normal; overflow-wrap:anywhere;' title='{breadcrumb_text_plain}'>
                                 {breadcrumb_text}
                             </div>
                             """,

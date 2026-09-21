@@ -157,10 +157,10 @@ body:has(.flipper-results-actions-hr) [data-testid="stPopover"] button {
 
 body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(.flipper-sticky-header),
 div[data-testid="stElementContainer"]:has(.flipper-sticky-header--results) {
-    padding: 0.25rem 0.25rem 0.25rem !important;
+    padding: 0.45rem 0.25rem 0.45rem !important;
     margin-bottom: 0 !important;
     height: auto !important;
-    min-height: 0 !important;
+    min-height: 2.7rem !important;
     overflow: visible;
 }
 
@@ -168,6 +168,11 @@ body:has(.flipper-results-actions-hr) .flipper-sticky-header,
 .flipper-sticky-header--results {
     gap: 0;
     padding-bottom: 0 !important;
+    justify-content: center;
+}
+
+.flipper-sticky-header--results .flipper-sticky-brand {
+    white-space: nowrap;
 }
 
 body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has([data-testid="stIFrame"]) {

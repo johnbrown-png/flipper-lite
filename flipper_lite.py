@@ -914,8 +914,10 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str, inc
                     wrap.style.zIndex = '1000';
                     wrap.style.background = '#f4f8fb';
                     wrap.style.borderBottom = '1px solid rgba(44, 95, 141, 0.28)';
-                    wrap.style.paddingTop = resultsMode ? '0.25rem' : '0.56rem';
-                    wrap.style.paddingBottom = resultsMode ? '0.25rem' : '1.16rem';
+                    wrap.style.paddingTop = resultsMode ? '0.45rem' : '0.56rem';
+                    wrap.style.paddingBottom = resultsMode ? '0.45rem' : '1.16rem';
+                    wrap.style.minHeight = resultsMode ? '2.7rem' : '';
+                    wrap.style.height = 'auto';
                     wrap.style.marginBottom = '0';
                 }
 

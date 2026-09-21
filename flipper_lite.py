@@ -696,7 +696,6 @@ def render_landing_demo_frame(recommendations_df):
         <script>
         (function() {
             const doc = window.parent.document;
-            if (window.parent.__flipperAgeNudgeBound) return;
 
             function findAgeSelectbox() {
                 const marker = doc.getElementById('flipper-age-select-marker');
@@ -762,6 +761,8 @@ def render_landing_demo_frame(recommendations_df):
                 }, 500);
             }
 
+            window.parent.__flipperPulseAgeSelect = pulseAgeSelect;
+            if (window.parent.__flipperAgeNudgeBound) return;
             window.parent.__flipperAgeNudgeBound = true;
             doc.addEventListener('click', function(event) {
                 const thumb = event.target.closest('.landing-demo-thumbnail-nudge');
@@ -1010,6 +1011,7 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                 }, 500);
             }
 
+            window.parent.__flipperPulseAgeSelect = pulseAgeSelect;
             if (!window.parent.__flipperAgeNudgeBound) {
                 window.parent.__flipperAgeNudgeBound = true;
                 doc.addEventListener('click', function(event) {

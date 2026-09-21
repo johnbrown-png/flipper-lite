@@ -670,6 +670,56 @@ class CurriculumAssistant:
                     if (tip) tip.classList.remove('is-visible');
                 }
 
+                function findAgeSelectbox() {
+                    const marker = doc.getElementById('flipper-age-select-marker');
+                    if (marker) {
+                        const col = marker.closest('[data-testid="stColumn"]')
+                            || marker.closest('[data-testid="column"]')
+                            || marker.closest('[data-testid="stHorizontalBlock"]');
+                        if (col) {
+                            const box = col.querySelector('[data-testid="stSelectbox"]');
+                            if (box) return box;
+                        }
+                    }
+                    return doc.querySelector('[data-testid="stSelectbox"]');
+                }
+
+                function ageIsPlaceholder() {
+                    const box = findAgeSelectbox();
+                    const text = ((box && box.innerText) || '').replace(/\\s+/g, ' ').trim();
+                    return text.indexOf("Learner's Age?") !== -1;
+                }
+
+                function closeTopicMenu() {
+                    const esc = new KeyboardEvent('keydown', {
+                        key: 'Escape',
+                        code: 'Escape',
+                        keyCode: 27,
+                        which: 27,
+                        bubbles: true,
+                        cancelable: true,
+                    });
+                    doc.dispatchEvent(esc);
+                }
+
+                function pulseAgeFromTopic(event) {
+                    const box = findTopicSelectbox();
+                    if (!box || !box.contains(event.target)) return false;
+                    if (!ageIsPlaceholder()) return false;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (typeof event.stopImmediatePropagation === 'function') {
+                        event.stopImmediatePropagation();
+                    }
+                    hideTooltip();
+                    if (typeof window.parent.__flipperPulseAgeSelect === 'function') {
+                        window.parent.__flipperPulseAgeSelect();
+                    }
+                    closeTopicMenu();
+                    setTimeout(closeTopicMenu, 0);
+                    return true;
+                }
+
                 if (window.parent.__flipperTopicTooltipBound) return;
                 window.parent.__flipperTopicTooltipBound = true;
 
@@ -688,6 +738,19 @@ class CurriculumAssistant:
                     if (box.contains(event.target) && !box.contains(leftFor)) {
                         hideTooltip();
                     }
+                }, true);
+
+                doc.addEventListener('mousedown', function(event) {
+                    pulseAgeFromTopic(event);
+                }, true);
+
+                doc.addEventListener('click', function(event) {
+                    pulseAgeFromTopic(event);
+                }, true);
+
+                doc.addEventListener('keydown', function(event) {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    pulseAgeFromTopic(event);
                 }, true);
             })();
             </script>

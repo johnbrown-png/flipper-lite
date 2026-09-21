@@ -506,10 +506,11 @@ class CurriculumAssistant:
         st.markdown(
             """
             <style>
-            /* Keep step headings flush against their dropdowns. */
+            /* 1rem space below Step 1 / Step 2 headings. */
             div[data-testid="stElementContainer"]:has(.step-one-heading),
             div[data-testid="stElementContainer"]:has(.step-two-heading) {
                 margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
             }
             .step-one-heading,
             .step-two-heading {
@@ -519,7 +520,7 @@ class CurriculumAssistant:
                 letter-spacing: -0.005em;
                 color: inherit;
                 margin: 0;
-                padding: 0.6rem 0 0 0;
+                padding: 0.6rem 0 1rem 0;
             }
             div[data-testid="stSelectbox"]:has(label[data-testid="stWidgetLabel"]) div[data-baseweb="select"] > div {
                 min-height: 44px;

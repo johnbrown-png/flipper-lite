@@ -442,7 +442,7 @@ def render_results_breadcrumb(breadcrumb_parts, results_focus_mode=False):
         )
     else:
         st.markdown(
-            f"<p class='flipper-results-breadcrumb' style='font-size: 0.84rem; margin-top: 0.5rem; margin-bottom: 1rem;'>{breadcrumb_text}</p>",
+            f"<p class='flipper-results-breadcrumb' style='font-size: 0.84rem; margin-top: 0.5rem; margin-bottom: 0;'>{breadcrumb_text}</p>",
             unsafe_allow_html=True,
         )
 
@@ -1545,13 +1545,13 @@ def main():
                     else:
                         st.markdown(
                             f"""
-                            <div style="
+                            <div class="flipper-small-step-desc" style="
                                 background: linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(234,242,250,0.96) 100%);
                                 border: 1px solid rgba(74, 144, 200, 0.28);
                                 border-left: 7px solid #1e3a5f;
                                 border-radius: 12px;
                                 padding: 0.85rem 1rem 0.9rem 1rem;
-                                margin: 0 0 1rem 0;
+                                margin: 0;
                                 box-shadow: 0 6px 18px rgba(30, 58, 95, 0.12);
                                 color: #18324f;
                                 font-size: 0.96rem;
@@ -1659,12 +1659,12 @@ def main():
             if results_focus_mode and compact_small_step_desc:
                 st.markdown(
                     f"""
-                    <div style="
+                    <div class="flipper-small-step-desc" style="
                         background: rgba(255,255,255,0.82);
                         border: 1px solid rgba(74, 144, 200, 0.25);
                         border-radius: 9px;
                         padding: 0.35rem 0.6rem;
-                        margin: 0.2rem 0 0.45rem 0;
+                        margin: 0;
                         color: #18324f;
                         font-size: 0.91rem;
                         line-height: 1.3;

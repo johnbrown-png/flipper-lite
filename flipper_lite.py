@@ -546,11 +546,11 @@ def render_landing_demo_frame(recommendations_df):
         textwrap.dedent(f"""
         <section class="landing-demo-frame" aria-label="Three example video suggestions">
             <div class="landing-demo-heading">
-                <div>
-                    <p class="landing-demo-eyebrow">What you get</p>
+                <p class="landing-demo-eyebrow">What you get</p>
+                <div class="landing-demo-title-row">
                     <h2>Three great videos for every step in maths from age 5 to 15</h2>
+                    <p class="landing-demo-context"><strong>Age 5-6</strong> <span aria-hidden="true">·</span> Autumn <span aria-hidden="true">·</span> Place value within 10 <span aria-hidden="true">·</span> Sort objects</p>
                 </div>
-                <p class="landing-demo-context"><strong>Age 5-6</strong> <span aria-hidden="true">·</span> Autumn <span aria-hidden="true">·</span> Place value within 10 <span aria-hidden="true">·</span> Sort objects</p>
             </div>
             <div class="landing-demo-cards">{''.join(cards)}</div>
         </section>
@@ -558,55 +558,67 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-frame {{
                 display: flex;
                 flex-direction: column;
-                min-height: clamp(280px, 40vh, 480px);
-                height: clamp(280px, 40vh, 480px);
-                max-height: clamp(280px, 40vh, 480px);
-                margin: 0rem 0 0.4rem;
+                min-height: clamp(308px, 44vh, 528px);
+                height: clamp(308px, 44vh, 528px);
+                max-height: clamp(308px, 44vh, 528px);
+                margin: 0rem 0 0.32rem;
                 padding: clamp(0.85rem, 2vw, 1.35rem);
                 border: 1px solid rgba(44, 95, 141, 0.24);
                 border-radius: 12px;
                 background: rgba(255, 255, 255, 0.9);
                 box-shadow: 0 10px 26px rgba(30, 58, 95, 0.12);
                 box-sizing: border-box;
+                overflow: hidden;
             }}
             .landing-demo-heading {{
                 display: flex;
-                align-items: end;
-                justify-content: space-between;
+                flex-direction: column;
                 flex: 0 0 auto;
-                gap: 1.2rem;
-                margin-bottom: 0.68rem;
+                gap: 0.12rem;
+                margin-bottom: 0.28rem;
             }}
             .landing-demo-eyebrow {{
-                margin: 0 0 0.28rem;
+                margin: 0;
                 color: #4a90c8;
                 font-size: 0.624rem;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
             }}
+            .landing-demo-title-row {{
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                width: 100%;
+                flex-wrap: nowrap;
+            }}
             .landing-demo-heading h2 {{
                 margin: 0;
                 color: #1e3a5f;
                 font-family: 'Poppins', sans-serif;
-                font-size: clamp(0.96rem, 1.6vw, 1.36rem);
+                font-size: 1.2rem;
                 line-height: 1.2;
+                flex: 1 1 auto;
+                min-width: 0;
+                white-space: nowrap;
             }}
             .landing-demo-context {{
-                max-width: 32rem;
                 margin: 0;
                 color: #2c5f8d;
                 font-size: 0.72rem;
-                line-height: 1.4;
+                line-height: 1.2;
                 text-align: right;
+                flex: 0 0 auto;
+                white-space: nowrap;
             }}
             .landing-demo-cards {{
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 0.92rem;
-                max-width: 80%;
-                width: 80%;
-                flex: 1 1 auto;
+                gap: 0.74rem;
+                max-width: 64%;
+                width: 64%;
+                flex: 0 0 auto;
                 min-height: 0;
                 margin: 0 auto;
                 align-content: start;
@@ -648,18 +660,18 @@ def render_landing_demo_frame(recommendations_df):
                 left: 50%;
                 top: 50%;
                 display: grid;
-                width: 2.88rem;
-                height: 2.88rem;
+                width: 2.3rem;
+                height: 2.3rem;
                 transform: translate(-50%, -50%);
                 place-items: center;
                 border-radius: 50%;
                 color: #fff;
                 background: rgba(210, 35, 35, 0.95);
-                font-size: 1.104rem;
+                font-size: 0.88rem;
                 box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
             }}
             .landing-demo-card-body {{
-                padding: 0.44rem 0.6rem 0.52rem;
+                padding: 0.35rem 0.48rem 0.42rem;
             }}
             .landing-demo-card-body h3 {{
                 display: -webkit-box;
@@ -680,10 +692,10 @@ def render_landing_demo_frame(recommendations_df):
                 line-height: 1.3;
             }}
             @media (max-width: 700px) {{
-                .landing-demo-frame {{ min-height: 0; height: auto; max-height: none; }}
-                .landing-demo-heading {{ display: block; }}
-                .landing-demo-context {{ margin-top: 0.65rem; text-align: left; }}
-                .landing-demo-cards {{ grid-template-columns: 1fr; }}
+                .landing-demo-frame {{ min-height: 0; height: auto; max-height: none; overflow: visible; }}
+                .landing-demo-title-row {{ display: block; }}
+                .landing-demo-context {{ margin-top: 0.4rem; text-align: left; white-space: normal; }}
+                .landing-demo-cards {{ grid-template-columns: 1fr; width: 80%; max-width: 80%; }}
                 .landing-demo-card {{ display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }}
                 .landing-demo-card-body {{ align-self: center; }}
             }}
@@ -892,8 +904,8 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                     wrap.style.zIndex = '1000';
                     wrap.style.background = '#f4f8fb';
                     wrap.style.borderBottom = '1px solid rgba(44, 95, 141, 0.28)';
-                    wrap.style.paddingTop = '0.7rem';
-                    wrap.style.paddingBottom = '1.45rem';
+                    wrap.style.paddingTop = '0.56rem';
+                    wrap.style.paddingBottom = '1.16rem';
                     wrap.style.marginBottom = '0';
                 }
 

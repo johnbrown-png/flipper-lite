@@ -513,13 +513,13 @@ class CurriculumAssistant:
             }
             .step-one-heading,
             .step-two-heading {
-                font-size: 1.4rem !important;
+                font-size: 1.2rem !important;
                 font-weight: 600;
-                line-height: 1.2;
+                line-height: 1.15;
                 letter-spacing: -0.005em;
                 color: inherit;
                 margin: 0;
-                padding: 0.75rem 0 0 0;
+                padding: 0.6rem 0 0 0;
             }
             div[data-testid="stSelectbox"]:has(label[data-testid="stWidgetLabel"]) div[data-baseweb="select"] > div {
                 min-height: 44px;

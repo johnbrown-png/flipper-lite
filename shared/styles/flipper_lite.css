@@ -37,7 +37,7 @@ header[data-testid="stHeader"] {
 
 /* Reduce spacing between elements */
 .element-container {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 /* Make headers more compact */
@@ -142,7 +142,7 @@ div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
     background: #f4f8fb;
     border-bottom: 1px solid rgba(44, 95, 141, 0.28);
     box-shadow: 0 4px 12px rgba(30, 58, 95, 0.06);
-    padding: 0.7rem 0.25rem 1.45rem;
+    padding: 0.56rem 0.25rem 1.16rem;
     margin-bottom: 0 !important;
 }
 
@@ -260,15 +260,26 @@ div[data-testid="stElementContainer"]:has(.curriculum-assistant-chrome) {
 
 div[data-testid="stElementContainer"]:has(.step-one-heading),
 div[data-testid="stElementContainer"]:has(.step-two-heading) {
-    margin-top: 0.15rem !important;
+    margin-top: 0.12rem !important;
     margin-bottom: 0 !important;
 }
 
 h3.step-one-heading,
 h3.step-two-heading {
-    font-size: 1.4rem !important;
-    padding-top: 0.15rem !important;
+    font-size: 1.2rem !important;
+    padding-top: 0.12rem !important;
+    margin-bottom: 0 !important;
+    line-height: 1.15;
     scroll-margin-top: 8.5rem;
+}
+
+div[data-testid="stElementContainer"]:has(.landing-demo-frame) {
+    margin-bottom: 0 !important;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.flipper-age-select-marker) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 @keyframes flipper-age-nudge {

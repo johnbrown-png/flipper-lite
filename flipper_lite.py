@@ -839,8 +839,25 @@ def _landing_photo_path(filename: str) -> str:
     return str(original) if original.exists() else ""
 
 
-def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
+def render_sticky_landing_header(header_gradient: str, ai_accent_color: str, include_nav: bool = True):
     """Render the landing banner with in-page jumps, kept visible while scrolling."""
+    if include_nav:
+        nav_html = (
+            '<nav class="flipper-sticky-nav" aria-label="Landing sections">'
+            '<a class="flipper-nav-link" href="#teacher">Teacher</a>'
+            '<span class="flipper-nav-gap" aria-hidden="true"></span>'
+            '<a class="flipper-nav-link" href="#parent">Parent</a>'
+            '<span class="flipper-nav-gap" aria-hidden="true"></span>'
+            '<a class="flipper-nav-link" href="#homeschooling">Homeschooling</a>'
+            '<span class="flipper-nav-gap" aria-hidden="true"></span>'
+            '<a class="flipper-nav-link" href="#about">About</a>'
+            '<span class="flipper-nav-end-space" aria-hidden="true"></span>'
+            '</nav>'
+        )
+    else:
+        # Keep this a real HTML node so Streamlit does not treat the following
+        # </div> as markdown and render it as a visible code block.
+        nav_html = '<span class="flipper-sticky-nav-placeholder" aria-hidden="true"></span>'
     st.markdown(
         f"""
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -852,17 +869,7 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str):
                 </span>
             </div>
             <div class="flipper-sticky-subrow">
-                <p class="flipper-sticky-tagline">The best Maths teaching on YouTube for age 5 to 15</p>
-                <nav class="flipper-sticky-nav" aria-label="Landing sections">
-                    <a class="flipper-nav-link" href="#teacher">Teacher</a>
-                    <span class="flipper-nav-gap" aria-hidden="true"></span>
-                    <a class="flipper-nav-link" href="#parent">Parent</a>
-                    <span class="flipper-nav-gap" aria-hidden="true"></span>
-                    <a class="flipper-nav-link" href="#homeschooling">Homeschooling</a>
-                    <span class="flipper-nav-gap" aria-hidden="true"></span>
-                    <a class="flipper-nav-link" href="#about">About</a>
-                    <span class="flipper-nav-end-space" aria-hidden="true"></span>
-                </nav>
+                <p class="flipper-sticky-tagline">The best Maths teaching on YouTube for age 5 to 15</p>{nav_html}
             </div>
         </div>
         <style>
@@ -1189,49 +1196,24 @@ def main():
     
     results_header_slot = None
 
+    render_sticky_landing_header(
+        HEADER_GRADIENT,
+        AI_ACCENT_COLOR,
+        include_nav=not results_focus_mode,
+    )
+
     if results_focus_mode:
         st.markdown(
-            f"""
+            """
             <style>
-            .block-container {{
+            .block-container {
                 padding-top: 0 !important;
-            }}
-            .results-brand-inline {{
-                margin: -0.2rem 0 0;
-                font-family: 'Poppins', sans-serif;
-                font-weight: 600;
-                line-height: 1;
-                letter-spacing: -0.01em;
-                white-space: nowrap;
-            }}
-            .results-brand-main,
-            .results-brand-sub {{
-                background: {HEADER_GRADIENT};
-                -webkit-background-clip: text;
-                background-clip: text;
-                color: transparent;
-                text-shadow: 0 0 0 rgba(30, 58, 95, 0.02);
-            }}
-            .results-brand-main {{
-                font-size: 1.93rem;
-            }}
-            .results-brand-sub {{
-                font-size: 1.09rem;
-                margin-left: 0.1rem;
-            }}
-            .results-brand-ai {{
-                color: {AI_ACCENT_COLOR};
-                -webkit-text-fill-color: {AI_ACCENT_COLOR};
-                background: none;
-            }}
+            }
             </style>
-            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
             """,
             unsafe_allow_html=True,
         )
         results_header_slot = st.container()
-    else:
-        render_sticky_landing_header(HEADER_GRADIENT, AI_ACCENT_COLOR)
     
     # Load precomputed recommendations
     recommendations_df = load_precomputed_recommendations_flat()
@@ -1413,20 +1395,9 @@ def main():
             if results_focus_mode and results_header_slot is not None:
                 with results_header_slot:
                     if show_step_nav:
-                        brand_col, email_col, nav_home_col, nav_back_col, nav_next_col = st.columns([6.5, 1.3, 1.3, 1.35, 1.35])
+                        _spacer_col, email_col, nav_home_col, nav_back_col, nav_next_col = st.columns([4, 1.3, 1.3, 1.35, 1.35])
                     else:
-                        brand_col, email_col = st.columns([8.5, 1.5])
-
-                    with brand_col:
-                        st.markdown(
-                            """
-                            <div class='results-brand-inline'>
-                                <span class='results-brand-main'>Flipper School</span>
-                                <span class='results-brand-sub'> - Cur<span class='results-brand-ai'>AI</span>ted Education Videos</span>
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                        _spacer_col, email_col = st.columns([8.5, 1.5])
 
                     with email_col:
                         render_email_recommendations_popover(ctx)

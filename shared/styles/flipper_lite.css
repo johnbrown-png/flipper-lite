@@ -195,9 +195,9 @@ div[data-testid="stElementContainer"]:has(iframe[height="1"]) {
     overflow: hidden !important;
 }
 
-/* 0.25rem here plus the results-view 0.25rem vertical gap = 0.5rem below the breadcrumb. */
+/* Sit the breadcrumb just below the third video card. */
 div[data-testid="stElementContainer"]:has(.flipper-results-breadcrumb) {
-    margin-top: 0 !important;
+    margin-top: 0.15rem !important;
     margin-bottom: 0.25rem !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;

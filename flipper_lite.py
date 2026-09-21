@@ -423,6 +423,30 @@ def render_email_recommendations_popover(ctx):
                 st.error(message)
 
 
+def render_results_breadcrumb(breadcrumb_parts, results_focus_mode=False):
+    """Render the Age | Term | Topic | Small Step trail."""
+    if not breadcrumb_parts:
+        return
+
+    breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
+    breadcrumb_text_plain = " | ".join(breadcrumb_parts)
+
+    if results_focus_mode:
+        st.markdown(
+            f"""
+            <div class="flipper-results-breadcrumb" style='font-size:0.84rem; margin:0; white-space:normal; overflow-wrap:anywhere;' title='{breadcrumb_text_plain}'>
+                {breadcrumb_text}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"<p class='flipper-results-breadcrumb' style='font-size: 0.84rem; margin-top: 0.5rem; margin-bottom: 1rem;'>{breadcrumb_text}</p>",
+            unsafe_allow_html=True,
+        )
+
+
 def render_result_card(result, compact=False, mobile_viewer_mode=False):
     """Render a single Video card."""
     
@@ -1492,47 +1516,27 @@ def main():
                         unsafe_allow_html=True,
                     )
 
-            # Display breadcrumb heading if curriculum context is available
+            breadcrumb_parts = []
+
+            # Build breadcrumb heading if curriculum context is available.
+            # Rendered below the third video card so the cards stay first.
             if ctx:
-                # Build breadcrumb with labeled sections
-                breadcrumb_parts = []
-            
                 if ctx.get('age'):
                     breadcrumb_parts.append(f"Age: {ctx['age']}")
-            
+
                 if ctx.get('term'):
                     breadcrumb_parts.append(f"Term: {ctx['term']}")
-            
-                # Add difficulty only if it has a value
+
                 difficulty = str(ctx.get('difficulty') or '').strip()
                 if difficulty:
                     breadcrumb_parts.append(f"Difficulty: {difficulty}")
-            
+
                 if ctx.get('topic'):
                     breadcrumb_parts.append(f"Topic: {ctx['topic']}")
 
                 small_step = str(ctx.get('small_step') or '').strip()
                 if small_step:
                     breadcrumb_parts.append(f"Small Step: {small_step}")
-            
-                # Display breadcrumb with smaller font and separators
-                if breadcrumb_parts:
-                    breadcrumb_text = " &nbsp;|&nbsp; ".join(breadcrumb_parts)
-                    breadcrumb_text_plain = " | ".join(breadcrumb_parts)
-
-                    if results_focus_mode:
-                        st.markdown(
-                            f"""
-                            <div class="flipper-results-breadcrumb" style='font-size:0.84rem; margin:0; white-space:normal; overflow-wrap:anywhere;' title='{breadcrumb_text_plain}'>
-                                {breadcrumb_text}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        breadcrumb_margin = "0.35rem" if results_focus_mode else "1rem"
-                        breadcrumb_top_margin = "0" if results_focus_mode else "0.5rem"
-                        st.markdown(f"<p style='font-size: 0.84rem; margin-top: {breadcrumb_top_margin}; margin-bottom: {breadcrumb_margin};'>{breadcrumb_text}</p>", unsafe_allow_html=True)
 
                 small_step_desc = str(ctx.get('small_step_desc') or '').strip()
                 if small_step_desc:
@@ -1640,12 +1644,17 @@ def main():
                         st.session_state.pending_step_nav = next_step
                         st.rerun()
 
-            for result in st.session_state.display_results:
+            for idx, result in enumerate(st.session_state.display_results):
                 render_result_card(
                     result,
                     compact=results_focus_mode,
                     mobile_viewer_mode=mobile_viewer_mode,
                 )
+                if idx == 2:
+                    render_results_breadcrumb(breadcrumb_parts, results_focus_mode)
+
+            if breadcrumb_parts and len(st.session_state.display_results) < 3:
+                render_results_breadcrumb(breadcrumb_parts, results_focus_mode)
 
             if results_focus_mode and compact_small_step_desc:
                 st.markdown(

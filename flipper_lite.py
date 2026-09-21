@@ -1203,19 +1203,6 @@ def main():
     )
 
     if results_focus_mode:
-        st.markdown(
-            """
-            <style>
-            .block-container {
-                padding-top: 0 !important;
-            }
-            [data-testid="stPopover"] button {
-                white-space: nowrap !important;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
         results_header_slot = st.container()
     
     # Load precomputed recommendations

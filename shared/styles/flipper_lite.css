@@ -147,6 +147,14 @@ div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
 }
 
 /* Results-view action buttons: collapse chrome above/below so video cards dominate. */
+body:has(.flipper-results-actions-hr) .block-container {
+    padding-top: 0 !important;
+}
+
+body:has(.flipper-results-actions-hr) [data-testid="stPopover"] button {
+    white-space: nowrap !important;
+}
+
 body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
     padding-bottom: 0.25rem !important;
     margin-bottom: 0 !important;
@@ -160,41 +168,55 @@ body:has(.flipper-results-actions-hr) .flipper-sticky-subrow {
     padding-bottom: 0 !important;
 }
 
-div[data-testid="stElementContainer"]:has(.flipper-results-actions-hr) {
-    margin-top: -0.75rem !important;
-    margin-bottom: -0.75rem !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has([data-testid="stIFrame"]) {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none;
 }
 
-div[data-testid="stElementContainer"]:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(.flipper-results-actions-hr) {
+body:has(.flipper-results-actions-hr) [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] {
+    gap: 0.25rem !important;
+}
+
+div[data-testid="stLayoutWrapper"]:has(> [data-testid="stVerticalBlock"] .flipper-results-actions-hr) {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
 }
 
-div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) {
+div[data-testid="stVerticalBlock"]:has(> [data-testid="stLayoutWrapper"] > [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) {
     gap: 0 !important;
 }
 
-div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) > [data-testid="stHorizontalBlock"] {
+div[data-testid="stHorizontalBlock"]:has([class*="st-key-step_nav_home_top"]),
+div[data-testid="stHorizontalBlock"]:has([data-testid="stPopoverButton"]) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    gap: 0.25rem !important;
+    align-items: center;
+}
+
+div[data-testid="stHorizontalBlock"]:has([class*="st-key-step_nav_home_top"]) [data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has([class*="st-key-step_nav_home_top"]) [data-testid="stButton"],
+div[data-testid="stHorizontalBlock"]:has([class*="st-key-step_nav_home_top"]) [data-testid="stPopover"],
+div[data-testid="stHorizontalBlock"]:has([data-testid="stPopoverButton"]) [data-testid="stColumn"],
+div[data-testid="stHorizontalBlock"]:has([data-testid="stPopoverButton"]) [data-testid="stButton"],
+div[data-testid="stHorizontalBlock"]:has([data-testid="stPopoverButton"]) [data-testid="stPopover"] {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
 }
 
-div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) [data-testid="stColumn"],
-div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) [data-testid="stButton"],
-div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) [data-testid="stPopover"] {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-div[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"]):has(.flipper-results-actions-hr) button {
+div[data-testid="stHorizontalBlock"]:has([class*="st-key-step_nav_home_top"]) button,
+div[data-testid="stHorizontalBlock"]:has([data-testid="stPopoverButton"]) button {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     padding-top: 0.12rem !important;
@@ -215,6 +237,7 @@ section.main:has(.flipper-sticky-header) {
 div[data-testid="stElementContainer"]:has(iframe[height="0"]),
 div[data-testid="stElementContainer"]:has(#flipper-video-results-top),
 div[data-testid="stElementContainer"]:has(.curriculum-assistant-chrome) {
+    display: none !important;
     position: absolute !important;
     width: 0 !important;
     height: 0 !important;

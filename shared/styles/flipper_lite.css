@@ -27,7 +27,7 @@ header[data-testid="stHeader"] {
 
 /* Reduce padding around main content */
 .block-container {
-    padding-top: 0.25rem;
+    padding-top: 0.0m;
     padding-bottom: 1rem;
     background: rgba(255, 255, 255, 0.7);
     border-radius: 12px;

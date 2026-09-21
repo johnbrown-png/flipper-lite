@@ -155,16 +155,18 @@ body:has(.flipper-results-actions-hr) [data-testid="stPopover"] button {
     white-space: nowrap !important;
 }
 
-body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(.flipper-sticky-header) {
-    padding-bottom: 0.25rem !important;
+body:has(.flipper-results-actions-hr) div[data-testid="stElementContainer"]:has(.flipper-sticky-header),
+div[data-testid="stElementContainer"]:has(.flipper-sticky-header--results) {
+    padding: 0.25rem 0.25rem 0.25rem !important;
     margin-bottom: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible;
 }
 
-body:has(.flipper-results-actions-hr) .flipper-sticky-header {
-    padding-bottom: 0 !important;
-}
-
-body:has(.flipper-results-actions-hr) .flipper-sticky-subrow {
+body:has(.flipper-results-actions-hr) .flipper-sticky-header,
+.flipper-sticky-header--results {
+    gap: 0;
     padding-bottom: 0 !important;
 }
 

@@ -841,8 +841,11 @@ def _landing_photo_path(filename: str) -> str:
 
 def render_sticky_landing_header(header_gradient: str, ai_accent_color: str, include_nav: bool = True):
     """Render the landing banner with in-page jumps, kept visible while scrolling."""
+    header_class = "flipper-sticky-header" if include_nav else "flipper-sticky-header flipper-sticky-header--results"
     if include_nav:
-        nav_html = (
+        subrow_html = (
+            '<div class="flipper-sticky-subrow">'
+            '<p class="flipper-sticky-tagline">The best Maths teaching on YouTube for age 5 to 15</p>'
             '<nav class="flipper-sticky-nav" aria-label="Landing sections">'
             '<a class="flipper-nav-link" href="#teacher">Teacher</a>'
             '<span class="flipper-nav-gap" aria-hidden="true"></span>'
@@ -853,24 +856,23 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str, inc
             '<a class="flipper-nav-link" href="#about">About</a>'
             '<span class="flipper-nav-end-space" aria-hidden="true"></span>'
             '</nav>'
+            '</div>'
         )
     else:
-        # Keep this a real HTML node so Streamlit does not treat the following
-        # </div> as markdown and render it as a visible code block.
-        nav_html = '<span class="flipper-sticky-nav-placeholder" aria-hidden="true"></span>'
+        # Brand-only banner on video cards. Keep a complete header div so Streamlit
+        # does not treat a following </div> as markdown and render it as a code block.
+        subrow_html = ""
     st.markdown(
         f"""
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-        <div class="flipper-sticky-header">
+        <div class="{header_class}">
             <div class="flipper-sticky-brand">
                 <span class="flipper-sticky-brand-main">Flipper School</span>
                 <span class="flipper-sticky-brand-sub">
                     - Cur<span class="flipper-sticky-brand-ai">AI</span>ted Education Videos
                 </span>
             </div>
-            <div class="flipper-sticky-subrow">
-                <p class="flipper-sticky-tagline">The best Maths teaching on YouTube for age 5 to 15</p>{nav_html}
-            </div>
+            {subrow_html}
         </div>
         <style>
             .flipper-sticky-brand-main,
@@ -906,13 +908,13 @@ def render_sticky_landing_header(header_gradient: str, ai_accent_color: str, inc
 
                 const wrap = header.closest('[data-testid="stElementContainer"]') || header.parentElement;
                 if (wrap) {
-                    const resultsMode = !!doc.querySelector('.flipper-results-actions-hr');
+                    const resultsMode = !!doc.querySelector('.flipper-sticky-header--results');
                     wrap.style.position = 'sticky';
                     wrap.style.top = '0px';
                     wrap.style.zIndex = '1000';
                     wrap.style.background = '#f4f8fb';
                     wrap.style.borderBottom = '1px solid rgba(44, 95, 141, 0.28)';
-                    wrap.style.paddingTop = '0.56rem';
+                    wrap.style.paddingTop = resultsMode ? '0.25rem' : '0.56rem';
                     wrap.style.paddingBottom = resultsMode ? '0.25rem' : '1.16rem';
                     wrap.style.marginBottom = '0';
                 }

@@ -558,11 +558,11 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-frame {{
                 display: flex;
                 flex-direction: column;
-                min-height: clamp(308px, 44vh, 528px);
-                height: clamp(308px, 44vh, 528px);
-                max-height: clamp(308px, 44vh, 528px);
+                min-height: clamp(277px, 39.6vh, 475px);
+                height: clamp(277px, 39.6vh, 475px);
+                max-height: clamp(277px, 39.6vh, 475px);
                 margin: 0rem 0 0.32rem;
-                padding: clamp(0.85rem, 2vw, 1.35rem);
+                padding: clamp(0.765rem, 1.8vw, 1.215rem);
                 border: 1px solid rgba(44, 95, 141, 0.24);
                 border-radius: 12px;
                 background: rgba(255, 255, 255, 0.9);
@@ -615,9 +615,9 @@ def render_landing_demo_frame(recommendations_df):
             .landing-demo-cards {{
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 0.74rem;
-                max-width: 64%;
-                width: 64%;
+                gap: 0.67rem;
+                max-width: 57.6%;
+                width: 57.6%;
                 flex: 0 0 auto;
                 min-height: 0;
                 margin: 0 auto;
@@ -660,14 +660,14 @@ def render_landing_demo_frame(recommendations_df):
                 left: 50%;
                 top: 50%;
                 display: grid;
-                width: 2.3rem;
-                height: 2.3rem;
+                width: 2.07rem;
+                height: 2.07rem;
                 transform: translate(-50%, -50%);
                 place-items: center;
                 border-radius: 50%;
                 color: #fff;
                 background: rgba(210, 35, 35, 0.95);
-                font-size: 0.88rem;
+                font-size: 0.79rem;
                 box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
             }}
             .landing-demo-card-body {{
@@ -695,7 +695,7 @@ def render_landing_demo_frame(recommendations_df):
                 .landing-demo-frame {{ min-height: 0; height: auto; max-height: none; overflow: visible; }}
                 .landing-demo-title-row {{ display: block; }}
                 .landing-demo-context {{ margin-top: 0.4rem; text-align: left; white-space: normal; }}
-                .landing-demo-cards {{ grid-template-columns: 1fr; width: 80%; max-width: 80%; }}
+                .landing-demo-cards {{ grid-template-columns: 1fr; width: 72%; max-width: 72%; }}
                 .landing-demo-card {{ display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }}
                 .landing-demo-card-body {{ align-self: center; }}
             }}

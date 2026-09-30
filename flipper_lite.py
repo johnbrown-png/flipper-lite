@@ -46,8 +46,8 @@ from thoughtprompt.page import (
 # Selection payload normalization, routing, deferred widget sync, and debug-panel
 # eligibility checks are centralized in shared/step_selection.py.
 
-# Mothballed topic-table search (prefix text box + table): hidden by default.
-ENABLE_TOPIC_TABLE_SEARCH = False
+# Topic-table search (user-entered free-text prefix box + results table): shown by default.
+ENABLE_TOPIC_TABLE_SEARCH = True
 
 # Natural-language Flipper Search (search_engine.py / streamlit_ui.py): disabled, kept for future re-enable.
 ENABLE_FLIPPER_SEARCH = False

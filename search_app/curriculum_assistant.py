@@ -348,6 +348,44 @@ class CurriculumAssistant:
         ul[data-baseweb="menu"] li {
             background-color: #ffffff !important;
         }
+        /* Topic free-text search: same white field and 2px dark outline as Age / Topic dropdowns.
+           Scoped to the widget immediately after the search marker so other text fields stay untouched. */
+        div[data-testid="stElementContainer"]:has(.flipper-topic-search-marker) {
+            display: none !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+        }
+        div[data-testid="stElementContainer"]:has(.flipper-topic-search-marker) + div[data-testid="stElementContainer"] {
+            margin-top: 0.75rem;
+        }
+        div[data-testid="stElementContainer"]:has(.flipper-topic-search-marker) + div[data-testid="stElementContainer"] [data-testid="stTextInput"] div[data-baseweb="input"] {
+            background-color: #ffffff !important;
+            border: 2px solid #1e3a5f !important;
+            border-radius: 8px !important;
+            min-height: 44px !important;
+            box-shadow: none !important;
+        }
+        div[data-testid="stElementContainer"]:has(.flipper-topic-search-marker) + div[data-testid="stElementContainer"] [data-testid="stTextInput"] div[data-baseweb="input"]:hover,
+        div[data-testid="stElementContainer"]:has(.flipper-topic-search-marker) + div[data-testid="stElementContainer"] [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
+            border-color: #2c5f8d !important;
+            box-shadow: 0 0 0 3px rgba(44, 95, 141, 0.25) !important;
+        }
+        div[data-testid="stElementContainer"]:has(.flipper-topic-search-marker) + div[data-testid="stElementContainer"] [data-testid="stTextInput"] div[data-baseweb="input"] > div {
+            background-color: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        div[data-testid="stElementContainer"]:has(.flipper-topic-search-marker) + div[data-testid="stElementContainer"] [data-testid="stTextInput"] input {
+            background-color: #ffffff !important;
+            min-height: 40px !important;
+        }
+        div[data-testid="stElementContainer"]:has(.flipper-topic-search-marker) + div[data-testid="stElementContainer"] [data-testid="stTextInput"] input::placeholder {
+            color: #31333F !important;
+            opacity: 1 !important;
+        }
         </style>
         ''', unsafe_allow_html=True)
 
@@ -388,95 +426,7 @@ class CurriculumAssistant:
             st.session_state.clear_topic_prefix_on_open = True
             self._clear_parent_results_state()
 
-        if show_topic_table_search:
-            pending_topic_open = st.session_state.get('pending_topic_open')
-            if pending_topic_open:
-                pending_age = pending_topic_open.get('age', '')
-                pending_topic = pending_topic_open.get('topic', '')
-                difficulty_options = self._get_topic_difficulty_options(pending_age, pending_topic)
-                if not difficulty_options:
-                    difficulty_options = ['Foundation', 'Higher']
-
-                st.info(f"Choose difficulty for {pending_topic} ({pending_age})")
-                if 'pending_open_difficulty' not in st.session_state or st.session_state.pending_open_difficulty not in difficulty_options:
-                    st.session_state.pending_open_difficulty = difficulty_options[0]
-
-                st.radio(
-                    "Difficulty",
-                    options=difficulty_options,
-                    key='pending_open_difficulty',
-                    horizontal=True,
-                )
-                p1, p2, _ = st.columns([1, 1, 5])
-                with p1:
-                    if st.button('Continue', key='confirm_pending_topic_open'):
-                        chosen_diff = st.session_state.get('pending_open_difficulty', difficulty_options[0])
-                        st.session_state.pending_topic_open = None
-                        _apply_topic_open_selection(pending_age, pending_topic, chosen_diff)
-                        st.rerun()
-                with p2:
-                    if st.button('Cancel', key='cancel_pending_topic_open'):
-                        st.session_state.pending_topic_open = None
-                        st.rerun()
-
-            # Prefix topic search: hidden until user types.
-            topic_prefix = st.text_input(
-                "",
-                placeholder="Search e.g. fractions, algebra...",
-                key="topic_prefix_search"
-            )
-
-            topic_prefix = (topic_prefix or '').strip()
-            if topic_prefix:
-                prefix_lower = topic_prefix.lower()
-                search_rows = self._build_topic_search_rows()
-                matches = search_rows[search_rows['topic'].str.lower().str.startswith(prefix_lower)]
-
-                if matches.empty:
-                    st.caption(f"No topics begin with '{topic_prefix}'.")
-                else:
-                    st.caption(f"{len(matches)} topic/age matches")
-                    longest_topic_len = max(len(str(v)) for v in matches['topic'])
-                    longest_age_len = max(len(str(v)) for v in matches['age'])
-
-                    # Keep columns compact and left-justified based on visible search results.
-                    topic_col_chars = max(len('Topic'), longest_topic_len + 2)
-                    age_col_chars = max(len('Age'), 5, longest_age_len)
-                    # Give Action enough width so Open never wraps.
-                    action_col_chars = max(12, len('Action') + 4, len('Open') + 6)
-                    compact_total = topic_col_chars + age_col_chars + action_col_chars
-                    spacer_chars = max(16, compact_total * 2)
-                    col_spec = [topic_col_chars, age_col_chars, action_col_chars, spacer_chars]
-
-                    h1, h2, h4, _hs = st.columns(col_spec)
-                    with h1:
-                        st.markdown("**Topic**")
-                    with h2:
-                        st.markdown("**Age**")
-                    with h4:
-                        st.markdown("")
-                    for idx, row in matches.iterrows():
-                        topic_val = row['topic']
-                        age_val = row['age']
-
-                        c1, c2, c4, _cs = st.columns(col_spec)
-                        with c1:
-                            st.write(topic_val)
-                        with c2:
-                            st.write(age_val)
-                        with c4:
-                            btn_key = f"open_topic_match_{idx}_{age_val}_{topic_val}".replace(' ', '_')
-                            if st.button("Open", key=btn_key):
-                                if age_val in ['13-14', '14-15']:
-                                    st.session_state.pending_topic_open = {
-                                        'age': age_val,
-                                        'topic': topic_val,
-                                    }
-                                    st.rerun()
-                                else:
-                                    _apply_topic_open_selection(age_val, topic_val, '')
-                                    st.rerun()
-        else:
+        if not show_topic_table_search:
             # Ensure hidden topic-table search state does not leak into the visible dropdown flow.
             st.session_state.pending_topic_open = None
 
@@ -662,7 +612,17 @@ class CurriculumAssistant:
                     tip.classList.add('is-visible');
                     const width = tip.offsetWidth || 280;
                     const maxLeft = Math.max(12, (window.parent.innerWidth || 0) - width - 12);
-                    tip.style.top = (rect.bottom + 8) + 'px';
+                    const search = doc.querySelector('.flipper-topic-search-marker');
+                    let top = rect.bottom + 8;
+                    if (search) {
+                        const searchInput = search.closest('[data-testid="stElementContainer"]');
+                        const next = searchInput ? searchInput.nextElementSibling : null;
+                        const field = next ? next.querySelector('[data-testid="stTextInput"]') : null;
+                        if (field) {
+                            top = field.getBoundingClientRect().bottom + 8;
+                        }
+                    }
+                    tip.style.top = top + 'px';
                     tip.style.left = Math.max(12, Math.min(rect.left, maxLeft)) + 'px';
                 }
 
@@ -772,6 +732,99 @@ class CurriculumAssistant:
                     },
                 )
             st.rerun()
+
+        if show_topic_table_search:
+            pending_topic_open = st.session_state.get('pending_topic_open')
+            if pending_topic_open:
+                pending_age = pending_topic_open.get('age', '')
+                pending_topic = pending_topic_open.get('topic', '')
+                difficulty_options = self._get_topic_difficulty_options(pending_age, pending_topic)
+                if not difficulty_options:
+                    difficulty_options = ['Foundation', 'Higher']
+
+                st.info(f"Choose difficulty for {pending_topic} ({pending_age})")
+                if 'pending_open_difficulty' not in st.session_state or st.session_state.pending_open_difficulty not in difficulty_options:
+                    st.session_state.pending_open_difficulty = difficulty_options[0]
+
+                st.radio(
+                    "Difficulty",
+                    options=difficulty_options,
+                    key='pending_open_difficulty',
+                    horizontal=True,
+                )
+                p1, p2, _ = st.columns([1, 1, 5])
+                with p1:
+                    if st.button('Continue', key='confirm_pending_topic_open'):
+                        chosen_diff = st.session_state.get('pending_open_difficulty', difficulty_options[0])
+                        st.session_state.pending_topic_open = None
+                        _apply_topic_open_selection(pending_age, pending_topic, chosen_diff)
+                        st.rerun()
+                with p2:
+                    if st.button('Cancel', key='cancel_pending_topic_open'):
+                        st.session_state.pending_topic_open = None
+                        st.rerun()
+
+            st.markdown(
+                '<div id="flipper-topic-search-marker" class="flipper-topic-search-marker"></div>',
+                unsafe_allow_html=True,
+            )
+            topic_prefix = st.text_input(
+                "Or type a skill",
+                placeholder="Or type a skill e.g. adding fractions",
+                key="topic_prefix_search",
+                label_visibility="collapsed",
+            )
+
+            topic_prefix = (topic_prefix or '').strip()
+            if topic_prefix:
+                prefix_lower = topic_prefix.lower()
+                search_rows = self._build_topic_search_rows()
+                matches = search_rows[search_rows['topic'].str.lower().str.startswith(prefix_lower)]
+
+                if matches.empty:
+                    st.caption(f"No topics begin with '{topic_prefix}'.")
+                else:
+                    st.caption(f"{len(matches)} topic/age matches")
+                    longest_topic_len = max(len(str(v)) for v in matches['topic'])
+                    longest_age_len = max(len(str(v)) for v in matches['age'])
+
+                    # Keep columns compact and left-justified based on visible search results.
+                    topic_col_chars = max(len('Topic'), longest_topic_len + 2)
+                    age_col_chars = max(len('Age'), 5, longest_age_len)
+                    # Give Action enough width so Open never wraps.
+                    action_col_chars = max(12, len('Action') + 4, len('Open') + 6)
+                    compact_total = topic_col_chars + age_col_chars + action_col_chars
+                    spacer_chars = max(16, compact_total * 2)
+                    col_spec = [topic_col_chars, age_col_chars, action_col_chars, spacer_chars]
+
+                    h1, h2, h4, _hs = st.columns(col_spec)
+                    with h1:
+                        st.markdown("**Topic**")
+                    with h2:
+                        st.markdown("**Age**")
+                    with h4:
+                        st.markdown("")
+                    for idx, row in matches.iterrows():
+                        topic_val = row['topic']
+                        age_val = row['age']
+
+                        c1, c2, c4, _cs = st.columns(col_spec)
+                        with c1:
+                            st.write(topic_val)
+                        with c2:
+                            st.write(age_val)
+                        with c4:
+                            btn_key = f"open_topic_match_{idx}_{age_val}_{topic_val}".replace(' ', '_')
+                            if st.button("Open", key=btn_key):
+                                if age_val in ['13-14', '14-15']:
+                                    st.session_state.pending_topic_open = {
+                                        'age': age_val,
+                                        'topic': topic_val,
+                                    }
+                                    st.rerun()
+                                else:
+                                    _apply_topic_open_selection(age_val, topic_val, '')
+                                    st.rerun()
 
         # Show small steps if topic selected
         if topics_ready and st.session_state.curr_topic != 'Topic ?':

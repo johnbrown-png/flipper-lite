@@ -1146,7 +1146,7 @@ def render_landing_audience_sections():
             "image": "teacher.jpg",
             "alt": "Teacher presenting a lesson to a class",
             "paragraphs": [
-                "Find a video on a specific topic for catch-up, homework, pre-learning, small group work or to help kids catch up after being away, or any other uses, it's up to you.",
+                "Find a video on a specific topic, to grab attention, as a reminder, for homework, pre-learning, small group work or to help kids catch up after being away, or any other uses, it's up to you.",
                 "Using White Rose curriculum? Find 3 videos for every White Rose Small Step for age 5 to 15.",
                 "Quickly find topic specific learning materials for learners who have missed a key lesson.",
                 "Introducing a new topic? Why not start with a short video to set context?",

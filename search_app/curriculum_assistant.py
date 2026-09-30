@@ -362,7 +362,9 @@ class CurriculumAssistant:
             background: linear-gradient(135deg, #1e3a5f 0%, #2c5f8d 100%) !important;
             color: #fff !important;
         }
-        /* Keep Watch buttons (skill search results and topic step list) on one line */
+        /* Keep Watch buttons (skill search results and topic step list) on one line.
+           The search header's empty action column carries a marker so it gets the same width as the rows. */
+        div[data-testid="stColumn"]:has(.flipper-watch-col-marker),
         div[data-testid="stColumn"]:has([class*="st-key-open_step_match_"]),
         div[data-testid="stColumn"]:has([class*="st-key-find_step_topic_"]) {
             min-width: 6.5rem !important;
@@ -838,7 +840,7 @@ class CurriculumAssistant:
                     with h3:
                         st.markdown("**Age**")
                     with h4:
-                        st.markdown("")
+                        st.markdown('<span class="flipper-watch-col-marker"></span>', unsafe_allow_html=True)
                     for idx, row in shown.iterrows():
                         step_id = row['small_step_id']
                         step_val = row['small_step']

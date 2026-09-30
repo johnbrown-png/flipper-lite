@@ -197,6 +197,7 @@ class CurriculumAssistant:
         st.session_state.topic_select_topic_search = 'Topic ?'
         st.session_state.topic_prefix_search = ''
         st.session_state.pending_topic_open = None
+        st.session_state.pending_topic_open_apply = None
         st.session_state.pending_open_difficulty = 'Foundation'
         st.session_state.clear_topic_prefix_on_open = False
         st.session_state.pending_step_nav = None
@@ -403,13 +404,12 @@ class CurriculumAssistant:
             else:
                 return None, None
 
-        # Clear active topic prefix after selecting an Open result row.
-        if st.session_state.get('clear_topic_prefix_on_open'):
-            st.session_state.topic_prefix_search = ''
-            st.session_state.clear_topic_prefix_on_open = False
-
         def _apply_topic_open_selection(age_val, topic_val, difficulty_val=''):
-            """Apply selection from prefix table and route into existing topic/small-step flow."""
+            """Apply selection from prefix table and route into existing topic/small-step flow.
+
+            Must run before the age, difficulty, and topic widgets are created.
+            Streamlit rejects writes to those widget keys later in the same run.
+            """
             st.session_state.curr_year = age_val
             st.session_state.year_select_topic_search = age_val
 
@@ -425,6 +425,19 @@ class CurriculumAssistant:
             st.session_state.topic_select_topic_search = topic_val
             st.session_state.clear_topic_prefix_on_open = True
             self._clear_parent_results_state()
+
+        pending_apply = st.session_state.pop('pending_topic_open_apply', None)
+        if pending_apply:
+            _apply_topic_open_selection(
+                pending_apply.get('age', ''),
+                pending_apply.get('topic', ''),
+                pending_apply.get('difficulty', ''),
+            )
+
+        # Clear active topic prefix after selecting an Open result row.
+        if st.session_state.get('clear_topic_prefix_on_open'):
+            st.session_state.topic_prefix_search = ''
+            st.session_state.clear_topic_prefix_on_open = False
 
         if not show_topic_table_search:
             # Ensure hidden topic-table search state does not leak into the visible dropdown flow.
@@ -757,7 +770,11 @@ class CurriculumAssistant:
                     if st.button('Continue', key='confirm_pending_topic_open'):
                         chosen_diff = st.session_state.get('pending_open_difficulty', difficulty_options[0])
                         st.session_state.pending_topic_open = None
-                        _apply_topic_open_selection(pending_age, pending_topic, chosen_diff)
+                        st.session_state.pending_topic_open_apply = {
+                            'age': pending_age,
+                            'topic': pending_topic,
+                            'difficulty': chosen_diff,
+                        }
                         st.rerun()
                 with p2:
                     if st.button('Cancel', key='cancel_pending_topic_open'):
@@ -823,7 +840,11 @@ class CurriculumAssistant:
                                     }
                                     st.rerun()
                                 else:
-                                    _apply_topic_open_selection(age_val, topic_val, '')
+                                    st.session_state.pending_topic_open_apply = {
+                                        'age': age_val,
+                                        'topic': topic_val,
+                                        'difficulty': '',
+                                    }
                                     st.rerun()
 
         # Show small steps if topic selected

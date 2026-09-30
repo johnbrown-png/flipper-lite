@@ -1472,6 +1472,7 @@ def main():
                                 st.session_state.topic_select_topic_search = 'Topic ?'
                                 st.session_state.topic_prefix_search = ''
                                 st.session_state.pending_topic_open = None
+                                st.session_state.pending_topic_open_apply = None
                                 st.session_state.pending_open_difficulty = 'Foundation'
                                 st.session_state.clear_topic_prefix_on_open = False
                                 st.session_state.pending_step_nav = None
@@ -1605,6 +1606,7 @@ def main():
                         st.session_state.topic_select_topic_search = 'Topic ?'
                         st.session_state.topic_prefix_search = ''
                         st.session_state.pending_topic_open = None
+                        st.session_state.pending_topic_open_apply = None
                         st.session_state.pending_open_difficulty = 'Foundation'
                         st.session_state.clear_topic_prefix_on_open = False
                         st.session_state.pending_step_nav = None

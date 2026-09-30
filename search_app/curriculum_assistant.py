@@ -362,10 +362,20 @@ class CurriculumAssistant:
             background: linear-gradient(135deg, #1e3a5f 0%, #2c5f8d 100%) !important;
             color: #fff !important;
         }
-        /* Keep prefix-search Open buttons on one line */
-        button[key^="open_topic_match_"] {
+        /* Keep Watch buttons (skill search results and topic step list) on one line */
+        div[data-testid="stColumn"]:has([class*="st-key-open_step_match_"]),
+        div[data-testid="stColumn"]:has([class*="st-key-find_step_topic_"]) {
+            min-width: 6.5rem !important;
+            flex-shrink: 0 !important;
+        }
+        [class*="st-key-open_step_match_"] button,
+        [class*="st-key-find_step_topic_"] button {
             white-space: nowrap !important;
-            min-width: 7.5rem !important;
+            min-width: 6rem !important;
+        }
+        [class*="st-key-open_step_match_"] button p,
+        [class*="st-key-find_step_topic_"] button p {
+            white-space: nowrap !important;
         }
         /* Small-step description preview with clickable '...more' disclosure */
         .ss-desc-caption {
@@ -815,8 +825,7 @@ class CurriculumAssistant:
                     step_col_chars = max(len('Small step'), longest_step_len + 2)
                     topic_col_chars = max(len('Topic'), longest_topic_len + 2)
                     age_col_chars = max(len('Age'), 5, longest_age_len)
-                    # Give Action enough width so Open never wraps.
-                    action_col_chars = max(12, len('Action') + 4, len('Open') + 6)
+                    action_col_chars = max(14, len('Watch') + 9)
                     compact_total = step_col_chars + topic_col_chars + age_col_chars + action_col_chars
                     spacer_chars = max(16, compact_total)
                     col_spec = [step_col_chars, topic_col_chars, age_col_chars, action_col_chars, spacer_chars]

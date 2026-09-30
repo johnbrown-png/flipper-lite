@@ -21,6 +21,9 @@ ENABLE_PICK_BY_SMALL_STEP_HEADING = False
 # Small-step description preview: number of leading words shown before '...more'.
 SMALL_STEP_DESC_PREVIEW_WORDS = 10
 
+# Free-text skill search: how many small-step rows to show.
+SMALL_STEP_SEARCH_LIMIT = 15
+
 
 def _render_truncated_description(text, title=''):
     """Render a small-step title and description with a clickable '...more' disclosure."""
@@ -124,26 +127,92 @@ class CurriculumAssistant:
         except Exception:
             return 999
 
-    def _build_topic_search_rows(self):
-        """Build deduplicated topic-age rows for prefix search table."""
+    @staticmethod
+    def _search_tokens(text):
+        """Split text into lowercase word tokens."""
+        cleaned = ''.join(ch if ch.isalnum() else ' ' for ch in str(text).lower())
+        return [tok for tok in cleaned.split() if tok]
+
+    @staticmethod
+    def _token_in_haystack(query_tok, haystack):
+        """Match a query word exactly, or by a shared stem of at least 3 letters."""
+        if query_tok in haystack:
+            return True
+        if len(query_tok) < 3:
+            return False
+        for hay_tok in haystack:
+            if len(hay_tok) < 3:
+                continue
+            if hay_tok.startswith(query_tok) or query_tok.startswith(hay_tok):
+                return True
+        return False
+
+    @classmethod
+    def _tokens_covered(cls, query_tokens, haystack):
+        return all(cls._token_in_haystack(tok, haystack) for tok in query_tokens)
+
+    def _search_small_steps(self, query):
+        """Rank small steps whose name, or name plus topic, contains every query word.
+
+        Phrase matches in the step name rank above loose word matches in the name,
+        which rank above words split across the step name and topic.
+        """
+        columns = ['small_step', 'topic', 'age', 'difficulty']
         if self.df is None:
             self.df = self._load_curriculum()
         if self.df is None:
-            return pd.DataFrame(columns=['topic', 'age'])
+            return pd.DataFrame(columns=columns)
 
-        rows = self.df[['topic', 'age']].copy()
-        rows['topic'] = rows['topic'].astype(str).str.strip()
-        rows['age'] = rows['age'].astype(str).str.strip()
+        query_tokens = self._search_tokens(query)
+        if not query_tokens:
+            return pd.DataFrame(columns=columns)
+        phrase = ' '.join(query_tokens)
 
-        rows = rows[(rows['topic'] != '') & (rows['topic'].str.lower() != 'nan')]
-        rows = rows[(rows['age'] != '') & (rows['age'].str.lower() != 'nan')]
+        matches = []
+        for _, row in self.df.iterrows():
+            step = str(row.get('small_step_name', '')).strip()
+            topic = str(row.get('topic', '')).strip()
+            age = str(row.get('age', '')).strip()
+            if not step or step.lower() == 'nan' or not age or age.lower() == 'nan':
+                continue
+            if topic.lower() == 'nan':
+                topic = ''
 
-        rows = rows.drop_duplicates(subset=['topic', 'age']).copy()
-        rows['topic_sort'] = rows['topic'].str.lower()
-        rows['age_sort'] = rows['age'].apply(self._age_sort_key)
+            step_tokens = self._search_tokens(step)
+            topic_tokens = self._search_tokens(topic)
+            step_text = ' '.join(step_tokens)
+            if phrase in step_text:
+                rank = 0
+            elif self._tokens_covered(query_tokens, step_tokens):
+                rank = 1
+            elif self._tokens_covered(query_tokens, step_tokens + topic_tokens):
+                rank = 2
+            else:
+                continue
 
-        rows = rows.sort_values(['topic_sort', 'age_sort', 'age'], kind='stable')
-        return rows[['topic', 'age']].reset_index(drop=True)
+            difficulty = str(row.get('difficulty', '')).strip()
+            if difficulty.lower() == 'nan':
+                difficulty = ''
+            matches.append({
+                'small_step': step,
+                'topic': topic,
+                'age': age,
+                'difficulty': difficulty,
+                'rank': rank,
+                'name_len': len(step),
+                'age_sort': self._age_sort_key(age),
+            })
+
+        if not matches:
+            return pd.DataFrame(columns=columns)
+
+        ranked = pd.DataFrame(matches)
+        ranked = ranked.sort_values(
+            ['rank', 'name_len', 'age_sort', 'topic', 'small_step'],
+            kind='stable',
+        )
+        ranked = ranked.drop_duplicates(subset=['small_step', 'topic', 'age', 'difficulty'])
+        return ranked[columns].reset_index(drop=True)
 
     def _get_topic_difficulty_options(self, age, topic):
         """Return available Foundation/Higher difficulty options for a topic/age pair."""
@@ -413,10 +482,12 @@ class CurriculumAssistant:
             st.session_state.curr_year = age_val
             st.session_state.year_select_topic_search = age_val
 
-            if age_val in ['13-14', '14-15']:
-                chosen = difficulty_val if difficulty_val in ['Foundation', 'Higher'] else 'Foundation'
-                st.session_state.curr_difficulty = chosen
-                st.session_state.difficulty_select_topic_search = chosen
+            if difficulty_val in ['Foundation', 'Higher']:
+                st.session_state.curr_difficulty = difficulty_val
+                st.session_state.difficulty_select_topic_search = difficulty_val
+            elif age_val in ['13-14', '14-15']:
+                st.session_state.curr_difficulty = 'Foundation'
+                st.session_state.difficulty_select_topic_search = 'Foundation'
             else:
                 st.session_state.curr_difficulty = 'All'
                 st.session_state.difficulty_select_topic_search = 'All'
@@ -794,46 +865,62 @@ class CurriculumAssistant:
 
             topic_prefix = (topic_prefix or '').strip()
             if topic_prefix:
-                prefix_lower = topic_prefix.lower()
-                search_rows = self._build_topic_search_rows()
-                matches = search_rows[search_rows['topic'].str.lower().str.startswith(prefix_lower)]
+                matches = self._search_small_steps(topic_prefix)
 
                 if matches.empty:
-                    st.caption(f"No topics begin with '{topic_prefix}'.")
+                    st.caption(f"No small steps match '{topic_prefix}'.")
                 else:
-                    st.caption(f"{len(matches)} topic/age matches")
-                    longest_topic_len = max(len(str(v)) for v in matches['topic'])
-                    longest_age_len = max(len(str(v)) for v in matches['age'])
+                    shown = matches.head(SMALL_STEP_SEARCH_LIMIT)
+                    if len(matches) > len(shown):
+                        st.caption(f"Showing {len(shown)} of {len(matches)} small steps")
+                    else:
+                        st.caption(f"{len(shown)} small step matches")
+                    longest_step_len = max(len(str(v)) for v in shown['small_step'])
+                    longest_topic_len = max(len(str(v)) for v in shown['topic'])
+                    longest_age_len = max(len(str(v)) for v in shown['age'])
 
                     # Keep columns compact and left-justified based on visible search results.
+                    step_col_chars = max(len('Small step'), longest_step_len + 2)
                     topic_col_chars = max(len('Topic'), longest_topic_len + 2)
                     age_col_chars = max(len('Age'), 5, longest_age_len)
                     # Give Action enough width so Open never wraps.
                     action_col_chars = max(12, len('Action') + 4, len('Open') + 6)
-                    compact_total = topic_col_chars + age_col_chars + action_col_chars
-                    spacer_chars = max(16, compact_total * 2)
-                    col_spec = [topic_col_chars, age_col_chars, action_col_chars, spacer_chars]
+                    compact_total = step_col_chars + topic_col_chars + age_col_chars + action_col_chars
+                    spacer_chars = max(16, compact_total)
+                    col_spec = [step_col_chars, topic_col_chars, age_col_chars, action_col_chars, spacer_chars]
 
-                    h1, h2, h4, _hs = st.columns(col_spec)
+                    h1, h2, h3, h4, _hs = st.columns(col_spec)
                     with h1:
-                        st.markdown("**Topic**")
+                        st.markdown("**Small step**")
                     with h2:
+                        st.markdown("**Topic**")
+                    with h3:
                         st.markdown("**Age**")
                     with h4:
                         st.markdown("")
-                    for idx, row in matches.iterrows():
+                    for idx, row in shown.iterrows():
+                        step_val = row['small_step']
                         topic_val = row['topic']
                         age_val = row['age']
+                        difficulty_val = str(row.get('difficulty', '')).strip()
+                        if difficulty_val not in ('Foundation', 'Higher'):
+                            difficulty_val = ''
 
-                        c1, c2, c4, _cs = st.columns(col_spec)
+                        c1, c2, c3, c4, _cs = st.columns(col_spec)
                         with c1:
-                            st.write(topic_val)
+                            st.write(step_val)
                         with c2:
+                            st.write(topic_val)
+                        with c3:
                             st.write(age_val)
                         with c4:
-                            btn_key = f"open_topic_match_{idx}_{age_val}_{topic_val}".replace(' ', '_')
+                            safe_key = ''.join(
+                                ch if ch.isalnum() else '_'
+                                for ch in f"{idx}_{age_val}_{topic_val}_{step_val}_{difficulty_val}"
+                            )
+                            btn_key = f"open_step_match_{safe_key}"
                             if st.button("Open", key=btn_key):
-                                if age_val in ['13-14', '14-15']:
+                                if not difficulty_val and age_val in ['13-14', '14-15']:
                                     st.session_state.pending_topic_open = {
                                         'age': age_val,
                                         'topic': topic_val,
@@ -843,7 +930,7 @@ class CurriculumAssistant:
                                     st.session_state.pending_topic_open_apply = {
                                         'age': age_val,
                                         'topic': topic_val,
-                                        'difficulty': '',
+                                        'difficulty': difficulty_val,
                                     }
                                     st.rerun()
 

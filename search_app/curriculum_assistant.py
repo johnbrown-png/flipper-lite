@@ -362,6 +362,20 @@ class CurriculumAssistant:
             background: linear-gradient(135deg, #1e3a5f 0%, #2c5f8d 100%) !important;
             color: #fff !important;
         }
+        /* Skill search results table: compact rows (about half the default row height). */
+        .st-key-flipper_step_search_table,
+        .st-key-flipper_step_search_table [data-testid="stVerticalBlock"] {
+            gap: 0.15rem !important;
+        }
+        .st-key-flipper_step_search_table [data-testid="stMarkdownContainer"] p {
+            margin: 0 !important;
+            line-height: 1.25 !important;
+        }
+        .st-key-flipper_step_search_table button {
+            min-height: 1.6rem !important;
+            padding-top: 0.05rem !important;
+            padding-bottom: 0.05rem !important;
+        }
         /* Keep Watch buttons (skill search results and topic step list) on one line.
            The search header's empty action column carries a marker so it gets the same width as the rows. */
         div[data-testid="stColumn"]:has(.flipper-watch-col-marker),
@@ -832,7 +846,8 @@ class CurriculumAssistant:
                     spacer_chars = max(16, compact_total)
                     col_spec = [step_col_chars, topic_col_chars, age_col_chars, action_col_chars, spacer_chars]
 
-                    h1, h2, h3, h4, _hs = st.columns(col_spec)
+                    results_table = st.container(key="flipper_step_search_table")
+                    h1, h2, h3, h4, _hs = results_table.columns(col_spec, vertical_alignment="center")
                     with h1:
                         st.markdown("**Small step**")
                     with h2:
@@ -849,7 +864,7 @@ class CurriculumAssistant:
                         difficulty_val = row['difficulty']
                         age_label = f"{age_val} ({difficulty_val})" if difficulty_val else age_val
 
-                        c1, c2, c3, c4, _cs = st.columns(col_spec)
+                        c1, c2, c3, c4, _cs = results_table.columns(col_spec, vertical_alignment="center")
                         with c1:
                             st.write(step_val)
                         with c2:

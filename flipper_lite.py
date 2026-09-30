@@ -1296,7 +1296,7 @@ def main():
     # Note: video_inventory.csv no longer needed - channel & duration now in precomputed_recommendations.csv
     
     # Initialize curriculum assistant (uses same dropdown UI as flipper.py)
-    curriculum_path = project_root / "Curriculum" / "Maths" / "curriculum_08052026_small_steps.csv"
+    curriculum_path = project_root / "Curriculum" / "Maths" / "curriculum_08052026_small_steps.with_ss_desc_generated.csv"
     curriculum_assistant = None
     if curriculum_path.exists():
         curriculum_assistant = CurriculumAssistant(str(curriculum_path))
@@ -1471,9 +1471,6 @@ def main():
                                 st.session_state.curr_topic = 'Topic ?'
                                 st.session_state.topic_select_topic_search = 'Topic ?'
                                 st.session_state.topic_prefix_search = ''
-                                st.session_state.pending_topic_open = None
-                                st.session_state.pending_topic_open_apply = None
-                                st.session_state.pending_open_difficulty = 'Foundation'
                                 st.session_state.clear_topic_prefix_on_open = False
                                 st.session_state.pending_step_nav = None
                                 st.rerun()
@@ -1605,9 +1602,6 @@ def main():
                         st.session_state.curr_topic = 'Topic ?'
                         st.session_state.topic_select_topic_search = 'Topic ?'
                         st.session_state.topic_prefix_search = ''
-                        st.session_state.pending_topic_open = None
-                        st.session_state.pending_topic_open_apply = None
-                        st.session_state.pending_open_difficulty = 'Foundation'
                         st.session_state.clear_topic_prefix_on_open = False
                         st.session_state.pending_step_nav = None
                         st.rerun()

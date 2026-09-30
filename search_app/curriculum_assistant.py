@@ -157,7 +157,7 @@ class CurriculumAssistant:
         Phrase matches in the step name rank above loose word matches in the name,
         which rank above words split across the step name and topic.
         """
-        columns = ['small_step', 'topic', 'age', 'difficulty']
+        columns = ['small_step_id', 'small_step', 'topic', 'age', 'difficulty']
         if self.df is None:
             self.df = self._load_curriculum()
         if self.df is None:
@@ -168,8 +168,13 @@ class CurriculumAssistant:
             return pd.DataFrame(columns=columns)
         phrase = ' '.join(query_tokens)
 
+        self._refresh_duplicate_flags()
+
         matches = []
         for _, row in self.df.iterrows():
+            step_id = str(row.get('small_step_id', '')).strip()
+            if not step_id or step_id in self.duplicate_step_ids:
+                continue
             step = str(row.get('small_step_name', '')).strip()
             topic = str(row.get('topic', '')).strip()
             age = str(row.get('age', '')).strip()
@@ -194,6 +199,7 @@ class CurriculumAssistant:
             if difficulty.lower() == 'nan':
                 difficulty = ''
             matches.append({
+                'small_step_id': step_id,
                 'small_step': step,
                 'topic': topic,
                 'age': age,
@@ -211,24 +217,46 @@ class CurriculumAssistant:
             ['rank', 'name_len', 'age_sort', 'topic', 'small_step'],
             kind='stable',
         )
-        ranked = ranked.drop_duplicates(subset=['small_step', 'topic', 'age', 'difficulty'])
+        ranked = ranked.drop_duplicates(subset=['small_step_id'])
         return ranked[columns].reset_index(drop=True)
 
-    def _get_topic_difficulty_options(self, age, topic):
-        """Return available Foundation/Higher difficulty options for a topic/age pair."""
+    def _get_step_row(self, small_step_id):
+        """Return the curriculum row for a small_step_id, or None."""
         if self.df is None:
-            self.df = self._load_curriculum()
-        if self.df is None:
-            return []
+            return None
+        rows = self.df[self.df['small_step_id'] == small_step_id]
+        if rows.empty:
+            return None
+        return rows.iloc[0]
 
-        mask = (self.df['age'] == age) & (self.df['topic'] == topic)
-        subset = self.df[mask].copy()
-        if subset.empty or 'difficulty' not in subset.columns:
-            return []
-
-        diff = subset['difficulty'].astype(str).str.strip()
-        opts = sorted(set(d for d in diff.tolist() if d in {'Foundation', 'Higher'}), key=lambda x: 0 if x == 'Foundation' else 1)
-        return opts
+    @staticmethod
+    def _step_payload(row, selection_source, display_step_num=None):
+        """Build a small_step_search payload (docs/SMALL_STEP_PAYLOAD_CONTRACT.md) from a curriculum row."""
+        step_text = str(row['small_step_name']).strip()
+        full_desc = str(row.get('ss_wr_desc', '')).strip()
+        example_text = str(row.get('ss_desc', '')).strip()
+        diff_val = row.get('difficulty', '')
+        if pd.isna(diff_val):
+            diff_val = ''
+        payload = {
+            'action': 'small_step_search',
+            'selection_source': selection_source,
+            'year': row['year'],
+            'term': row['term'],
+            'difficulty': diff_val,
+            'topic': row['topic'],
+            'small_step': step_text,
+            'small_step_desc': example_text if example_text else full_desc,
+            'small_step_full_desc': full_desc,
+            'small_step_id': row['small_step_id'],
+            'small_step_num': int(row['small_step_num']),
+            'small_step_num_in_topic': int(row['small_step_num_in_topic']),
+            'age': row['age'],
+            'display_text': step_text if not example_text else f"{step_text} - {example_text}",
+        }
+        if display_step_num is not None:
+            payload['display_small_step_num_in_topic'] = display_step_num
+        return payload
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes to allow for curriculum updates
     def _load_curriculum(_self):
@@ -265,9 +293,6 @@ class CurriculumAssistant:
         st.session_state.curr_topic = 'Topic ?'
         st.session_state.topic_select_topic_search = 'Topic ?'
         st.session_state.topic_prefix_search = ''
-        st.session_state.pending_topic_open = None
-        st.session_state.pending_topic_open_apply = None
-        st.session_state.pending_open_difficulty = 'Foundation'
         st.session_state.clear_topic_prefix_on_open = False
         st.session_state.pending_step_nav = None
         CurriculumAssistant._clear_parent_results_state()
@@ -312,32 +337,7 @@ class CurriculumAssistant:
             n = len(steps)
             prev_row = steps.iloc[(pos - 1) % n]
             next_row = steps.iloc[(pos + 1) % n]
-
-            def _row_to_dict(row):
-                step_text = str(row['small_step_name']).strip()
-                full_desc = str(row.get('ss_wr_desc', '')).strip()
-                example_text = str(row.get('ss_desc', '')).strip()
-                diff_val = row.get('difficulty', '')
-                if pd.isna(diff_val):
-                    diff_val = ''
-                return {
-                    'action': 'small_step_search',
-                    'selection_source': 'nav',
-                    'year': row['year'],
-                    'term': row['term'],
-                    'difficulty': diff_val,
-                    'topic': row['topic'],
-                    'small_step': step_text,
-                    'small_step_desc': example_text if example_text else full_desc,
-                    'small_step_full_desc': full_desc,
-                    'small_step_id': row['small_step_id'],
-                    'small_step_num': int(row['small_step_num']),
-                    'small_step_num_in_topic': int(row['small_step_num_in_topic']),
-                    'age': row['age'],
-                    'display_text': step_text if not example_text else f"{step_text} - {example_text}",
-                }
-
-            return _row_to_dict(prev_row), _row_to_dict(next_row)
+            return self._step_payload(prev_row, 'nav'), self._step_payload(next_row, 'nav')
         except Exception:
             return None, None
     
@@ -473,46 +473,10 @@ class CurriculumAssistant:
             else:
                 return None, None
 
-        def _apply_topic_open_selection(age_val, topic_val, difficulty_val=''):
-            """Apply selection from prefix table and route into existing topic/small-step flow.
-
-            Must run before the age, difficulty, and topic widgets are created.
-            Streamlit rejects writes to those widget keys later in the same run.
-            """
-            st.session_state.curr_year = age_val
-            st.session_state.year_select_topic_search = age_val
-
-            if difficulty_val in ['Foundation', 'Higher']:
-                st.session_state.curr_difficulty = difficulty_val
-                st.session_state.difficulty_select_topic_search = difficulty_val
-            elif age_val in ['13-14', '14-15']:
-                st.session_state.curr_difficulty = 'Foundation'
-                st.session_state.difficulty_select_topic_search = 'Foundation'
-            else:
-                st.session_state.curr_difficulty = 'All'
-                st.session_state.difficulty_select_topic_search = 'All'
-
-            st.session_state.curr_topic = topic_val
-            st.session_state.topic_select_topic_search = topic_val
-            st.session_state.clear_topic_prefix_on_open = True
-            self._clear_parent_results_state()
-
-        pending_apply = st.session_state.pop('pending_topic_open_apply', None)
-        if pending_apply:
-            _apply_topic_open_selection(
-                pending_apply.get('age', ''),
-                pending_apply.get('topic', ''),
-                pending_apply.get('difficulty', ''),
-            )
-
-        # Clear active topic prefix after selecting an Open result row.
+        # Clear the skill search box after a search result was opened.
         if st.session_state.get('clear_topic_prefix_on_open'):
             st.session_state.topic_prefix_search = ''
             st.session_state.clear_topic_prefix_on_open = False
-
-        if not show_topic_table_search:
-            # Ensure hidden topic-table search state does not leak into the visible dropdown flow.
-            st.session_state.pending_topic_open = None
 
         if ENABLE_PICK_BY_SMALL_STEP_HEADING:
             st.markdown(
@@ -818,40 +782,6 @@ class CurriculumAssistant:
             st.rerun()
 
         if show_topic_table_search:
-            pending_topic_open = st.session_state.get('pending_topic_open')
-            if pending_topic_open:
-                pending_age = pending_topic_open.get('age', '')
-                pending_topic = pending_topic_open.get('topic', '')
-                difficulty_options = self._get_topic_difficulty_options(pending_age, pending_topic)
-                if not difficulty_options:
-                    difficulty_options = ['Foundation', 'Higher']
-
-                st.info(f"Choose difficulty for {pending_topic} ({pending_age})")
-                if 'pending_open_difficulty' not in st.session_state or st.session_state.pending_open_difficulty not in difficulty_options:
-                    st.session_state.pending_open_difficulty = difficulty_options[0]
-
-                st.radio(
-                    "Difficulty",
-                    options=difficulty_options,
-                    key='pending_open_difficulty',
-                    horizontal=True,
-                )
-                p1, p2, _ = st.columns([1, 1, 5])
-                with p1:
-                    if st.button('Continue', key='confirm_pending_topic_open'):
-                        chosen_diff = st.session_state.get('pending_open_difficulty', difficulty_options[0])
-                        st.session_state.pending_topic_open = None
-                        st.session_state.pending_topic_open_apply = {
-                            'age': pending_age,
-                            'topic': pending_topic,
-                            'difficulty': chosen_diff,
-                        }
-                        st.rerun()
-                with p2:
-                    if st.button('Cancel', key='cancel_pending_topic_open'):
-                        st.session_state.pending_topic_open = None
-                        st.rerun()
-
             st.markdown(
                 '<div id="flipper-topic-search-marker" class="flipper-topic-search-marker"></div>',
                 unsafe_allow_html=True,
@@ -877,7 +807,9 @@ class CurriculumAssistant:
                         st.caption(f"{len(shown)} small step matches")
                     longest_step_len = max(len(str(v)) for v in shown['small_step'])
                     longest_topic_len = max(len(str(v)) for v in shown['topic'])
-                    longest_age_len = max(len(str(v)) for v in shown['age'])
+                    longest_age_len = max(
+                        len(f"{a} ({d})" if d else str(a)) for a, d in zip(shown['age'], shown['difficulty'])
+                    )
 
                     # Keep columns compact and left-justified based on visible search results.
                     step_col_chars = max(len('Small step'), longest_step_len + 2)
@@ -899,12 +831,12 @@ class CurriculumAssistant:
                     with h4:
                         st.markdown("")
                     for idx, row in shown.iterrows():
+                        step_id = row['small_step_id']
                         step_val = row['small_step']
                         topic_val = row['topic']
                         age_val = row['age']
-                        difficulty_val = str(row.get('difficulty', '')).strip()
-                        if difficulty_val not in ('Foundation', 'Higher'):
-                            difficulty_val = ''
+                        difficulty_val = row['difficulty']
+                        age_label = f"{age_val} ({difficulty_val})" if difficulty_val else age_val
 
                         c1, c2, c3, c4, _cs = st.columns(col_spec)
                         with c1:
@@ -912,26 +844,26 @@ class CurriculumAssistant:
                         with c2:
                             st.write(topic_val)
                         with c3:
-                            st.write(age_val)
+                            st.write(age_label)
                         with c4:
-                            safe_key = ''.join(
-                                ch if ch.isalnum() else '_'
-                                for ch in f"{idx}_{age_val}_{topic_val}_{step_val}_{difficulty_val}"
-                            )
+                            safe_key = ''.join(ch if ch.isalnum() else '_' for ch in f"{idx}_{step_id}")
                             btn_key = f"open_step_match_{safe_key}"
-                            if st.button("Open", key=btn_key):
-                                if not difficulty_val and age_val in ['13-14', '14-15']:
-                                    st.session_state.pending_topic_open = {
-                                        'age': age_val,
-                                        'topic': topic_val,
-                                    }
-                                    st.rerun()
-                                else:
-                                    st.session_state.pending_topic_open_apply = {
-                                        'age': age_val,
-                                        'topic': topic_val,
-                                        'difficulty': difficulty_val,
-                                    }
+                            if st.button("Watch", key=btn_key, help="Find videos for this step"):
+                                step_row = self._get_step_row(step_id)
+                                if step_row is not None:
+                                    st.session_state.pending_insertion = self._step_payload(step_row, 'search')
+                                    st.session_state.clear_topic_prefix_on_open = True
+                                    track_event(
+                                        "step_search_watch_clicked",
+                                        {
+                                            "query": topic_prefix,
+                                            "small_step": step_val,
+                                            "small_step_id": step_id,
+                                            "topic": topic_val,
+                                            "age": age_val,
+                                            "difficulty": difficulty_val,
+                                        },
+                                    )
                                     st.rerun()
 
         # Show small steps if topic selected
@@ -959,24 +891,9 @@ class CurriculumAssistant:
                                 difficulty_val = row.get('difficulty', '')
                                 if pd.isna(difficulty_val):
                                     difficulty_val = ''
-                                # Keep payload fields aligned with docs/SMALL_STEP_PAYLOAD_CONTRACT.md.
-                                st.session_state.pending_insertion = {
-                                    'action': 'small_step_search',
-                                    'selection_source': 'selector',
-                                    'year': row['year'],
-                                    'term': row['term'],
-                                    'difficulty': difficulty_val,
-                                    'topic': row['topic'],
-                                    'small_step': step_text,
-                                    'small_step_desc': example_text if example_text else full_desc,
-                                    'small_step_full_desc': full_desc,
-                                    'small_step_id': row['small_step_id'],
-                                    'small_step_num': int(row['small_step_num']),
-                                    'small_step_num_in_topic': int(row['small_step_num_in_topic']),
-                                    'display_small_step_num_in_topic': display_step_num,
-                                    'age': row['age'],
-                                    'display_text': step_text if not example_text else f"{step_text} - {example_text}"
-                                }
+                                st.session_state.pending_insertion = self._step_payload(
+                                    row, 'selector', display_step_num=display_step_num
+                                )
                                 track_event(
                                     "step_watch_clicked",
                                     {

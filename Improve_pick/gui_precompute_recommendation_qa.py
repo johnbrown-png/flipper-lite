@@ -83,6 +83,7 @@ SHOW_AWAITING_DOWNLOAD_CONTROL = False
 SHOW_FULL_REBUILD_CONTROL = False
 SHOW_APPROVE_UPDATE_CONTROL = False
 SHOW_CLEAR_OVERRIDE_CONTROL = False
+SHOW_QA_NOTE_CONTROL = False
 SHOW_LIVE_SEMANTIC_PREVIEW = False
 SHOW_ALIGNMENT_TAB = False
 SHOW_STAGE4_TAB = False
@@ -390,7 +391,7 @@ class ImprovePickQAGUI:
         self.show_unsaved_only_var = tk.BooleanVar(value=False)
         self.low_rating_jump_ignore_default_five_var = tk.BooleanVar(value=True)
         self.awaiting_download_faiss_var = tk.BooleanVar(value=False)
-        self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until Update QA CSV")
+        self.candidate_panel_state_var = tk.StringVar(value="Candidate panel: locked until 'Save step to qa.csv'")
         self.constraints_status_var = tk.StringVar(value="Constraints gate: idle")
         self.constraints_summary_var = tk.StringVar(value="No constraint test run yet")
         self.constraints_step_label_var = tk.StringVar(value="Selected small step: none")
@@ -490,6 +491,7 @@ class ImprovePickQAGUI:
         self.dup_jump_btn: ttk.Button | None = None
         self.dup_flag_btn: ttk.Button | None = None
         self.dup_unflag_btn: ttk.Button | None = None
+        self.dup_controls_frame: ttk.Frame | None = None
 
         # Video availability tracking
         self.unavailable_videos: dict[str, dict[str, str]] = {}  # {video_id: {status, source_step, source_position}}
@@ -596,41 +598,44 @@ class ImprovePickQAGUI:
         self.jump_ignore_default_five_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
         # Row 2: Unavailable video navigation and filtering
+        unavailable_frame = ttk.LabelFrame(selector_frame, text="Unavailable videos", padding=4)
+        unavailable_frame.grid(row=2, column=0, columnspan=6, sticky="ew", pady=(6, 0))
+        unavailable_frame.columnconfigure(4, weight=1)
+
         self.jump_unavailable_btn = ttk.Button(
-            selector_frame,
+            unavailable_frame,
             text="Jump to Next Unavailable Video",
             command=self._jump_to_next_unavailable,
         )
-        self.jump_unavailable_btn.grid(row=2, column=0, sticky="w", pady=(4, 0))
+        self.jump_unavailable_btn.grid(row=0, column=0, sticky="w")
 
-        ttk.Label(
-            selector_frame,
-            textvariable=self.availability_summary_var,
-            foreground="#cc0000",  # Red for warnings
-        ).grid(row=2, column=1, columnspan=4, sticky="w", padx=(8, 0), pady=(4, 0))
-
-        # Row 3: Unavailable video filtering controls
         self.show_unavailable_check = ttk.Checkbutton(
-            selector_frame,
+            unavailable_frame,
             text="Show unavailable only",
             variable=self.show_unavailable_only_var,
             command=self._on_filter_unavailable_changed,
         )
-        self.show_unavailable_check.grid(row=3, column=0, sticky="w", pady=(4, 0))
+        self.show_unavailable_check.grid(row=0, column=1, sticky="w", padx=(12, 0))
 
         ttk.Checkbutton(
-            selector_frame,
+            unavailable_frame,
             text="Deleted/private",
             variable=self.filter_deleted_var,
             command=self._on_filter_unavailable_changed,
-        ).grid(row=3, column=1, sticky="w", padx=(8, 0), pady=(4, 0))
+        ).grid(row=0, column=2, sticky="w", padx=(8, 0))
 
         ttk.Checkbutton(
-            selector_frame,
+            unavailable_frame,
             text="Embedding-disabled",
             variable=self.filter_embedding_var,
             command=self._on_filter_unavailable_changed,
-        ).grid(row=3, column=2, sticky="w", padx=(8, 0), pady=(4, 0))
+        ).grid(row=0, column=3, sticky="w", padx=(8, 0))
+
+        ttk.Label(
+            unavailable_frame,
+            textvariable=self.availability_summary_var,
+            foreground="#cc0000",  # Red for warnings
+        ).grid(row=0, column=4, sticky="w", padx=(12, 0))
 
         if SHOW_SHOW_UNSAVED_ONLY_CONTROL:
             self.show_unsaved_check = ttk.Checkbutton(
@@ -641,53 +646,56 @@ class ImprovePickQAGUI:
             )
             self.show_unsaved_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
-        # Row 5: Dup Review Mode controls
+        # Row 3: Dup Review Mode toggle; the rest of the dup controls only show when ON
         self.dup_review_btn = ttk.Button(
             selector_frame,
             text="High-Dup Review: OFF",
             command=self._toggle_dup_review_mode,
         )
-        self.dup_review_btn.grid(row=5, column=0, sticky="w", pady=(4, 0))
+        self.dup_review_btn.grid(row=3, column=0, sticky="w", pady=(6, 0))
 
-        ttk.Label(selector_frame, text="Hotspot top %:").grid(row=5, column=1, sticky="e", padx=(0, 4), pady=(4, 0))
+        self.dup_controls_frame = ttk.Frame(selector_frame)
+        self.dup_controls_frame.grid(row=3, column=1, columnspan=5, sticky="w", padx=(12, 0), pady=(6, 0))
+
+        ttk.Label(self.dup_controls_frame, text="Hotspot top %:").grid(row=0, column=0, sticky="e", padx=(0, 4))
         self.dup_threshold_spin = tk.Spinbox(
-            selector_frame,
+            self.dup_controls_frame,
             from_=1,
             to=50,
             width=4,
             textvariable=self.dup_threshold_pct_var,
             increment=1,
         )
-        self.dup_threshold_spin.grid(row=5, column=2, sticky="w", pady=(4, 0))
+        self.dup_threshold_spin.grid(row=0, column=1, sticky="w")
 
         self.dup_jump_btn = ttk.Button(
-            selector_frame,
+            self.dup_controls_frame,
             text="Next High-Dup Step",
             command=self._jump_to_next_dup_hotspot,
         )
-        self.dup_jump_btn.grid(row=5, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.dup_jump_btn.grid(row=0, column=2, sticky="w", padx=(12, 0))
 
         self.dup_flag_btn = ttk.Button(
-            selector_frame,
+            self.dup_controls_frame,
             text="Mark Step Redundant",
             command=self._flag_current_step_redundant,
         )
-        self.dup_flag_btn.grid(row=5, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.dup_flag_btn.grid(row=0, column=3, sticky="w", padx=(12, 0))
 
         self.dup_unflag_btn = ttk.Button(
-            selector_frame,
+            self.dup_controls_frame,
             text="Undo Redundant Mark",
             command=self._unflag_current_step_redundant,
             state=tk.DISABLED,
         )
-        self.dup_unflag_btn.grid(row=5, column=5, sticky="w", padx=(8, 0), pady=(4, 0))
+        self.dup_unflag_btn.grid(row=0, column=4, sticky="w", padx=(8, 0))
 
-        # Row 6: per-step dup score display
         ttk.Label(
-            selector_frame,
+            self.dup_controls_frame,
             textvariable=self.dup_score_display_var,
             foreground="#994400",
-        ).grid(row=6, column=0, columnspan=5, sticky="w", pady=(2, 0))
+        ).grid(row=1, column=0, columnspan=5, sticky="w", pady=(2, 0))
+        self.dup_controls_frame.grid_remove()
 
         text_frame = ttk.LabelFrame(outer, text="Query Text", padding=8)
         text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
@@ -711,8 +719,22 @@ class ImprovePickQAGUI:
         ttk.Label(candidate_frame, text="Candidate wording (candidate_ss_wr_desc)", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky="w")
         self.promoted_status_label = ttk.Label(candidate_frame, textvariable=self.promoted_status_var, foreground="green", font=("Segoe UI", 9, "bold"))
         self.promoted_status_label.grid(row=0, column=1, sticky="e", padx=(8, 0))
+        self.promote_canonical_btn = ttk.Button(
+            candidate_frame,
+            text="⭐ Promote to Canonical",
+            command=self._promote_to_canonical,
+        )
+        self.promote_canonical_btn.grid(row=0, column=2, sticky="e", padx=(8, 0))
+        self.promote_canonical_btn.grid_remove()
+        self._attach_tooltip(
+            self.promote_canonical_btn,
+            "Makes the candidate wording the canonical ss_wr_desc for this step by writing it to "
+            "qa/ss_desc_validated_overrides.csv (read by precompute). Shown only when the candidate "
+            "wording differs from the current canonical text. Re-run precompute_curriculum_recommendations.py "
+            "afterwards to rebuild recommendations.",
+        )
         self.candidate_text = scrolledtext.ScrolledText(candidate_frame, wrap=tk.WORD, height=9)
-        self.candidate_text.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(4, 0))
+        self.candidate_text.grid(row=1, column=0, columnspan=3, sticky="nsew", pady=(4, 0))
         self.candidate_text.bind("<<Modified>>", self._on_candidate_text_modified)
 
         if SHOW_LIVE_SEMANTIC_PREVIEW:
@@ -743,122 +765,146 @@ class ImprovePickQAGUI:
 
             ttk.Label(candidate_frame, textvariable=self.semantic_preview_status_var, foreground="#555555").grid(row=3, column=0, sticky="w", pady=(2, 0))
 
-        control_frame = ttk.Frame(outer)
-        control_frame.grid(row=3, column=0, sticky="ew", pady=(0, 4))
-        self.search_btn = ttk.Button(control_frame, text="Search Top 3", command=self._run_search)
-        self.search_btn.grid(row=0, column=0, padx=(0, 8))
-        self.save_btn = ttk.Button(control_frame, text="Save Approved Candidate", command=self._save_candidate, state=tk.DISABLED)
-        # Hidden intentionally: workflow now uses qa.csv via Update QA CSV.
-        self.update_qa_btn = ttk.Button(control_frame, text="Update QA CSV", command=self._update_qa_csv)
-        self.update_qa_btn.grid(row=0, column=1, padx=(0, 8))
+        action_row = ttk.Frame(outer)
+        action_row.grid(row=3, column=0, sticky="ew", pady=(0, 4))
 
-        self.mark_candidate_done_btn = ttk.Button(
-            control_frame,
-            text="Mark Candidate Reviewed (set shown ratings=10)",
-            command=self._mark_candidate_reviewed,
+        # Candidate search box: try new wording and optionally adopt its picks.
+        candidate_box = ttk.LabelFrame(action_row, text="Candidate search (try new wording)", padding=6)
+        candidate_box.grid(row=0, column=0, sticky="nsw", padx=(0, 8))
+
+        self.search_btn = ttk.Button(candidate_box, text="Search with candidate wording", command=self._run_search)
+        self.search_btn.grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self._attach_tooltip(
+            self.search_btn,
+            "Runs the semantic (FAISS) search plus teaching-quality scoring on the candidate wording "
+            "and shows the top results in the Candidate Search Results panel. Nothing is saved.",
         )
-        self.mark_candidate_done_btn.grid(row=0, column=2, padx=(0, 8))
-
-        if SHOW_AWAITING_DOWNLOAD_CONTROL:
-            self.awaiting_download_check = ttk.Checkbutton(
-                control_frame,
-                text="Set 'Awaiting download/faiss rebuild' on Update QA CSV",
-                variable=self.awaiting_download_faiss_var,
-            )
-            self.awaiting_download_check.grid(row=0, column=2, padx=(0, 8), sticky="w")
-
-        self.status_label = ttk.Label(control_frame, textvariable=self.status_var, foreground="blue")
-        self.status_label.grid(row=0, column=4, sticky="w")
-
-        self.promote_canonical_btn = ttk.Button(
-            control_frame,
-            text="⭐ Promote to Canonical",
-            command=self._promote_to_canonical,
-        )
-        self.promote_canonical_btn.grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
-        ttk.Label(
-            control_frame,
-            text="Writes candidate text → qa/ss_desc_validated_overrides.csv (read by precompute)",
-            foreground="#555555",
-        ).grid(row=1, column=2, columnspan=3, sticky="w", pady=(4, 0))
-
-        command_frame = ttk.LabelFrame(outer, text="QA Command Center", padding=4)
-        command_frame.grid(row=4, column=0, sticky="ew", pady=(0, 2))
-        for col in range(9):
-            command_frame.columnconfigure(col, weight=1)
-
-        btn_col = 0
-        apply_delete_btn = ttk.Button(command_frame, text="Apply Delete Queue", command=self._command_apply_delete_queue)
-        apply_delete_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
-        self.command_buttons.append(apply_delete_btn)
-        self._attach_tooltip(apply_delete_btn, "Runs delete_content.py on videos_to_delete.csv in soft-delete mode only. Local files and metadata are removed immediately, but this button does not perform the full FAISS rebuild.")
-        btn_col += 1
-
-        if SHOW_FULL_REBUILD_CONTROL:
-            full_rebuild_btn = ttk.Button(command_frame, text="Full Rebuild FAISS", command=self._command_full_rebuild_faiss)
-            full_rebuild_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
-            self.command_buttons.append(full_rebuild_btn)
-            self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. Use this when you want to physically purge deleted vectors and fully realign FAISS with current local assets.")
-            btn_col += 1
-
-        if SHOW_APPROVE_UPDATE_CONTROL:
-            finalize_btn = ttk.Button(command_frame, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
-            finalize_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
-            self.command_buttons.append(finalize_btn)
-            self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
-            btn_col += 1
+        self.save_btn = ttk.Button(candidate_box, text="Save Approved Candidate", command=self._save_candidate, state=tk.DISABLED)
+        # Hidden intentionally: workflow now uses qa.csv via Save step to qa.csv.
 
         cand_override_btn = ttk.Button(
-            command_frame,
-            text="Apply Cand MR",
+            candidate_box,
+            text="Use candidate picks as current",
             command=self._command_apply_manual_override,
         )
-        cand_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
+        cand_override_btn.grid(row=0, column=1, sticky="w", padx=(0, 8))
         self.command_buttons.append(cand_override_btn)
-        self._attach_tooltip(cand_override_btn, "Uses Candidate panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
-        btn_col += 1
+        self._attach_tooltip(
+            cand_override_btn,
+            "Writes the Candidate panel videos, in their MR (manual rank) order, to "
+            "qa/manual_precomputed_overrides.csv as this step's picks, replacing the current picks. "
+            "Run the search first.",
+        )
+
+        self.mark_candidate_done_btn = ttk.Button(
+            candidate_box,
+            text="Rate all candidate picks 10",
+            command=self._mark_candidate_reviewed,
+        )
+        self.mark_candidate_done_btn.grid(row=0, column=2, sticky="w")
+        self._attach_tooltip(
+            self.mark_candidate_done_btn,
+            "Sets every shown candidate rating to 10 so 'Jump to Next Candidate <= "
+            f"{LOW_CANDIDATE_RATING_THRESHOLD}' skips this step. Screen only: "
+            "step 3 'Save step to qa.csv' persists it.",
+        )
+
+        # Confirm box: numbered steps to persist and publish this step's final picks.
+        confirm_box = ttk.LabelFrame(action_row, text="Confirm picks for this step (do in order)", padding=6)
+        confirm_box.grid(row=0, column=1, sticky="nsw")
 
         curr_override_btn = ttk.Button(
-            command_frame,
-            text="Apply Curr MR",
+            confirm_box,
+            text="1. Save current pick order",
             command=self._command_apply_precomputed_manual_override,
         )
-        curr_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
+        curr_override_btn.grid(row=0, column=0, sticky="w", padx=(0, 8))
         self.command_buttons.append(curr_override_btn)
-        self._attach_tooltip(curr_override_btn, "Uses Precomputed panel MR values and writes qa/manual_precomputed_overrides.csv for this step.")
-        btn_col += 1
+        self._attach_tooltip(
+            curr_override_btn,
+            "Writes the Current picks panel videos, in their MR (manual rank) order, to "
+            "qa/manual_precomputed_overrides.csv. Skip this if the order is unchanged. "
+            "Do it first: it reloads the panel, which resets the ratings of rows that moved.",
+        )
 
-        if SHOW_CLEAR_OVERRIDE_CONTROL:
-            clear_override_btn = ttk.Button(command_frame, text="Clear Override", command=self._command_clear_manual_override)
-            clear_override_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
-            self.command_buttons.append(clear_override_btn)
-            self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
-            btn_col += 1
+        set_precomp_ratings_btn = ttk.Button(
+            confirm_box,
+            text="2. Rate all current picks 10",
+            command=self._command_set_all_precomputed_ratings_to_10,
+        )
+        set_precomp_ratings_btn.grid(row=0, column=1, sticky="w", padx=(0, 8))
+        self.command_buttons.append(set_precomp_ratings_btn)
+        self._attach_tooltip(
+            set_precomp_ratings_btn,
+            "Sets every rating in the Current picks panel to 10. Screen only: "
+            "step 3 'Save step to qa.csv' persists it.",
+        )
+
+        self.update_qa_btn = ttk.Button(confirm_box, text="3. Save step to qa.csv", command=self._update_qa_csv)
+        self.update_qa_btn.grid(row=0, column=2, sticky="w", padx=(0, 8))
+        self._attach_tooltip(
+            self.update_qa_btn,
+            "Writes the candidate wording, the current and candidate picks with their ratings, and notes "
+            "to qa/qa.csv. This marks the step as saved, which drives progress, Jump to Next Unsaved "
+            "and the low-rating jumps.",
+        )
 
         publish_qa_ref_btn = ttk.Button(
-            command_frame,
-            text="Publish QA Reference CSV",
+            confirm_box,
+            text="4. Publish to flipper_lite (all steps)",
             command=self._command_publish_qa_reference_csv,
         )
-        publish_qa_ref_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
+        publish_qa_ref_btn.grid(row=0, column=3, sticky="w", padx=(0, 8))
         self.command_buttons.append(publish_qa_ref_btn)
         self._attach_tooltip(
             publish_qa_ref_btn,
-            "Publishes precomputed_recommendations_flat_qa.csv from precomputed + manual overrides + wildcards. Atomic write; flipper_lite reads this file.",
+            "Rebuilds precomputed_recommendations_flat_qa.csv (read by flipper_lite) from the precomputed "
+            "picks plus all manual overrides and wildcards. Covers every step, so you can run it once "
+            "at the end of a session. Atomic write.",
         )
-        btn_col += 1
 
-        set_precomp_ratings_btn = ttk.Button(command_frame, text="Set All Precomp Rt to 10", command=self._command_set_all_precomputed_ratings_to_10)
-        set_precomp_ratings_btn.grid(row=0, column=btn_col, sticky="w", padx=(0, 8), pady=1)
-        self.command_buttons.append(set_precomp_ratings_btn)
-        self._attach_tooltip(set_precomp_ratings_btn, "Sets all Rt (rating) values in the Precomputed (current) picks panel to 10.")
+        extra_col = 4
+        if SHOW_AWAITING_DOWNLOAD_CONTROL:
+            self.awaiting_download_check = ttk.Checkbutton(
+                confirm_box,
+                text="Set 'Awaiting download/faiss rebuild' on Save step",
+                variable=self.awaiting_download_faiss_var,
+            )
+            self.awaiting_download_check.grid(row=0, column=extra_col, sticky="w", padx=(0, 8))
+            extra_col += 1
 
-        notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=4)
-        notes_frame.grid(row=5, column=0, sticky="ew", pady=(0, 2))
-        notes_frame.columnconfigure(1, weight=1)
-        ttk.Label(notes_frame, text="QA note (~15 words):").grid(row=0, column=0, sticky="w", padx=(0, 8))
-        self.notes_entry = ttk.Entry(notes_frame, textvariable=self.notes_var)
-        self.notes_entry.grid(row=0, column=1, sticky="ew")
+        if SHOW_FULL_REBUILD_CONTROL:
+            full_rebuild_btn = ttk.Button(confirm_box, text="Full Rebuild FAISS", command=self._command_full_rebuild_faiss)
+            full_rebuild_btn.grid(row=0, column=extra_col, sticky="w", padx=(0, 8))
+            self.command_buttons.append(full_rebuild_btn)
+            self._attach_tooltip(full_rebuild_btn, "Runs chunk, embedding, and a full FAISS rebuild from local data. Use this when you want to physically purge deleted vectors and fully realign FAISS with current local assets.")
+            extra_col += 1
+
+        if SHOW_APPROVE_UPDATE_CONTROL:
+            finalize_btn = ttk.Button(confirm_box, text="Approve + Update QA CSV", command=self._command_finalize_current_step)
+            finalize_btn.grid(row=0, column=extra_col, sticky="w", padx=(0, 8))
+            self.command_buttons.append(finalize_btn)
+            self._attach_tooltip(finalize_btn, "Writes the current candidate wording, ratings, and visible picks into qa/qa.csv for the selected small step.")
+            extra_col += 1
+
+        if SHOW_CLEAR_OVERRIDE_CONTROL:
+            clear_override_btn = ttk.Button(confirm_box, text="Clear Override", command=self._command_clear_manual_override)
+            clear_override_btn.grid(row=0, column=extra_col, sticky="w", padx=(0, 8))
+            self.command_buttons.append(clear_override_btn)
+            self._attach_tooltip(clear_override_btn, "Removes any manual precomputed override rows for the selected small step and falls back to the normal precomputed results.")
+            extra_col += 1
+
+        self.status_label = ttk.Label(outer, textvariable=self.status_var, foreground="blue")
+        self.status_label.grid(row=4, column=0, sticky="w", pady=(0, 4))
+
+        self.notes_entry: ttk.Entry | None = None
+        if SHOW_QA_NOTE_CONTROL:
+            notes_frame = ttk.LabelFrame(outer, text="Notes (optional)", padding=4)
+            notes_frame.grid(row=5, column=0, sticky="ew", pady=(0, 2))
+            notes_frame.columnconfigure(1, weight=1)
+            ttk.Label(notes_frame, text="QA note (~15 words):").grid(row=0, column=0, sticky="w", padx=(0, 8))
+            self.notes_entry = ttk.Entry(notes_frame, textvariable=self.notes_var)
+            self.notes_entry.grid(row=0, column=1, sticky="ew")
 
         rating_options = [str(i) for i in range(1, 11)]
 
@@ -1486,35 +1532,6 @@ class ImprovePickQAGUI:
         self._set_job_state(JOB_STATE_CANCELLED, step_text=f"Cancelled {job_name}")
         self.status_var.set(f"{job_name} cancelled")
 
-    def _command_apply_delete_queue(self) -> None:
-        if not VIDEOS_TO_DELETE_PATH.exists():
-            messagebox.showwarning("Missing delete queue", f"Delete queue file not found:\n{VIDEOS_TO_DELETE_PATH}")
-            return
-
-        try:
-            delete_df = pd.read_csv(VIDEOS_TO_DELETE_PATH)
-        except Exception as exc:
-            messagebox.showerror("Delete queue error", str(exc))
-            return
-
-        if delete_df.empty:
-            messagebox.showinfo("Delete queue", "Delete queue is empty. Nothing to apply.")
-            return
-
-        if not messagebox.askyesno(
-            "Confirm delete queue",
-            "Apply queued deletions now? This performs soft delete only: local assets and metadata are removed now, deleted-video tracking is updated, and full FAISS rebuild remains a separate step.",
-        ):
-            return
-
-        command = self._python_cmd_prefix() + [
-            "delete_content.py",
-            "--batch",
-            str(VIDEOS_TO_DELETE_PATH),
-            "--yes",
-        ]
-        self._start_subprocess_job("Apply Delete Queue", command, reload_assets=True)
-
     def _command_full_rebuild_faiss(self) -> None:
         if not messagebox.askyesno(
             "Confirm full rebuild",
@@ -1946,7 +1963,7 @@ class ImprovePickQAGUI:
             return
 
         if not self.latest_results:
-            messagebox.showwarning("No candidate picks", "Run Search Top 3 first; then apply manual override.")
+            messagebox.showwarning("No candidate picks", "Run 'Search with candidate wording' first; then use candidate picks as current.")
             return
 
         try:
@@ -3116,12 +3133,12 @@ class ImprovePickQAGUI:
         if updated_count == 0:
             messagebox.showinfo(
                 "No candidate results",
-                "No candidate rows are currently shown. Load persisted picks or run Search Top 3 first.",
+                "No candidate rows are currently shown. Load persisted picks or run 'Search with candidate wording' first.",
             )
             return
 
         self.status_var.set(
-            f"Marked {updated_count} shown candidate rating(s) as 10. Click Update QA CSV to persist for jump filtering."
+            f"Marked {updated_count} shown candidate rating(s) as 10. Click 'Save step to qa.csv' to persist for jump filtering."
         )
 
     def _on_show_unsaved_only_changed(self) -> None:
@@ -3186,7 +3203,7 @@ class ImprovePickQAGUI:
             self.candidate_display_unlocked_steps.add(small_step_id)
         else:
             self.candidate_display_unlocked_steps.discard(small_step_id)
-            self._set_candidate_panel_state("Candidate panel: locked until Update QA CSV")
+            self._set_candidate_panel_state("Candidate panel: locked until 'Save step to qa.csv'")
         # Update promoted status indicator
         if small_step_id in self.promoted_step_ids:
             self.promoted_status_var.set("✓ Promoted to canonical")
@@ -3199,6 +3216,15 @@ class ImprovePickQAGUI:
         self._update_dup_score_display()
         self._update_availability_summary_for_step(small_step_id)
         self._populate_dup_neighbours(small_step_id)
+        self._refresh_promote_visibility()
+
+    def _refresh_promote_visibility(self) -> None:
+        candidate = self.candidate_text.get("1.0", tk.END).strip()
+        canonical = self.baseline_text.get("1.0", tk.END).strip()
+        if self._selected_small_step_id() and candidate and candidate != canonical:
+            self.promote_canonical_btn.grid()
+        else:
+            self.promote_canonical_btn.grid_remove()
 
     def _set_text(self, widget: scrolledtext.ScrolledText, content: str) -> None:
         widget.config(state=tk.NORMAL)
@@ -3227,8 +3253,9 @@ class ImprovePickQAGUI:
             self.saved_candidate_steps.discard(step_id)
             self.candidate_display_unlocked_steps.discard(step_id)
         self._clear_results()
-        self._set_candidate_panel_state("Candidate panel: candidate edited, click Update QA CSV to persist")
+        self._set_candidate_panel_state("Candidate panel: candidate edited, click 'Save step to qa.csv' to persist")
         self._schedule_semantic_preview()
+        self._refresh_promote_visibility()
 
     def _schedule_semantic_preview(self) -> None:
         if not SHOW_LIVE_SEMANTIC_PREVIEW:
@@ -3361,7 +3388,7 @@ class ImprovePickQAGUI:
         self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
         self._clear_alignment_results()
         self._clear_stage4_results()
-        self._set_candidate_panel_state("Candidate panel: locked until Update QA CSV")
+        self._set_candidate_panel_state("Candidate panel: locked until 'Save step to qa.csv'")
         self.save_btn.config(state=tk.DISABLED)
 
     def _clear_candidate_result_widgets(self, reset_ratings: bool, reset_notes: bool = True) -> None:
@@ -3441,7 +3468,7 @@ class ImprovePickQAGUI:
         self.saved_candidate_steps.discard(small_step_id)
         self.candidate_display_unlocked_steps.discard(small_step_id)
         self._clear_candidate_result_widgets(reset_ratings=True, reset_notes=True)
-        self._set_candidate_panel_state("Candidate panel: search is transient until Update QA CSV")
+        self._set_candidate_panel_state("Candidate panel: search is transient until 'Save step to qa.csv'")
 
         self.search_btn.config(state=tk.DISABLED)
         self.save_btn.config(state=tk.DISABLED)
@@ -3501,7 +3528,7 @@ class ImprovePickQAGUI:
 
         self._render_candidate_search_results(self.latest_results)
         self._render_alignment_results(alignment_input)
-        self._set_candidate_panel_state("Candidate panel: showing current Search Top 3 results (not yet persisted)")
+        self._set_candidate_panel_state("Candidate panel: showing current search results (not yet persisted)")
 
         self.search_btn.config(state=tk.NORMAL)
         self.save_btn.config(state=tk.NORMAL if alignment_input else tk.DISABLED)
@@ -3852,11 +3879,11 @@ class ImprovePickQAGUI:
         self._sync_candidate_controls_for_current_step()
 
         if new_status == "active":
-            self.status_var.set(f"Excluded {video_id} for this step; rerun Search Top 3 to backfill.")
-            messagebox.showinfo("Candidate excluded", f"Excluded from future Search Top 3 for this step:\n{title} ({video_id})")
+            self.status_var.set(f"Excluded {video_id} for this step; rerun the candidate search to backfill.")
+            messagebox.showinfo("Candidate excluded", f"Excluded from future candidate searches for this step:\n{title} ({video_id})")
         else:
             self.status_var.set(f"Restored {video_id} for this step.")
-            messagebox.showinfo("Candidate restored", f"Restored for future Search Top 3 for this step:\n{title} ({video_id})")
+            messagebox.showinfo("Candidate restored", f"Restored for future candidate searches for this step:\n{title} ({video_id})")
 
     def _toggle_precomputed_knockout(self, index_num: int) -> None:
         small_step_id = self._selected_small_step_id()
@@ -3908,11 +3935,11 @@ class ImprovePickQAGUI:
         self._sync_candidate_controls_for_current_step()
 
         if new_status == "active":
-            self.status_var.set(f"Excluded {video_id} for this step; rerun Search Top 3 to backfill.")
-            messagebox.showinfo("Current pick excluded", f"Excluded from future Search Top 3 for this step:\n{title} ({video_id})")
+            self.status_var.set(f"Excluded {video_id} for this step; rerun the candidate search to backfill.")
+            messagebox.showinfo("Current pick excluded", f"Excluded from future candidate searches for this step:\n{title} ({video_id})")
         else:
             self.status_var.set(f"Restored {video_id} for this step.")
-            messagebox.showinfo("Current pick restored", f"Restored for future Search Top 3 for this step:\n{title} ({video_id})")
+            messagebox.showinfo("Current pick restored", f"Restored for future candidate searches for this step:\n{title} ({video_id})")
 
     def _apply_rating_color(self, index_num: int) -> None:
         rating_str = self.rating_vars[index_num].get().strip() or "5"
@@ -4195,7 +4222,7 @@ class ImprovePickQAGUI:
         # constraints_text is intentionally NOT written here; it is managed
         # exclusively by _save_constraints_text so constraints stay per-step.
         qa_row["awaiting download and faiss update"] = awaiting_download_faiss_text
-        notes_text = self.notes_entry.get().strip()
+        notes_text = self.notes_entry.get().strip() if self.notes_entry is not None else ""
         if not notes_text:
             notes_text = self.notes_var.get().strip()
         qa_row["notes"] = notes_text
@@ -4279,7 +4306,7 @@ class ImprovePickQAGUI:
         else:
             self.candidate_display_unlocked_steps.discard(small_step_id)
             self._clear_candidate_result_widgets(reset_ratings=False, reset_notes=False)
-            self._set_candidate_panel_state("Candidate panel: Update QA CSV ran, but no persisted candidate picks were found")
+            self._set_candidate_panel_state("Candidate panel: 'Save step to qa.csv' ran, but no persisted candidate picks were found")
             self.status_var.set("Updated qa/qa.csv. Candidate panel remains blank because no candidate picks are stored yet.")
 
         messagebox.showinfo("QA Updated", f"Saved QA row to:\n{QA_TRACKING_PATH}")
@@ -4311,6 +4338,8 @@ class ImprovePickQAGUI:
         # Track promoted step and update UI
         self.promoted_step_ids.add(small_step_id)
         self.promoted_status_var.set("✓ Promoted to canonical")
+        self._set_text(self.baseline_text, candidate_text)
+        self._refresh_promote_visibility()
         self.status_var.set(f"Promoted to canonical: {clean_text(row.get('small_step_id'))}")
         self._refresh_step_combo_labels(preserve_step_id=small_step_id)
         messagebox.showinfo(
@@ -4390,7 +4419,7 @@ class ImprovePickQAGUI:
             return
 
         if not self.latest_results:
-            messagebox.showwarning("No results", "Run Search Top 3 before saving.")
+            messagebox.showwarning("No results", "Run 'Search with candidate wording' before saving.")
             return
 
         scenario_label = clean_text(self.scenario_var.get()) or "gui_mvp_approved"
@@ -4413,7 +4442,7 @@ class ImprovePickQAGUI:
             self._upsert_targeted_override(row=row, candidate=candidate, scenario_label=scenario_label, ratings=ratings)
             self.saved_candidate_steps.add(small_step_id)
             self.candidate_display_unlocked_steps.discard(small_step_id)
-            self._set_candidate_panel_state("Candidate panel: candidate saved, click Update QA CSV to show persisted picks")
+            self._set_candidate_panel_state("Candidate panel: candidate saved, click 'Save step to qa.csv' to show persisted picks")
             self.status_var.set("Saved approved candidate and override row.")
             messagebox.showinfo(
                 "Saved",
@@ -4695,6 +4724,11 @@ def _toggle_dup_review_mode(self) -> None:
     self.dup_review_mode = not self.dup_review_mode
     if self.dup_review_btn is not None:
         self.dup_review_btn.config(text=f"High-Dup Review: {'ON' if self.dup_review_mode else 'OFF'}")
+    if self.dup_controls_frame is not None:
+        if self.dup_review_mode:
+            self.dup_controls_frame.grid()
+        else:
+            self.dup_controls_frame.grid_remove()
     current = self._selected_small_step_id()
     self._refresh_step_combo_labels(preserve_step_id=current)
     self.status_var.set(

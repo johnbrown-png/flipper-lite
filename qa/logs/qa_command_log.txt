@@ -442158,3 +442158,78 @@ IMPORTANT: 'embedding_disabled' videos ARE viewable on YouTube.com
 
 Report timestamp: 2026-10-23 13:12:28
 [2026-10-23T13:12:28] DONE Video Availability Check
+[2026-10-23T13:41:47] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_7_Change the subject of a simple formula
+[2026-10-23T13:42:17] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_7_Change the subject of a simple formula
+[2026-10-23T13:43:13] QA REFERENCE PUBLISHED rows=5038 steps=667 wildcards=35 manual=641 skipped=35
+[2026-10-23T13:44:39] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_8_Change the subject of a known formula
+[2026-10-23T13:46:59] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_8_Change the subject of a known formula
+[2026-10-23T13:47:17] QA REFERENCE PUBLISHED rows=5038 steps=668 wildcards=35 manual=642 skipped=35
+[2026-10-23T13:48:07] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_9_Change the subject of a complex formula
+[2026-10-23T13:48:12] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_9_Change the subject of a complex formula
+[2026-10-23T13:48:29] QA REFERENCE PUBLISHED rows=5038 steps=669 wildcards=35 manual=643 skipped=35
+[2026-10-23T13:49:36] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_10_Change the subject where the subject appears more than once (E)
+[2026-10-23T13:49:42] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Equations inequalities and formulae_10_Change the subject where the subject appears more than once (E)
+[2026-10-23T13:50:16] QA REFERENCE PUBLISHED rows=5038 steps=670 wildcards=35 manual=644 skipped=35
+[2026-10-23T13:51:07] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Percentages_7_Simple interest
+[2026-10-23T13:51:12] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Percentages_7_Simple interest
+[2026-10-23T13:52:20] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Percentages_7_Simple interest
+[2026-10-23T13:52:25] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Percentages_7_Simple interest
+[2026-10-23T13:54:02] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Percentages_9_Choose appropriate methods to solve percentage problems
+[2026-10-23T13:54:09] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Percentages_9_Choose appropriate methods to solve percentage problems
+[2026-10-23T13:55:11] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Ratio and scale_1_Equivalent ratios
+[2026-10-23T13:55:18] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Ratio and scale_1_Equivalent ratios
+[2026-10-23T13:57:03] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Ratio and scale_2_Share in a ratio (whole given)
+[2026-10-23T13:57:06] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Ratio and scale_2_Share in a ratio (whole given)
+[2026-10-23T13:59:13] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Ratio and scale_4_Combine a set of ratios
+[2026-10-23T13:59:16] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Ratio and scale_4_Combine a set of ratios
+[2026-10-23T14:00:05] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Ratio and scale_5_Combine a set of ratios (E)
+[2026-10-23T14:00:09] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Ratio and scale_5_Combine a set of ratios (E)
+[2026-10-23T14:01:53] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Work with fractions_4_Add and subtract algebraic fractions
+[2026-10-23T14:01:56] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Higher_Work with fractions_4_Add and subtract algebraic fractions
+[2026-10-23T14:03:59] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_4_Multiply and divide integers and decimals
+[2026-10-23T14:04:01] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_4_Multiply and divide integers and decimals
+[2026-10-23T14:06:22] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_6_Order of operations
+[2026-10-23T14:06:26] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_6_Order of operations
+[2026-10-23T14:07:03] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_8_Solve multi-step problems
+[2026-10-23T14:07:07] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Non-calculator methods_8_Solve multi-step problems
+[2026-10-23T14:08:47] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_3_List and count outcomes
+[2026-10-23T14:08:51] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_3_List and count outcomes
+[2026-10-23T14:10:23] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_8_Tree diagrams for independent events
+[2026-10-23T14:10:27] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_8_Tree diagrams for independent events
+[2026-10-23T14:12:16] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_9_Tree diagrams for dependent events
+[2026-10-23T14:12:19] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Probability_9_Tree diagrams for dependent events
+[2026-10-23T14:14:10] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Probability_7_Frequency trees
+[2026-10-23T14:14:12] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Probability_7_Frequency trees
+[2026-10-23T14:15:02] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Probability_9_Tree diagrams for independent events
+[2026-10-23T14:16:10] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Probability_10_Tree diagrams for dependent events (E)
+[2026-10-23T14:16:15] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Probability_10_Tree diagrams for dependent events (E)
+[2026-10-23T14:18:18] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Interpret and represent data_1_Averages and range
+[2026-10-23T14:18:22] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Interpret and represent data_1_Averages and range
+[2026-10-23T14:21:57] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Perimeter area and volume_4_Area of a compound shape
+[2026-10-23T14:22:00] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Perimeter area and volume_4_Area of a compound shape
+[2026-10-23T14:23:52] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Perimeter area and volume_5_Recognise and label parts of a circle
+[2026-10-23T14:23:58] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Perimeter area and volume_5_Recognise and label parts of a circle
+[2026-10-23T14:24:52] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Perimeter area and volume_6_Circumference of a circle
+[2026-10-23T14:24:58] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Perimeter area and volume_6_Circumference of a circle
+[2026-10-23T14:26:02] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Interpret and represent data_9_Scatter graphs
+[2026-10-23T14:26:34] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Interpret and represent data_9_Scatter graphs
+[2026-10-23T14:27:51] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_1_Averages and range
+[2026-10-23T14:27:56] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_1_Averages and range
+[2026-10-23T14:28:39] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_1_Averages and range
+[2026-10-23T14:29:41] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_8_Scatter graphs
+[2026-10-23T14:29:46] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Foundation_Interpret and represent data_8_Scatter graphs
+[2026-10-23T14:30:56] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Non-calculator methods_1_Order of operations
+[2026-10-23T14:31:01] MANUAL OVERRIDE applied for Year 10_14-15_Spring_Higher_Non-calculator methods_1_Order of operations
+[2026-10-23T14:32:46] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_1_Angles around a point, on a straight line and vertically opposite
+[2026-10-23T14:32:50] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_1_Angles around a point, on a straight line and vertically opposite
+[2026-10-23T14:35:03] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_3_Exterior angles of a polygon
+[2026-10-23T14:35:06] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_3_Exterior angles of a polygon
+[2026-10-23T14:36:06] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_4_Interior angles of a polygon
+[2026-10-23T14:36:12] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_4_Interior angles of a polygon
+[2026-10-23T14:37:09] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_5_Solve problems with angles in polygons
+[2026-10-23T14:37:14] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_5_Solve problems with angles in polygons
+[2026-10-23T14:42:58] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_6_Co-interior, alternate and corresponding angles
+[2026-10-23T14:43:01] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Higher_Angles_6_Co-interior, alternate and corresponding angles
+[2026-10-23T14:43:38] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Angles_4_Exterior angles of a polygon
+[2026-10-23T14:43:40] MANUAL OVERRIDE applied for Year 10_14-15_Summer_Foundation_Angles_4_Exterior angles of a polygon
+[2026-10-23T14:44:05] QA REFERENCE PUBLISHED rows=5038 steps=696 wildcards=35 manual=670 skipped=35

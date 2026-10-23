@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
+import json
 import os
 from pathlib import Path
+import pickle
 import re
 import subprocess
 import sys
@@ -32,7 +34,7 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from precompute_curriculum_recommendations import load_faiss_index
+import faiss
 from query_embedder import QueryEmbedder
 from data_pipeline.deletion_tracker import DeletionTracker
 from data_pipeline.instruction_quality_scorer import InstructionQualityScorer
@@ -65,10 +67,20 @@ QA_REFERENCE_OUTPUT_PATH = project_root / "precomputed_recommendations_flat_qa.c
 STEP_KNOCKOUT_PATH = project_root / "qa" / "step_video_knockouts.csv"
 DUP_FLAGGED_PATH = project_root / "qa" / "dup_flagged_steps.csv"
 QA_COMMAND_LOG_PATH = project_root / "qa" / "logs" / "qa_command_log.txt"
+PRECOMPUTED_PATH = project_root / "precomputed_recommendations_flat.csv"
+CURRICULUM_SCHEMA_PATH = project_root / "shared" / "curriculum_schema.py"
+FAISS_INDEX_FILE_PATH = project_root / "data" / "faiss_index" / "faiss_index.bin"
+FAISS_METADATA_PATH = project_root / "data" / "faiss_index" / "faiss_index_metadata.json"
+AVAILABILITY_FULL_REPORT_PATH = project_root / "reports" / "video_availability_check.csv"
+AVAILABILITY_UNAVAILABLE_REPORT_PATH = project_root / "reports" / "unavailable_video_availability_check.csv"
+BOOT_CACHE_DIR = project_root / "data" / "cache"
+# Bump when the cleaning in _build_curriculum_df / _build_precomputed_df changes so old pickles are ignored.
+BOOT_CACHE_VERSION = 2
 TOP_K = 3
 CANDIDATE_DISPLAY_K = 10
 LOW_CANDIDATE_RATING_THRESHOLD = 7
 DELETE_EVERYWHERE_JOB_NAME = "Delete Everywhere"
+VIDEO_AVAILABILITY_JOB_NAME = "Video Availability Check"
 KNOCKOUT_EXCLUDE_TEXT = "Exclude"
 KNOCKOUT_RESTORE_TEXT = "Restore"
 DELETE_EVERYWHERE_TOOLTIP = (
@@ -99,6 +111,27 @@ DUP_REVIEW_W = 10               # distance window: penalty decays to zero at thi
 DUP_REVIEW_K_SHRINK = 6        # shrinkage constant: stabilises low-evidence steps
 DUP_REVIEW_DEFAULT_TOP_PCT = 5  # default top-% of steps shown as hotspots
 DUP_NEIGHBOUR_RADIUS = 3        # adjacent steps shown either side in Dup Neighbours panel
+
+BOOT_STAGE_CURRICULUM = 0
+BOOT_STAGE_PRECOMPUTED = 1
+BOOT_STAGE_QA_STATE = 2
+BOOT_STAGE_STEP_LISTS = 3
+BOOT_STAGE_FAISS = 4
+BOOT_STAGE_FAISS_METADATA = 5
+BOOT_STAGE_INVENTORY = 6
+BOOT_STAGE_EMBEDDER = 7
+BOOT_STAGE_SCORER = 8
+BOOT_STAGES = (
+    "Loading curriculum",
+    "Loading precomputed picks",
+    "Loading qa.csv, overrides and availability report",
+    "Building step lists",
+    "Loading FAISS index",
+    "Loading FAISS metadata",
+    "Loading video inventory and deleted list",
+    "Starting query embedder",
+    "Loading instruction scorer cache and transcript index",
+)
 
 JOB_STATE_IDLE = "idle"
 JOB_STATE_RUNNING = "running"
@@ -220,16 +253,91 @@ def load_video_lookup() -> dict[str, dict[str, str]]:
     if not video_inventory_path.exists():
         return lookup
 
-    inventory_df = pd.read_csv(video_inventory_path)
-    for _, row in inventory_df.iterrows():
-        video_id = clean_text(row.get("video_id"))
-        if not video_id:
-            continue
-        lookup[video_id] = {
-            "channel": clean_text(row.get("channel")),
-            "duration_formatted": clean_text(row.get("duration_formatted")),
-        }
+    inventory_df = pd.read_csv(video_inventory_path, dtype=str)
+    columns = ("video_id", "channel", "duration_formatted")
+    for col in columns:
+        if col not in inventory_df.columns:
+            inventory_df[col] = ""
+        inventory_df[col] = inventory_df[col].map(clean_text)
+    for video_id, channel, duration in zip(*(inventory_df[col] for col in columns)):
+        if video_id:
+            lookup[video_id] = {"channel": channel, "duration_formatted": duration}
     return lookup
+
+
+def _files_signature(*paths: Path) -> tuple | None:
+    """Identity of source files (path, mtime, size); None if any file is missing."""
+    parts: list[tuple[str, int, int]] = []
+    for path in paths:
+        try:
+            stat = path.stat()
+        except OSError:
+            return None
+        parts.append((str(path), stat.st_mtime_ns, stat.st_size))
+    return (BOOT_CACHE_VERSION, *parts)
+
+
+def _load_cached(cache_name: str, source_paths: tuple[Path, ...], build):
+    """Return build() output, reusing a pickle in BOOT_CACHE_DIR while the source files are unchanged."""
+    cache_path = BOOT_CACHE_DIR / f"gui_boot_{cache_name}.pkl"
+    signature = _files_signature(*source_paths)
+    if signature is not None and cache_path.exists():
+        try:
+            with cache_path.open("rb") as handle:
+                cached = pickle.load(handle)
+            if cached.get("signature") == signature:
+                return cached["value"]
+        except Exception as exc:
+            print(f"Warning: ignoring unreadable boot cache {cache_path.name}: {exc}")
+
+    value = build()
+    if signature is not None:
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = cache_path.with_suffix(".pkl.tmp")
+            with temp_path.open("wb") as handle:
+                pickle.dump({"signature": signature, "value": value}, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            os.replace(temp_path, cache_path)
+        except Exception as exc:
+            print(f"Warning: could not write boot cache {cache_path.name}: {exc}")
+    return value
+
+
+def _read_faiss_metadata() -> list[dict[str, object]]:
+    with FAISS_METADATA_PATH.open("r", encoding="utf-8") as handle:
+        return json.load(handle)["metadata"]
+
+
+def _build_curriculum_df() -> pd.DataFrame:
+    curriculum_df = curriculum_to_long_df(pd.read_csv(CURRICULUM_PATH)).copy()
+
+    required_cols = ["small_step_id", "topic", "small_step_name", "ss_wr_desc", "age"]
+    for col in required_cols:
+        if col not in curriculum_df.columns:
+            raise ValueError(f"Curriculum is missing required column: {col}")
+
+    for col in required_cols:
+        curriculum_df[col] = curriculum_df[col].map(clean_text)
+
+    return curriculum_df[curriculum_df["small_step_id"].str.len() > 0].copy()
+
+
+def _build_precomputed_df() -> pd.DataFrame:
+    precomp_df = pd.read_csv(PRECOMPUTED_PATH)
+    for col in ["small_step_id", "video_id", "title", "video_title", "channel"]:
+        if col in precomp_df.columns:
+            precomp_df[col] = precomp_df[col].map(clean_text)
+    return precomp_df
+
+
+def _format_file_size(path: Path) -> str:
+    try:
+        size = path.stat().st_size
+    except OSError:
+        return ""
+    if size >= 1024 ** 3:
+        return f"{size / 1024 ** 3:.1f} GB"
+    return f"{size / 1024 ** 2:.0f} MB"
 
 
 def rating_to_color(rating: int) -> str:
@@ -491,7 +599,8 @@ class ImprovePickQAGUI:
         self.dup_review_mode = False
         self.dup_threshold_pct_var = tk.StringVar(value=str(DUP_REVIEW_DEFAULT_TOP_PCT))
         self.dup_score_display_var = tk.StringVar(value="")
-        self.dup_scores: dict[str, dict] = {}
+        # None until first needed (High-Dup Review / hotspot jump); reset when precomputed_df reloads.
+        self.dup_scores: dict[str, dict] | None = None
         self.dup_flagged_steps: set[str] = set()
         self.step_global_num: dict[str, int] = {}
         self.global_num_to_step_id: dict[int, str] = {}
@@ -513,7 +622,23 @@ class ImprovePickQAGUI:
         # {small_step_id: {"deleted": n, "embedding": n, "local": n}} for steps whose effective picks are affected
         self.unavailable_step_map: dict[str, dict[str, int]] = {}
         self.availability_summary_var = tk.StringVar(value="")
+        self.availability_checked_var = tk.StringVar(value="")
         self.all_step_options: list[str] = []  # Unfiltered list of all steps
+
+        self._precomputed_signature: tuple | None = None
+        self._qa_df_cache: pd.DataFrame | None = None
+        self._qa_df_cache_signature: tuple | None = None
+        self._low_candidate_cache_key: tuple | None = None
+        self._low_candidate_ids: set[str] = set()
+
+        # Boot indicator state (stays True until retrieval assets are ready)
+        self.boot_in_progress = True
+        self.boot_started_at = time.perf_counter()
+        self.boot_stage_started_at = self.boot_started_at
+        self.boot_stage_index = BOOT_STAGE_CURRICULUM
+        self.boot_stage_label = ""
+        self.boot_tick_after_id: str | None = None
+        self.boot_status_var = tk.StringVar(value="Starting up, please wait...")
 
         self.active_job_state = JOB_STATE_IDLE
         self.active_job_name = ""
@@ -561,12 +686,31 @@ class ImprovePickQAGUI:
         outer.columnconfigure(0, weight=1)
         outer.rowconfigure(6, weight=1)
 
+        header = ttk.Frame(outer)
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 4))
+        header.columnconfigure(1, weight=1)
+
         title = ttk.Label(
-            outer,
+            header,
             text="Improve Pick - Manual Candidate QA",
             font=("Segoe UI", 13, "bold"),
         )
-        title.grid(row=0, column=0, sticky="w", pady=(0, 4))
+        title.grid(row=0, column=0, sticky="w")
+
+        self.boot_frame = tk.Frame(header, bg="#fff3cd", padx=8, pady=3, highlightthickness=1, highlightbackground="#e0b84c")
+        self.boot_frame.grid(row=0, column=1, sticky="ew", padx=(16, 0))
+        self.boot_frame.columnconfigure(0, weight=1)
+        self.boot_label = tk.Label(
+            self.boot_frame,
+            textvariable=self.boot_status_var,
+            bg="#fff3cd",
+            fg="#7a4b00",
+            font=("Segoe UI", 10, "bold"),
+            anchor="w",
+        )
+        self.boot_label.grid(row=0, column=0, sticky="ew")
+        self.boot_progress = ttk.Progressbar(self.boot_frame, mode="determinate", maximum=len(BOOT_STAGES), length=240)
+        self.boot_progress.grid(row=0, column=1, sticky="e", padx=(12, 0))
 
         selector_frame = ttk.LabelFrame(outer, text="Small Step Selection", padding=8)
         selector_frame.grid(row=1, column=0, sticky="ew", pady=(0, 4))
@@ -632,7 +776,7 @@ class ImprovePickQAGUI:
         # Row 2: Unavailable video navigation and filtering
         unavailable_frame = ttk.LabelFrame(selector_frame, text="Unavailable videos", padding=4)
         unavailable_frame.grid(row=3, column=0, columnspan=6, sticky="ew", pady=(6, 0))
-        unavailable_frame.columnconfigure(6, weight=1)
+        unavailable_frame.columnconfigure(7, weight=1)
 
         self.jump_unavailable_btn = ttk.Button(
             unavailable_frame,
@@ -687,11 +831,31 @@ class ImprovePickQAGUI:
             "Reload data/deleted_videos.json after running delete_content.py, without restarting the GUI.",
         )
 
+        run_availability_btn = ttk.Button(
+            unavailable_frame,
+            text="Run Availability Check",
+            command=self._command_run_availability_check,
+        )
+        run_availability_btn.grid(row=0, column=6, sticky="w", padx=(8, 0))
+        self.command_buttons.append(run_availability_btn)
+        self._attach_tooltip(
+            run_availability_btn,
+            "Checks every video in precomputed_recommendations_flat_qa.csv (what flipper_lite serves) against "
+            "the YouTube API for deleted, private and embedding-disabled videos (~30s, ~50 quota units). "
+            "Run '4. Publish to flipper_lite' first so recent pick changes are included.",
+        )
+
+        ttk.Label(
+            unavailable_frame,
+            textvariable=self.availability_checked_var,
+            foreground="#666666",
+        ).grid(row=0, column=7, sticky="w", padx=(8, 0))
+
         ttk.Label(
             unavailable_frame,
             textvariable=self.availability_summary_var,
             foreground="#cc0000",  # Red for warnings
-        ).grid(row=0, column=6, sticky="w", padx=(12, 0))
+        ).grid(row=1, column=0, columnspan=9, sticky="w", pady=(2, 0))
 
         if SHOW_SHOW_UNSAVED_ONLY_CONTROL:
             self.show_unsaved_check = ttk.Checkbutton(
@@ -1513,9 +1677,75 @@ class ImprovePickQAGUI:
         self._refresh_command_controls()
 
     def _refresh_command_controls(self) -> None:
-        running = self.active_job_state == JOB_STATE_RUNNING
+        running = self.active_job_state == JOB_STATE_RUNNING or self.boot_in_progress
         for btn in self.command_buttons:
             btn.config(state=tk.DISABLED if running else tk.NORMAL)
+
+    # ------------------------------------------------------------------ #
+    # Boot indicator                                                       #
+    # ------------------------------------------------------------------ #
+
+    def _boot_begin(self, stage_index: int) -> None:
+        self.boot_in_progress = True
+        self.boot_started_at = time.perf_counter()
+        self.boot_stage_label = ""
+        self.boot_frame.config(bg="#fff3cd", highlightbackground="#e0b84c")
+        self.boot_label.config(bg="#fff3cd", fg="#7a4b00")
+        self.boot_frame.grid()
+        self.boot_progress.grid()
+        self.root.config(cursor="watch")
+        self.search_btn.config(state=tk.DISABLED)
+        self.constraints_run_btn.config(state=tk.DISABLED)
+        self._refresh_command_controls()
+        self._boot_stage(stage_index)
+        if self.boot_tick_after_id is None:
+            self.boot_tick_after_id = self.root.after(1000, self._boot_tick)
+
+    def _boot_stage(self, stage_index: int, label: str = "") -> None:
+        """Advance the boot banner. Must run on the Tk thread (workers use root.after)."""
+        now = time.perf_counter()
+        if self.boot_stage_label:
+            print(f"[boot] {self.boot_stage_label}: {now - self.boot_stage_started_at:.1f}s")
+        self.boot_stage_index = stage_index
+        self.boot_stage_label = label or BOOT_STAGES[stage_index]
+        self.boot_stage_started_at = now
+        self.boot_progress["value"] = stage_index
+        self._render_boot_status()
+        self.root.update_idletasks()
+
+    def _render_boot_status(self) -> None:
+        elapsed = int(time.perf_counter() - self.boot_started_at)
+        self.boot_status_var.set(
+            f"Starting up, please wait - step {self.boot_stage_index + 1}/{len(BOOT_STAGES)}: "
+            f"{self.boot_stage_label}... {elapsed}s"
+        )
+
+    def _boot_tick(self) -> None:
+        if not self.boot_in_progress:
+            self.boot_tick_after_id = None
+            return
+        self._render_boot_status()
+        self.boot_tick_after_id = self.root.after(1000, self._boot_tick)
+
+    def _boot_finish(self, ok: bool, error_text: str = "") -> None:
+        now = time.perf_counter()
+        if self.boot_stage_label:
+            print(f"[boot] {self.boot_stage_label}: {now - self.boot_stage_started_at:.1f}s")
+        print(f"[boot] total: {now - self.boot_started_at:.1f}s ({'ready' if ok else 'failed'})")
+        self.boot_stage_label = ""
+        self.boot_in_progress = False
+        if self.boot_tick_after_id is not None:
+            self.root.after_cancel(self.boot_tick_after_id)
+            self.boot_tick_after_id = None
+        self.root.config(cursor="")
+        if ok:
+            self.boot_frame.grid_remove()
+        else:
+            self.boot_frame.config(bg="#f8d7da", highlightbackground="#d9534f")
+            self.boot_label.config(bg="#f8d7da", fg="#8a1c1c")
+            self.boot_progress.grid_remove()
+            self.boot_status_var.set(f"Startup failed: {error_text}")
+        self._refresh_command_controls()
 
     def _start_subprocess_job(self, job_name: str, command: list[str], reload_assets: bool) -> None:
         if self.active_job_state == JOB_STATE_RUNNING:
@@ -1605,8 +1835,11 @@ class ImprovePickQAGUI:
                 self.status_var.set(f"{job_name} completed. Soft delete finished; refreshing deleted-video state...")
                 self._refresh_after_soft_delete()
                 self._report_delete_everywhere_result()
+            elif job_name == VIDEO_AVAILABILITY_JOB_NAME:
+                self._refresh_after_availability_check()
             else:
                 self.status_var.set(f"{job_name} completed. Reloading retrieval assets...")
+                self._boot_begin(BOOT_STAGE_FAISS)
                 worker = threading.Thread(target=self._load_heavy_assets, daemon=True)
                 worker.start()
 
@@ -1627,6 +1860,70 @@ class ImprovePickQAGUI:
         self._append_command_log(f"CANCELLED {job_name}")
         self._set_job_state(JOB_STATE_CANCELLED, step_text=f"Cancelled {job_name}")
         self.status_var.set(f"{job_name} cancelled")
+
+    def _command_run_availability_check(self) -> None:
+        if self.active_job_state == JOB_STATE_RUNNING:
+            messagebox.showwarning("Job running", "Another QA command is already running.")
+            return
+        if not QA_REFERENCE_OUTPUT_PATH.exists():
+            messagebox.showerror(
+                "Nothing to check",
+                f"{QA_REFERENCE_OUTPUT_PATH.name} does not exist yet. Run '4. Publish to flipper_lite' first.",
+            )
+            return
+
+        published_at = datetime.fromtimestamp(QA_REFERENCE_OUTPUT_PATH.stat().st_mtime)
+        if not messagebox.askyesno(
+            "Run availability check",
+            f"Check every video in {QA_REFERENCE_OUTPUT_PATH.name} against the YouTube API?\n\n"
+            "This takes about 30 seconds, uses about 50 YouTube API quota units and needs "
+            "YOUTUBE_API_KEY in .env.\n\n"
+            f"Last published: {published_at:%Y-%m-%d %H:%M}. Run '4. Publish to flipper_lite' first "
+            "if you have changed picks since then.",
+        ):
+            return
+
+        command = self._python_cmd_prefix() + [
+            "check_video_availability.py",
+            "--source",
+            "precomputed",
+            "--output",
+            str(AVAILABILITY_FULL_REPORT_PATH.relative_to(project_root)),
+        ]
+        self.status_var.set("Running video availability check against the YouTube API...")
+        self._start_subprocess_job(VIDEO_AVAILABILITY_JOB_NAME, command, reload_assets=True)
+
+    def _refresh_after_availability_check(self) -> None:
+        self._load_availability_report()
+        self._build_unavailable_step_map()
+        self._update_availability_summary_for_step(self._selected_small_step_id())
+        self._refresh_availability_checked_label()
+        if self.show_unavailable_only_var.get():
+            self._on_filter_unavailable_changed()
+
+        status_counts: dict[str, int] = {}
+        for info in self.unavailable_videos.values():
+            status_counts[info["status"]] = status_counts.get(info["status"], 0) + 1
+        deleted_count = status_counts.get("deleted", 0) + status_counts.get("private", 0)
+        embedding_count = status_counts.get("embedding_disabled", 0)
+        other_count = len(self.unavailable_videos) - deleted_count - embedding_count
+        affected_steps = sum(
+            1 for counts in self.unavailable_step_map.values()
+            if counts.get("deleted", 0) or counts.get("embedding", 0)
+        )
+        self.status_var.set(
+            f"Availability check done: {deleted_count} deleted/private, {embedding_count} embedding-disabled, "
+            f"{other_count} other (API error/not checked); {affected_steps} step(s) affected"
+        )
+
+    def _refresh_availability_checked_label(self) -> None:
+        if not AVAILABILITY_FULL_REPORT_PATH.exists():
+            self.availability_checked_var.set("Last checked: never")
+            return
+        checked_at = datetime.fromtimestamp(AVAILABILITY_FULL_REPORT_PATH.stat().st_mtime)
+        days = (datetime.now().date() - checked_at.date()).days
+        age = "today" if days == 0 else ("yesterday" if days == 1 else f"{days} days ago")
+        self.availability_checked_var.set(f"Last checked: {checked_at:%Y-%m-%d %H:%M} ({age})")
 
     def _command_full_rebuild_faiss(self) -> None:
         if not messagebox.askyesno(
@@ -1659,6 +1956,18 @@ class ImprovePickQAGUI:
 
     def _reload_wildcards_df(self) -> None:
         self.wildcard_df = _read_wildcard_rows(WILDCARD_OVERRIDE_PATH)
+
+    def _reload_precomputed_df(self) -> None:
+        """Reload precomputed picks if the CSV changed; keeps the current frame when the file is missing."""
+        signature = _files_signature(PRECOMPUTED_PATH)
+        if signature is None:
+            return
+        if signature == self._precomputed_signature and not self.precomputed_df.empty:
+            return
+        self.precomputed_df = _load_cached("precomputed", (PRECOMPUTED_PATH,), _build_precomputed_df)
+        self._precomputed_signature = signature
+        self.dup_scores = None
+        self._build_step_global_num_lookup()
 
     def _get_wildcard_for_step(self, small_step_id: str) -> dict[str, str]:
         if self.wildcard_df.empty or not small_step_id:
@@ -1887,14 +2196,7 @@ class ImprovePickQAGUI:
             return
 
         try:
-            precomputed_path = project_root / "precomputed_recommendations_flat.csv"
-            if precomputed_path.exists():
-                precomp_df = pd.read_csv(precomputed_path)
-                for col in ["small_step_id", "video_id", "title", "video_title", "channel"]:
-                    if col in precomp_df.columns:
-                        precomp_df[col] = precomp_df[col].map(clean_text)
-                self.precomputed_df = precomp_df
-
+            self._reload_precomputed_df()
             self._reload_wildcards_df()
             self.dup_flagged_steps = self._load_dup_flagged_steps()
             published_df, stats = self._build_published_precomputed_df()
@@ -2582,14 +2884,7 @@ class ImprovePickQAGUI:
             self.deleted_videos = DeletionTracker().get_deleted_video_ids()
             self.video_lookup = load_video_lookup()
             self._reload_wildcards_df()
-
-            precomputed_path = project_root / "precomputed_recommendations_flat.csv"
-            if precomputed_path.exists():
-                precomp_df = pd.read_csv(precomputed_path)
-                for col in ["small_step_id", "video_id", "title", "video_title", "channel"]:
-                    if col in precomp_df.columns:
-                        precomp_df[col] = precomp_df[col].map(clean_text)
-                self.precomputed_df = precomp_df
+            self._reload_precomputed_df()
 
             self._build_unavailable_step_map()
             selected_step_id = self._selected_small_step_id()
@@ -2619,38 +2914,19 @@ class ImprovePickQAGUI:
         """Entry point called after mainloop starts. Curriculum loads on main thread (fast);
         heavy FAISS/embedder assets load in a background thread."""
         try:
+            self._boot_begin(BOOT_STAGE_CURRICULUM)
             self.status_var.set("Loading curriculum...")
-            self.root.update_idletasks()
-            curriculum_raw = pd.read_csv(CURRICULUM_PATH)
-            self.curriculum_df = curriculum_to_long_df(curriculum_raw).copy()
+            self.curriculum_df = _load_cached(
+                "curriculum", (CURRICULUM_PATH, CURRICULUM_SCHEMA_PATH), _build_curriculum_df
+            )
 
-            required_cols = ["small_step_id", "topic", "small_step_name", "ss_wr_desc", "age"]
-            for col in required_cols:
-                if col not in self.curriculum_df.columns:
-                    raise ValueError(f"Curriculum is missing required column: {col}")
-
-            self.curriculum_df["small_step_id"] = self.curriculum_df["small_step_id"].map(clean_text)
-            self.curriculum_df["topic"] = self.curriculum_df["topic"].map(clean_text)
-            self.curriculum_df["small_step_name"] = self.curriculum_df["small_step_name"].map(clean_text)
-            self.curriculum_df["ss_wr_desc"] = self.curriculum_df["ss_wr_desc"].map(clean_text)
-            self.curriculum_df["age"] = self.curriculum_df["age"].map(clean_text)
-
-            self.curriculum_df = self.curriculum_df[self.curriculum_df["small_step_id"].str.len() > 0].copy()
-
-            precomputed_path = project_root / "precomputed_recommendations_flat.csv"
-            if precomputed_path.exists():
-                precomp_df = pd.read_csv(precomputed_path)
-                for col in ["small_step_id", "video_id", "title", "video_title", "channel"]:
-                    if col in precomp_df.columns:
-                        precomp_df[col] = precomp_df[col].map(clean_text)
-                self.precomputed_df = precomp_df
-
+            self._boot_stage(BOOT_STAGE_PRECOMPUTED)
+            self._reload_precomputed_df()
             self._reload_wildcards_df()
 
-            self.curriculum_by_id = {
-                row["small_step_id"]: row
-                for _, row in self.curriculum_df.drop_duplicates(subset=["small_step_id"], keep="first").iterrows()
-            }
+            self._boot_stage(BOOT_STAGE_QA_STATE)
+            unique_steps = self.curriculum_df.drop_duplicates(subset=["small_step_id"], keep="first")
+            self.curriculum_by_id = {row["small_step_id"]: row for row in unique_steps.to_dict("records")}
 
             self.sorted_step_ids = sorted(
                 self.curriculum_by_id.keys(),
@@ -2660,46 +2936,49 @@ class ImprovePickQAGUI:
             # Load promoted steps from canonical overrides
             override_map = load_validated_override_map(CANONICAL_OVERRIDE_PATH)
             self.promoted_step_ids = set(override_map.keys())
-            
+
             # Load video availability report and locally deleted videos (cheap JSON read; heavy assets reload it too)
             self._load_availability_report()
+            self._refresh_availability_checked_label()
             self.deleted_videos = DeletionTracker().get_deleted_video_ids()
             self._build_unavailable_step_map()
-            
-            self._update_cascade_filter_options()
-            self._refresh_step_combo_labels()
 
-            # Build global step number lookup and compute dup proximity scores
-            self._build_step_global_num_lookup()
-            self.dup_scores = self._compute_dup_scores()
+            self._boot_stage(BOOT_STAGE_STEP_LISTS)
             self.dup_flagged_steps = self._load_dup_flagged_steps()
+            self._update_cascade_filter_options()
             self._refresh_dup_review_state()
 
             if self.step_var.get():
                 self._on_step_selected(None)
-                selected_step_id = self._selected_small_step_id()
-                if selected_step_id:
-                    self._populate_precomputed(selected_step_id)
 
             self.status_var.set("Loading retrieval assets (FAISS / embedder)...")
-            self.search_btn.config(state=tk.DISABLED)
-            self.root.update_idletasks()
+            self._boot_stage(BOOT_STAGE_FAISS, f"Loading FAISS index ({_format_file_size(FAISS_INDEX_FILE_PATH)})")
 
             worker = threading.Thread(target=self._load_heavy_assets, daemon=True)
             worker.start()
 
         except Exception as exc:
             self.status_var.set("Failed to initialize curriculum")
+            self._boot_finish(False, str(exc))
             messagebox.showerror("Initialization Error", str(exc))
+
+    def _report_boot_stage(self, stage_index: int, label: str = "") -> None:
+        """Called from the heavy-asset worker thread."""
+        self.root.after(0, self._boot_stage, stage_index, label)
 
     def _load_heavy_assets(self) -> None:
         """Background thread: load FAISS index, embedder, scorer."""
         try:
-            index, metadata = load_faiss_index()
+            index = faiss.read_index(str(FAISS_INDEX_FILE_PATH))
+            self._report_boot_stage(BOOT_STAGE_FAISS_METADATA)
+            metadata = _load_cached("faiss_metadata", (FAISS_METADATA_PATH,), _read_faiss_metadata)
             fallback_lookup = build_faiss_video_lookup(metadata)
+            self._report_boot_stage(BOOT_STAGE_INVENTORY)
             video_lookup = load_video_lookup()
             deleted_videos = DeletionTracker().get_deleted_video_ids()
+            self._report_boot_stage(BOOT_STAGE_EMBEDDER)
             embedder = QueryEmbedder()
+            self._report_boot_stage(BOOT_STAGE_SCORER)
             scorer = InstructionQualityScorer()
 
             self.root.after(0, self._on_heavy_assets_ready, index, metadata, fallback_lookup, video_lookup, deleted_videos, embedder, scorer)
@@ -2732,6 +3011,7 @@ class ImprovePickQAGUI:
         self.status_var.set("Ready")
         self.constraints_status_var.set("Constraints gate: ready")
         self._schedule_semantic_preview()
+        self._boot_finish(True)
         if self.active_job_state == JOB_STATE_RUNNING:
             self._set_job_state(JOB_STATE_DONE, step_text="Retrieval assets reloaded")
 
@@ -2741,6 +3021,7 @@ class ImprovePickQAGUI:
         # Re-enable buttons even on error so user can see the error message when they try to search
         self.search_btn.config(state=tk.NORMAL)
         self.constraints_run_btn.config(state=tk.NORMAL)
+        self._boot_finish(False, error_message)
         if self.active_job_state == JOB_STATE_RUNNING:
             self._set_job_state(JOB_STATE_FAILED, step_text="Retrieval asset reload failed", error_text=error_message)
         messagebox.showerror("Initialization Error", error_message)
@@ -2769,9 +3050,9 @@ class ImprovePickQAGUI:
         return (step_num, small_step_id)
 
     def _refresh_dup_review_state(self) -> None:
-        """Recompute dup-review metrics and refresh related UI state."""
-        self._build_step_global_num_lookup()
-        self.dup_scores = self._compute_dup_scores()
+        """Refresh dup-review UI state; scores are only computed while High-Dup Review is on."""
+        if self.dup_review_mode:
+            self._ensure_dup_scores()
         current_step_id = self._selected_small_step_id()
         self._refresh_step_combo_labels(preserve_step_id=current_step_id)
         self._update_dup_score_display()
@@ -2927,6 +3208,11 @@ class ImprovePickQAGUI:
         if not QA_TRACKING_PATH.exists():
             return set()
 
+        ignore_default_five = bool(self.low_rating_jump_ignore_default_five_var.get())
+        cache_key = (_files_signature(QA_TRACKING_PATH), ignore_default_five)
+        if cache_key[0] is not None and cache_key == self._low_candidate_cache_key:
+            return set(self._low_candidate_ids)
+
         try:
             qa_df = self._load_qa_df()
         except Exception:
@@ -2935,7 +3221,6 @@ class ImprovePickQAGUI:
         if qa_df.empty:
             return set()
 
-        ignore_default_five = bool(self.low_rating_jump_ignore_default_five_var.get())
         low_step_ids: set[str] = set()
         for _, qa_row in qa_df.iterrows():
             small_step_id = clean_text(qa_row.get("small_step_id"))
@@ -2966,7 +3251,9 @@ class ImprovePickQAGUI:
                     low_step_ids.add(small_step_id)
                     break
 
-        return low_step_ids
+        self._low_candidate_cache_key = cache_key
+        self._low_candidate_ids = low_step_ids
+        return set(low_step_ids)
 
     def _set_selected_step_by_id(self, small_step_id: str) -> bool:
         label = self.step_labels_by_id.get(small_step_id)
@@ -3079,23 +3366,31 @@ class ImprovePickQAGUI:
             self._set_selected_step_by_id(next_step_id)
 
     def _load_availability_report(self) -> None:
-        """Load video availability report from check_video_availability.py output."""
-        availability_path = project_root / "reports" / "unavailable_video_availability_check.csv"
+        """Load video availability results from check_video_availability.py output.
+
+        Reads the full report (every checked video) rather than the unavailable_ subset, because the
+        script skips writing the subset file when nothing is unavailable, leaving stale results behind.
+        """
         self.unavailable_videos = {}
-        
+        availability_path = AVAILABILITY_FULL_REPORT_PATH
+        if not availability_path.exists():
+            availability_path = AVAILABILITY_UNAVAILABLE_REPORT_PATH
         if not availability_path.exists():
             return
-        
+
         try:
-            df = pd.read_csv(availability_path)
-            for _, row in df.iterrows():
-                video_id = clean_text(row.get("video_id"))
-                if not video_id:
-                    continue
+            df = pd.read_csv(availability_path, dtype=str)
+            columns = ("video_id", "status", "source_step", "source_position")
+            for col in columns:
+                if col not in df.columns:
+                    df[col] = ""
+                df[col] = df[col].map(clean_text)
+            df = df[(df["video_id"].str.len() > 0) & (df["status"] != "available")]
+            for video_id, status, source_step, source_position in zip(*(df[col] for col in columns)):
                 self.unavailable_videos[video_id] = {
-                    "status": clean_text(row.get("status")),
-                    "source_step": clean_text(row.get("source_step")),
-                    "source_position": clean_text(row.get("source_position")),
+                    "status": status,
+                    "source_step": source_step,
+                    "source_position": source_position,
                 }
         except Exception as exc:
             print(f"Warning: Could not load availability report: {exc}")
@@ -4248,7 +4543,23 @@ class ImprovePickQAGUI:
             return default
         return max(1, min(10, parsed))
 
+    def _invalidate_qa_caches(self) -> None:
+        self._qa_df_cache = None
+        self._qa_df_cache_signature = None
+        self._low_candidate_cache_key = None
+
     def _load_qa_df(self) -> pd.DataFrame:
+        """Return a copy of the normalised qa.csv, re-reading only when the file changes."""
+        signature = _files_signature(QA_TRACKING_PATH)
+        if signature is not None and signature == self._qa_df_cache_signature and self._qa_df_cache is not None:
+            return self._qa_df_cache.copy()
+        qa_df = self._read_qa_df()
+        if signature is not None:
+            self._qa_df_cache = qa_df
+            self._qa_df_cache_signature = signature
+        return qa_df.copy()
+
+    def _read_qa_df(self) -> pd.DataFrame:
         if QA_TRACKING_PATH.exists():
             qa_df = pd.read_csv(QA_TRACKING_PATH)
         else:
@@ -4377,6 +4688,7 @@ class ImprovePickQAGUI:
 
         QA_TRACKING_PATH.parent.mkdir(parents=True, exist_ok=True)
         pd.DataFrame(columns=QA_COLUMNS).to_csv(QA_TRACKING_PATH, index=False)
+        self._invalidate_qa_caches()
 
     def _restore_saved_ratings(
         self,
@@ -4460,6 +4772,7 @@ class ImprovePickQAGUI:
         merged = merged.drop_duplicates(subset=["small_step_id"], keep="last")
         merged = merged.sort_values(["small_step_id"], kind="stable")
         merged.to_csv(QA_TRACKING_PATH, index=False)
+        self._invalidate_qa_caches()
 
     def _update_qa_csv(self) -> None:
         small_step_id = self._selected_small_step_id()
@@ -4752,20 +5065,26 @@ def _build_step_global_num_lookup(self) -> None:
     """Build step_id -> small_step_num_global and reverse lookup from precomputed_df."""
     self.step_global_num = {}
     self.global_num_to_step_id = {}
-    if self.precomputed_df.empty:
+    if self.precomputed_df.empty or not {"small_step_id", "small_step_num_global"}.issubset(self.precomputed_df.columns):
         return
-    seen: set[str] = set()
-    for _, row in self.precomputed_df.iterrows():
-        sid = clean_text(row.get("small_step_id", ""))
-        if not sid or sid in seen:
+    first_rows = self.precomputed_df[["small_step_id", "small_step_num_global"]].copy()
+    first_rows["small_step_id"] = first_rows["small_step_id"].map(clean_text)
+    first_rows = first_rows[first_rows["small_step_id"].str.len() > 0].drop_duplicates(subset=["small_step_id"], keep="first")
+    global_nums = pd.to_numeric(first_rows["small_step_num_global"], errors="coerce")
+    for sid, g in zip(first_rows["small_step_id"], global_nums):
+        if pd.isna(g):
             continue
-        seen.add(sid)
-        try:
-            g = int(row["small_step_num_global"])
-        except (ValueError, TypeError, KeyError):
-            continue
-        self.step_global_num[sid] = g
-        self.global_num_to_step_id[g] = sid
+        self.step_global_num[sid] = int(g)
+        self.global_num_to_step_id[int(g)] = sid
+
+
+def _ensure_dup_scores(self) -> dict[str, dict]:
+    if self.dup_scores is None:
+        self.status_var.set("Computing high-dup scores...")
+        self.root.update_idletasks()
+        self.dup_scores = self._compute_dup_scores()
+        self.status_var.set("Ready")
+    return self.dup_scores
 
 
 def _compute_dup_scores(self) -> dict[str, dict]:
@@ -4940,6 +5259,9 @@ def _toggle_dup_review_mode(self) -> None:
         else:
             self.dup_controls_frame.grid_remove()
     current = self._selected_small_step_id()
+    if self.dup_review_mode:
+        self._ensure_dup_scores()
+        self._populate_dup_neighbours(current)
     self._refresh_step_combo_labels(preserve_step_id=current)
     self.status_var.set(
         "Dup Review ON — combo sorted by dup score (highest first)"
@@ -4959,7 +5281,7 @@ def _toggle_query_text_visibility(self) -> None:
 
 
 def _jump_to_next_dup_hotspot(self) -> None:
-    if not self.dup_scores:
+    if not self._ensure_dup_scores():
         messagebox.showinfo("No dup scores", "Dup scores have not been computed yet (precomputed CSV may not be loaded).")
         return
     try:
@@ -5052,11 +5374,14 @@ def _populate_dup_neighbours(self, small_step_id: str) -> None:
             topic = clean_text(row.get("topic"))
             name = clean_text(row.get("small_step_name"))
             ss_desc = clean_text(row.get("ss_wr_desc"))
-            s = self.dup_scores.get(target_sid)
-            dup_info = (
-                f"H={s['H']:.3f}  n={s['n_links']}  nearest_d={s['nearest_d']}"
-                if s else "no proximal dups"
-            )
+            if self.dup_scores is None:
+                dup_info = "dup score: turn on High-Dup Review to compute"
+            else:
+                s = self.dup_scores.get(target_sid)
+                dup_info = (
+                    f"H={s['H']:.3f}  n={s['n_links']}  nearest_d={s['nearest_d']}"
+                    if s else "no proximal dups"
+                )
             flagged_marker = "  [FLAGGED]" if target_sid in self.dup_flagged_steps else ""
             direction = "" if is_current else ("↑" if offset < 0 else "↓")
 
@@ -5094,6 +5419,7 @@ def _populate_dup_neighbours(self, small_step_id: str) -> None:
 # Bind the above functions as methods of ImprovePickQAGUI
 ImprovePickQAGUI._build_step_global_num_lookup = _build_step_global_num_lookup
 ImprovePickQAGUI._compute_dup_scores = _compute_dup_scores
+ImprovePickQAGUI._ensure_dup_scores = _ensure_dup_scores
 ImprovePickQAGUI._load_dup_flagged_steps = _load_dup_flagged_steps
 ImprovePickQAGUI._save_dup_flagged_steps = _save_dup_flagged_steps
 ImprovePickQAGUI._flag_current_step_redundant = _flag_current_step_redundant

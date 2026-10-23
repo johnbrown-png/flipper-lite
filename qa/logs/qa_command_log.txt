@@ -442109,3 +442109,52 @@ Processing: How Do You Convert Metric to Imperial  KS2 Maths Concept for Kids_r8
 [2026-10-21T10:50:35] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Equations inequalities and formulae_6_Change the subject of a simple formula
 [2026-10-21T11:29:50] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Equations inequalities and formulae_6_Change the subject of a simple formula
 [2026-10-21T11:30:34] QA REFERENCE PUBLISHED rows=5038 steps=665 wildcards=35 manual=639 skipped=35
+[2026-10-23T12:49:39] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Equations inequalities and formulae_7_Change the subject of a known formula
+[2026-10-23T12:50:12] MANUAL OVERRIDE applied for Year 10_14-15_Autumn_Foundation_Equations inequalities and formulae_7_Change the subject of a known formula
+[2026-10-23T12:52:32] QA REFERENCE PUBLISHED rows=5038 steps=666 wildcards=35 manual=640 skipped=35
+[2026-10-23T13:11:36] START Video Availability Check: C:\Users\johnf\OneDrive\Documents\Visual Studio Code\flipper16012026\.venv\Scripts\python.exe check_video_availability.py --source precomputed --output reports\video_availability_check.csv
+[2026-10-23T13:12:28] ======================================================================
+Loading videos from: precomputed
+======================================================================
+  Loaded 5038 video entries from precomputed recommendations
+  Unique videos: 2367 (removed 2671 duplicates)
+
+======================================================================
+Checking video availability via YouTube API...
+======================================================================
+  Videos to check: 2367
+  API requests needed: ~48 (batches of 50)
+
+
+  ✅ API check completed in 33.0 seconds
+
+======================================================================
+Saving reports...
+======================================================================
+  ✅ Full report saved: reports\video_availability_check.csv
+  ⚠️  Problem videos report saved: reports\unavailable_video_availability_check.csv
+      - 16 truly unavailable (deleted/private)
+      - 33 watchable but not embeddable
+  🗑️  Truly unavailable (delete these): reports\deletion_candidates_video_availability_check.csv (16 videos)
+  📺 Watchable but not embeddable: reports\embedding_disabled_video_availability_check.csv (33 videos)
+
+======================================================================
+VIDEO AVAILABILITY CHECK SUMMARY
+======================================================================
+Total videos checked: 2367
+
+Status breakdown:
+  ✅ available             2318 ( 97.9%)
+  ❌ deleted                 16 (  0.7%)
+  🚫 embedding_disabled      33 (  1.4%)
+
+❌ CRITICAL: 16 videos are deleted/private - REPLACE THESE
+🚫 WARNING: 33 videos can't embed (watchable on YouTube, won't play in Flipper)
+
+IMPORTANT: 'embedding_disabled' videos ARE viewable on YouTube.com
+           but WON'T play in Flipper's embedded player.
+           These require 'Watch on YouTube' fallback or replacement.
+======================================================================
+
+Report timestamp: 2026-10-23 13:12:28
+[2026-10-23T13:12:28] DONE Video Availability Check

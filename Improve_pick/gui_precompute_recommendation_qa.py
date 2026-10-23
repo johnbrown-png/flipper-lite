@@ -59,7 +59,6 @@ TARGET_OVERRIDES_PATH = project_root / "qa" / "targeted_ss_wr_desc_overrides.csv
 APPROVED_CANDIDATES_PATH = project_root / "qa" / "approved_ss_wr_desc_candidates.csv"
 CANONICAL_OVERRIDE_PATH = project_root / "qa" / "ss_desc_validated_overrides.csv"
 QA_TRACKING_PATH = project_root / "qa" / "qa.csv"
-VIDEOS_TO_DELETE_PATH = project_root / "videos_to_delete" / "videos_to_delete.csv"
 MANUAL_PRECOMP_OVERRIDE_PATH = project_root / "qa" / "manual_precomputed_overrides.csv"
 WILDCARD_OVERRIDE_PATH = project_root / "qa" / "wildcards" / "wildcards.csv"
 QA_REFERENCE_OUTPUT_PATH = project_root / "precomputed_recommendations_flat_qa.csv"
@@ -70,6 +69,12 @@ TOP_K = 3
 CANDIDATE_DISPLAY_K = 10
 LOW_CANDIDATE_RATING_THRESHOLD = 7
 DELETE_EVERYWHERE_JOB_NAME = "Delete Everywhere"
+KNOCKOUT_EXCLUDE_TEXT = "Exclude"
+KNOCKOUT_RESTORE_TEXT = "Restore"
+DELETE_EVERYWHERE_TOOLTIP = (
+    "Delete everywhere: soft-delete this video from Flipper now (delete_content.py --video ID --yes). "
+    "It is then flagged 'removed locally' in every step so Jump to Next Unavailable can find it."
+)
 SEMANTIC_PREVIEW_K = 5
 SEMANTIC_PREVIEW_CHUNKS = 40
 SEMANTIC_PREVIEW_DEBOUNCE_MS = 550
@@ -383,7 +388,7 @@ class ImprovePickQAGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Improve Pick - Targeted ss_wr_desc QA")
-        self.root.geometry("1240x760")
+        self.root.geometry("1400x860")
 
         self.status_var = tk.StringVar(value="Loading data...")
         self.step_var = tk.StringVar(value="")
@@ -430,6 +435,7 @@ class ImprovePickQAGUI:
         self.semantic_preview_request_id = 0
 
         self.result_title_labels: list[ttk.Label] = []
+        self.result_video_id_labels: list[ttk.Label] = []
         self.result_channel_labels: list[ttk.Label] = []
         self.result_score_labels: list[ttk.Label] = []
         self.result_open_buttons: list[ttk.Button] = []
@@ -445,10 +451,10 @@ class ImprovePickQAGUI:
         self.precomputed_results: list[dict[str, object]] = []
         self.precomputed_panel_state_var = tk.StringVar(value="Current picks source: precomputed base")
         self.precomputed_title_labels: list[ttk.Label] = []
+        self.precomputed_video_id_labels: list[ttk.Label] = []
         self.precomputed_channel_labels: list[ttk.Label] = []
         self.precomputed_score_labels: list[ttk.Label] = []
         self.precomputed_open_buttons: list[ttk.Button] = []
-        self.precomputed_delete_buttons: list[ttk.Button] = []
         self.precomputed_delete_everywhere_buttons: list[ttk.Button] = []
         self.pending_delete_everywhere_id = ""
         self.precomputed_knockout_buttons: list[ttk.Button] = []
@@ -457,7 +463,7 @@ class ImprovePickQAGUI:
         self.precomputed_rank_vars: list[tk.StringVar] = []
         self.precomputed_rank_dropdowns: list[tk.OptionMenu] = []
         self._prev_precomputed_ranks: list[int] = []
-        self.candidate_delete_buttons: list[ttk.Button] = []
+        self.candidate_delete_everywhere_buttons: list[ttk.Button] = []
         self.semantic_preview_title_labels: list[ttk.Label] = []
         self.semantic_preview_channel_labels: list[ttk.Label] = []
         self.semantic_preview_score_labels: list[ttk.Label] = []
@@ -495,6 +501,8 @@ class ImprovePickQAGUI:
         self.dup_flag_btn: ttk.Button | None = None
         self.dup_unflag_btn: ttk.Button | None = None
         self.dup_controls_frame: ttk.Frame | None = None
+
+        self.query_text_visible = False
 
         # Video availability tracking
         self.unavailable_videos: dict[str, dict[str, str]] = {}  # {video_id: {status, source_step, source_position}}
@@ -748,9 +756,22 @@ class ImprovePickQAGUI:
         text_frame = ttk.LabelFrame(outer, text="Query Text", padding=8)
         text_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 4))
         text_frame.columnconfigure(0, weight=1)
-        text_frame.columnconfigure(1, weight=1)
+        text_frame.rowconfigure(1, weight=1)
 
-        baseline_frame = ttk.Frame(text_frame)
+        self.query_text_toggle_btn = ttk.Button(
+            text_frame,
+            text="Show Query Text",
+            command=self._toggle_query_text_visibility,
+        )
+        self.query_text_toggle_btn.grid(row=0, column=0, sticky="w")
+
+        self.query_text_body = ttk.Frame(text_frame)
+        self.query_text_body.grid(row=1, column=0, sticky="nsew", pady=(6, 0))
+        self.query_text_body.columnconfigure(0, weight=1)
+        self.query_text_body.columnconfigure(1, weight=1)
+        self.query_text_body.rowconfigure(0, weight=1)
+
+        baseline_frame = ttk.Frame(self.query_text_body)
         baseline_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
         baseline_frame.columnconfigure(0, weight=1)
         baseline_frame.rowconfigure(1, weight=1)
@@ -759,7 +780,7 @@ class ImprovePickQAGUI:
         self.baseline_text.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
         self.baseline_text.config(state=tk.DISABLED)
 
-        candidate_frame = ttk.Frame(text_frame)
+        candidate_frame = ttk.Frame(self.query_text_body)
         candidate_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
         candidate_frame.columnconfigure(0, weight=1)
         candidate_frame.columnconfigure(1, weight=0)
@@ -813,6 +834,8 @@ class ImprovePickQAGUI:
 
             ttk.Label(candidate_frame, textvariable=self.semantic_preview_status_var, foreground="#555555").grid(row=3, column=0, sticky="w", pady=(2, 0))
 
+        self.query_text_body.grid_remove()
+
         action_row = ttk.Frame(outer)
         action_row.grid(row=3, column=0, sticky="ew", pady=(0, 4))
 
@@ -839,7 +862,7 @@ class ImprovePickQAGUI:
         self.command_buttons.append(cand_override_btn)
         self._attach_tooltip(
             cand_override_btn,
-            "Writes the Candidate panel videos, in their MR (manual rank) order, to "
+            "Writes the Candidate panel videos, in their Manual rank order, to "
             "qa/manual_precomputed_overrides.csv as this step's picks, replacing the current picks. "
             "Run the search first.",
         )
@@ -870,7 +893,7 @@ class ImprovePickQAGUI:
         self.command_buttons.append(curr_override_btn)
         self._attach_tooltip(
             curr_override_btn,
-            "Writes the Current picks panel videos, in their MR (manual rank) order, to "
+            "Writes the Current picks panel videos, in their Manual rank order, to "
             "qa/manual_precomputed_overrides.csv. Skip this if the order is unchanged. "
             "Do it first: it reloads the panel, which resets the ratings of rows that moved.",
         )
@@ -961,8 +984,8 @@ class ImprovePickQAGUI:
 
         qa_results_tab = ttk.Frame(results_notebook, padding=6)
         qa_results_tab.columnconfigure(0, weight=1)
-        qa_results_tab.columnconfigure(1, weight=1)
-        qa_results_tab.rowconfigure(0, weight=1)
+        qa_results_tab.rowconfigure(0, weight=0)
+        qa_results_tab.rowconfigure(1, weight=1)
         results_notebook.add(qa_results_tab, text="Stage 1 QA Results")
 
         constraints_tab = ttk.Frame(results_notebook, padding=6)
@@ -986,46 +1009,64 @@ class ImprovePickQAGUI:
             results_notebook.add(stage4_tab, text="Stage 4 Pedagogy + Final Ranking")
 
         precomp_frame = ttk.LabelFrame(qa_results_tab, text="Precomputed Picks (Current)", padding=6)
-        precomp_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
+        precomp_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 6))
         precomp_frame.columnconfigure(1, weight=1)
         candidate_results_frame = ttk.LabelFrame(qa_results_tab, text="Candidate Search Results", padding=6)
-        candidate_results_frame.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
+        candidate_results_frame.grid(row=1, column=0, sticky="nsew")
         candidate_results_frame.columnconfigure(1, weight=1)
+
+        header_tooltips = {
+            "Rank": "Position in the list (1 = top pick).",
+            "Title": "Video title.",
+            "Video ID": "YouTube video ID.",
+            "Channel": "YouTube channel.",
+            "Score": "Combined ranking score used to order the picks.",
+            "Manual rank": "Reorder the picks by hand before applying them as a manual override.",
+            "Open": "Open the video on YouTube.",
+            "Exclude": "Not right for this step: exclude (or restore) the video for this step only; it is skipped in future candidate searches for the step.",
+            "Delete all": "Not good enough anywhere: delete the video from Flipper now; every step still showing it is flagged 'removed locally'.",
+            "Rating": "Your 1-10 quality rating for this pick.",
+        }
+        precomp_headers = ["Rank", "Title", "Video ID", "Channel", "Score", "Manual rank", "Open", "Exclude", "Delete all", "Rating"]
+        candidate_headers = list(precomp_headers)
 
         ttk.Label(
             candidate_results_frame,
             textvariable=self.candidate_panel_state_var,
             foreground="#555555",
-        ).grid(row=0, column=0, columnspan=9, sticky="w", padx=4, pady=(0, 4))
+        ).grid(row=0, column=0, columnspan=len(candidate_headers), sticky="w", padx=4, pady=(0, 4))
 
         ttk.Label(
             precomp_frame,
             textvariable=self.precomputed_panel_state_var,
             foreground="#555555",
-        ).grid(row=0, column=0, columnspan=9, sticky="w", padx=4, pady=(0, 4))
+        ).grid(row=0, column=0, columnspan=len(precomp_headers), sticky="w", padx=4, pady=(0, 4))
 
-        precomp_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "DE", "Rt"]
-        candidate_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "Rt"]
-        for col, header in enumerate(precomp_headers):
-            ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
-        for col, header in enumerate(candidate_headers):
-            ttk.Label(candidate_results_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
+        for frame, headers in ((precomp_frame, precomp_headers), (candidate_results_frame, candidate_headers)):
+            for col, header in enumerate(headers):
+                header_label = ttk.Label(frame, text=header, font=("Segoe UI", 10, "bold"))
+                header_label.grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
+                self._attach_tooltip(header_label, header_tooltips[header])
 
         # Precomputed (current) panel rows — always TOP_K = 3
         for i in range(TOP_K):
             row_num = i + 1
             ttk.Label(precomp_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
 
-            p_title = ttk.Label(precomp_frame, text="", width=66)
-            p_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
+            p_title = ttk.Label(precomp_frame, text="", width=50)
+            p_title.grid(row=row_num + 1, column=1, sticky="ew", padx=4, pady=2)
             self.precomputed_title_labels.append(p_title)
 
-            p_channel = ttk.Label(precomp_frame, text="", width=5)
-            p_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
+            p_video_id = ttk.Label(precomp_frame, text="", width=13)
+            p_video_id.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
+            self.precomputed_video_id_labels.append(p_video_id)
+
+            p_channel = ttk.Label(precomp_frame, text="", width=24)
+            p_channel.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.precomputed_channel_labels.append(p_channel)
 
-            p_score = ttk.Label(precomp_frame, text="", width=5)
-            p_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
+            p_score = ttk.Label(precomp_frame, text="", width=8)
+            p_score.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
             self.precomputed_score_labels.append(p_score)
 
             p_rank_var = tk.StringVar(value=str(row_num))
@@ -1036,26 +1077,17 @@ class ImprovePickQAGUI:
                 *[str(rank_option) for rank_option in range(1, TOP_K + 1)],
                 command=lambda _v, idx=i: self._on_precomputed_rank_change(idx),
             )
-            p_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=2, pady=2)
+            p_rank_menu.grid(row=row_num + 1, column=5, sticky="w", padx=2, pady=2)
             p_rank_menu.config(width=2)
             self.precomputed_rank_dropdowns.append(p_rank_menu)
 
-            p_open = ttk.Button(precomp_frame, text="O", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
-            p_open.grid(row=row_num + 1, column=5, sticky="w", padx=2, pady=2)
+            p_open = ttk.Button(precomp_frame, text="Open", command=lambda idx=i: self._open_precomputed_video(idx), state=tk.DISABLED)
+            p_open.grid(row=row_num + 1, column=6, sticky="w", padx=2, pady=2)
             self.precomputed_open_buttons.append(p_open)
-
-            p_delete = ttk.Button(
-                precomp_frame,
-                text="Add",
-                command=lambda idx=i: self._append_result_to_videos_to_delete("current", idx),
-                state=tk.DISABLED,
-            )
-            p_delete.grid(row=row_num + 1, column=6, sticky="w", padx=2, pady=2)
-            self.precomputed_delete_buttons.append(p_delete)
 
             p_knockout = ttk.Button(
                 precomp_frame,
-                text="Excl",
+                text=KNOCKOUT_EXCLUDE_TEXT,
                 command=lambda idx=i: self._toggle_precomputed_knockout(idx),
                 state=tk.DISABLED,
             )
@@ -1064,16 +1096,12 @@ class ImprovePickQAGUI:
 
             p_delete_everywhere = ttk.Button(
                 precomp_frame,
-                text="Del all",
-                command=lambda idx=i: self._delete_precomputed_video_everywhere(idx),
+                text="Delete all",
+                command=lambda idx=i: self._delete_video_everywhere("current", idx),
                 state=tk.DISABLED,
             )
             p_delete_everywhere.grid(row=row_num + 1, column=8, sticky="w", padx=2, pady=2)
-            self._attach_tooltip(
-                p_delete_everywhere,
-                "Delete everywhere: soft-delete this video from Flipper now (delete_content.py --video ID --yes). "
-                "It is then flagged 'removed locally' in every step so Jump to Next Unavailable can find it.",
-            )
+            self._attach_tooltip(p_delete_everywhere, DELETE_EVERYWHERE_TOOLTIP)
             self.precomputed_delete_everywhere_buttons.append(p_delete_everywhere)
 
             p_rating_var = tk.StringVar(value="5")
@@ -1089,16 +1117,20 @@ class ImprovePickQAGUI:
             row_num = i + 1
             ttk.Label(candidate_results_frame, text=f"{row_num}").grid(row=row_num + 1, column=0, sticky="w", padx=4, pady=2)
 
-            c_title = ttk.Label(candidate_results_frame, text="", width=66)
-            c_title.grid(row=row_num + 1, column=1, sticky="w", padx=4, pady=2)
+            c_title = ttk.Label(candidate_results_frame, text="", width=50)
+            c_title.grid(row=row_num + 1, column=1, sticky="ew", padx=4, pady=2)
             self.result_title_labels.append(c_title)
 
-            c_channel = ttk.Label(candidate_results_frame, text="", width=5)
-            c_channel.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
+            c_video_id = ttk.Label(candidate_results_frame, text="", width=13)
+            c_video_id.grid(row=row_num + 1, column=2, sticky="w", padx=4, pady=2)
+            self.result_video_id_labels.append(c_video_id)
+
+            c_channel = ttk.Label(candidate_results_frame, text="", width=24)
+            c_channel.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
             self.result_channel_labels.append(c_channel)
 
-            c_score = ttk.Label(candidate_results_frame, text="", width=5)
-            c_score.grid(row=row_num + 1, column=3, sticky="w", padx=4, pady=2)
+            c_score = ttk.Label(candidate_results_frame, text="", width=8)
+            c_score.grid(row=row_num + 1, column=4, sticky="w", padx=4, pady=2)
             self.result_score_labels.append(c_score)
 
             c_rank_var = tk.StringVar(value=str(row_num))
@@ -1109,37 +1141,38 @@ class ImprovePickQAGUI:
                 *[str(rank_option) for rank_option in range(1, CANDIDATE_DISPLAY_K + 1)],
                 command=lambda _v, idx=i: self._on_candidate_rank_change(idx),
             )
-            c_rank_menu.grid(row=row_num + 1, column=4, sticky="w", padx=2, pady=2)
+            c_rank_menu.grid(row=row_num + 1, column=5, sticky="w", padx=2, pady=2)
             c_rank_menu.config(width=2)
             self.candidate_rank_dropdowns.append(c_rank_menu)
 
-            c_open = ttk.Button(candidate_results_frame, text="O", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
-            c_open.grid(row=row_num + 1, column=5, sticky="w", padx=2, pady=2)
+            c_open = ttk.Button(candidate_results_frame, text="Open", command=lambda idx=i: self._open_video(idx), state=tk.DISABLED)
+            c_open.grid(row=row_num + 1, column=6, sticky="w", padx=2, pady=2)
             self.result_open_buttons.append(c_open)
-
-            c_delete = ttk.Button(
-                candidate_results_frame,
-                text="Add",
-                command=lambda idx=i: self._append_result_to_videos_to_delete("candidate", idx),
-                state=tk.DISABLED,
-            )
-            c_delete.grid(row=row_num + 1, column=6, sticky="w", padx=2, pady=2)
-            self.candidate_delete_buttons.append(c_delete)
 
             c_knockout = ttk.Button(
                 candidate_results_frame,
-                text="Excl",
+                text=KNOCKOUT_EXCLUDE_TEXT,
                 command=lambda idx=i: self._toggle_candidate_knockout(idx),
                 state=tk.DISABLED,
             )
             c_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=2, pady=2)
             self.candidate_knockout_buttons.append(c_knockout)
 
+            c_delete_everywhere = ttk.Button(
+                candidate_results_frame,
+                text="Delete all",
+                command=lambda idx=i: self._delete_video_everywhere("candidate", idx),
+                state=tk.DISABLED,
+            )
+            c_delete_everywhere.grid(row=row_num + 1, column=8, sticky="w", padx=2, pady=2)
+            self._attach_tooltip(c_delete_everywhere, DELETE_EVERYWHERE_TOOLTIP)
+            self.candidate_delete_everywhere_buttons.append(c_delete_everywhere)
+
             c_rating_var = tk.StringVar(value="5")
             self.rating_vars.append(c_rating_var)
             # tk.OptionMenu allows per-widget background color updates.
             c_menu = tk.OptionMenu(candidate_results_frame, c_rating_var, *rating_options, command=lambda _v, idx=i: self._on_rating_change(idx))
-            c_menu.grid(row=row_num + 1, column=8, sticky="w", padx=2, pady=2)
+            c_menu.grid(row=row_num + 1, column=9, sticky="w", padx=2, pady=2)
             c_menu.config(width=2)
             self.rating_dropdowns.append(c_menu)
             self._apply_rating_color(i)
@@ -1568,11 +1601,10 @@ class ImprovePickQAGUI:
         self.status_var.set(f"{job_name} completed.")
         self.last_failed_subprocess_spec = None
         if reload_assets:
-            if job_name in ("Apply Delete Queue", DELETE_EVERYWHERE_JOB_NAME):
+            if job_name == DELETE_EVERYWHERE_JOB_NAME:
                 self.status_var.set(f"{job_name} completed. Soft delete finished; refreshing deleted-video state...")
                 self._refresh_after_soft_delete()
-                if job_name == DELETE_EVERYWHERE_JOB_NAME:
-                    self._report_delete_everywhere_result()
+                self._report_delete_everywhere_result()
             else:
                 self.status_var.set(f"{job_name} completed. Reloading retrieval assets...")
                 worker = threading.Thread(target=self._load_heavy_assets, daemon=True)
@@ -2117,7 +2149,7 @@ class ImprovePickQAGUI:
         self._refresh_dup_review_state()
 
     def _command_set_all_precomputed_ratings_to_10(self) -> None:
-        """Sets all Rt (rating) values in the Precomputed picks panel to 10."""
+        """Sets all Rating values in the Precomputed picks panel to 10."""
         for i in range(len(self.precomputed_rating_vars)):
             self.precomputed_rating_vars[i].set("10")
             self._apply_precomputed_rating_color(i)
@@ -3558,11 +3590,12 @@ class ImprovePickQAGUI:
     def _clear_candidate_result_widgets(self, reset_ratings: bool, reset_notes: bool = True) -> None:
         for i in range(CANDIDATE_DISPLAY_K):
             self.result_title_labels[i].config(text="")
+            self.result_video_id_labels[i].config(text="")
             self.result_channel_labels[i].config(text="")
             self.result_score_labels[i].config(text="")
             self.result_open_buttons[i].config(state=tk.DISABLED)
-            self.candidate_delete_buttons[i].config(state=tk.DISABLED)
-            self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text="Excl")
+            self.candidate_delete_everywhere_buttons[i].config(state=tk.DISABLED)
+            self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text=KNOCKOUT_EXCLUDE_TEXT)
             self.candidate_rank_vars[i].set(str(i + 1))
             self.candidate_rank_dropdowns[i].config(state=tk.DISABLED)
             if reset_ratings:
@@ -3590,19 +3623,14 @@ class ImprovePickQAGUI:
             except (TypeError, ValueError):
                 score_text = ""
 
-            title_text = ""
-            if title and video_id:
-                title_text = f"{title} ({video_id})"
-            elif title:
-                title_text = title
-            elif video_id:
-                title_text = f"({video_id})"
-
-            self.result_title_labels[i].config(text=title_text)
+            self.result_title_labels[i].config(text=title)
+            self.result_video_id_labels[i].config(text=video_id)
             self.result_channel_labels[i].config(text=channel)
             self.result_score_labels[i].config(text=score_text)
             self.result_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
-            self.candidate_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.candidate_delete_everywhere_buttons[i].config(
+                state=tk.NORMAL if video_id and video_id not in self.deleted_videos else tk.DISABLED
+            )
             self.rating_vars[i].set("5")
             self._apply_rating_color(i)
 
@@ -3732,19 +3760,14 @@ class ImprovePickQAGUI:
             except (TypeError, ValueError):
                 score_value = ""
 
-            title_text = ""
-            if title and video_id:
-                title_text = f"{title} ({video_id})"
-            elif title:
-                title_text = title
-            elif video_id:
-                title_text = f"({video_id})"
-
-            self.result_title_labels[i].config(text=title_text)
+            self.result_title_labels[i].config(text=title)
+            self.result_video_id_labels[i].config(text=video_id)
             self.result_channel_labels[i].config(text=channel)
             self.result_score_labels[i].config(text=score_text)
             self.result_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
-            self.candidate_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.candidate_delete_everywhere_buttons[i].config(
+                state=tk.NORMAL if video_id and video_id not in self.deleted_videos else tk.DISABLED
+            )
             self.rating_vars[i].set(str(self._safe_parse_rating(qa_row.get(f"candidate_{rank}_rating_1_10"), default=5)))
             self._apply_rating_color(i)
 
@@ -3898,14 +3921,14 @@ class ImprovePickQAGUI:
             if i >= len(self.latest_results):
                 self.candidate_rank_vars[i].set(default_rank)
                 self.candidate_rank_dropdowns[i].config(state=tk.DISABLED)
-                self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text="Excl")
+                self.candidate_knockout_buttons[i].config(state=tk.DISABLED, text=KNOCKOUT_EXCLUDE_TEXT)
                 continue
 
             video_id = clean_text(self.latest_results[i].get("video_id"))
             if not self.candidate_rank_vars[i].get().strip():
                 self.candidate_rank_vars[i].set(default_rank)
             self.candidate_rank_dropdowns[i].config(state=tk.NORMAL)
-            knockout_text = "Undo" if video_id and video_id in knocked_out_ids else "Excl"
+            knockout_text = KNOCKOUT_RESTORE_TEXT if video_id and video_id in knocked_out_ids else KNOCKOUT_EXCLUDE_TEXT
             self.candidate_knockout_buttons[i].config(
                 state=tk.NORMAL if video_id else tk.DISABLED,
                 text=knockout_text,
@@ -3920,13 +3943,13 @@ class ImprovePickQAGUI:
             if i >= len(self.precomputed_results):
                 self.precomputed_rank_vars[i].set(default_rank)
                 self.precomputed_rank_dropdowns[i].config(state=tk.DISABLED)
-                self.precomputed_knockout_buttons[i].config(state=tk.DISABLED, text="Excl")
+                self.precomputed_knockout_buttons[i].config(state=tk.DISABLED, text=KNOCKOUT_EXCLUDE_TEXT)
                 continue
             if not self.precomputed_rank_vars[i].get().strip():
                 self.precomputed_rank_vars[i].set(default_rank)
             self.precomputed_rank_dropdowns[i].config(state=tk.NORMAL)
             video_id = clean_text(self.precomputed_results[i].get("video_id"))
-            knockout_text = "Undo" if video_id and video_id in knocked_out_ids else "Excl"
+            knockout_text = KNOCKOUT_RESTORE_TEXT if video_id and video_id in knocked_out_ids else KNOCKOUT_EXCLUDE_TEXT
             self.precomputed_knockout_buttons[i].config(
                 state=tk.NORMAL if video_id else tk.DISABLED,
                 text=knockout_text,
@@ -4134,10 +4157,10 @@ class ImprovePickQAGUI:
 
         for i in range(len(self.precomputed_results), TOP_K):
             self.precomputed_title_labels[i].config(text="")
+            self.precomputed_video_id_labels[i].config(text="", background="")
             self.precomputed_channel_labels[i].config(text="")
             self.precomputed_score_labels[i].config(text="")
             self.precomputed_open_buttons[i].config(state=tk.DISABLED)
-            self.precomputed_delete_buttons[i].config(state=tk.DISABLED)
             self.precomputed_delete_everywhere_buttons[i].config(state=tk.DISABLED)
             self.precomputed_rank_vars[i].set(str(i + 1))
             self.precomputed_rank_dropdowns[i].config(state=tk.DISABLED)
@@ -4169,13 +4192,13 @@ class ImprovePickQAGUI:
                 bg_color = "#fff9cc"  # Yellow background
             
             self.precomputed_title_labels[i].config(
-                text=f"{emoji_prefix}{title} ({video_id})",
+                text=f"{emoji_prefix}{title}",
                 background=bg_color
             )
+            self.precomputed_video_id_labels[i].config(text=video_id, background=bg_color)
             self.precomputed_channel_labels[i].config(text=channel, background=bg_color)
             self.precomputed_score_labels[i].config(text=f"{combined_score:.4f}", background=bg_color)
             self.precomputed_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
-            self.precomputed_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
             self.precomputed_delete_everywhere_buttons[i].config(
                 state=tk.NORMAL if video_id and availability != "local" else tk.DISABLED
             )
@@ -4524,14 +4547,15 @@ class ImprovePickQAGUI:
             f"Run precompute_curriculum_recommendations.py to rebuild recommendations.",
         )
 
-    def _delete_precomputed_video_everywhere(self, index_num: int) -> None:
-        if index_num < 0 or index_num >= len(self.precomputed_results):
+    def _delete_video_everywhere(self, source: str, index_num: int) -> None:
+        results = self.precomputed_results if source == "current" else self.latest_results
+        if index_num < 0 or index_num >= len(results):
             return
         if self.active_job_state == JOB_STATE_RUNNING:
             messagebox.showwarning("Job running", "Another QA command is already running.")
             return
 
-        result = self.precomputed_results[index_num]
+        result = results[index_num]
         video_id = clean_text(result.get("video_id"))
         title = clean_text(result.get("title")) or "(untitled)"
         if not video_id:
@@ -4558,7 +4582,7 @@ class ImprovePickQAGUI:
             "This runs delete_content.py --video (same as deleting it in the terminal): captions, chunks, "
             "embeddings and metadata are removed and the video is excluded from search. "
             "Afterwards every step still showing it is flagged 'removed locally' for replacement.\n\n"
-            "Other videos in videos_to_delete.csv are not touched.",
+            "If it is only wrong for this step, use Exclude instead.",
         ):
             return
 
@@ -4586,59 +4610,6 @@ class ImprovePickQAGUI:
         )
         if self.show_unavailable_only_var.get():
             self._on_filter_unavailable_changed()
-
-    def _append_result_to_videos_to_delete(self, source: str, index_num: int) -> None:
-        results = self.precomputed_results if source == "current" else self.latest_results
-        if index_num < 0 or index_num >= len(results):
-            return
-
-        result = results[index_num]
-        video_id = clean_text(result.get("video_id"))
-        video_title = clean_text(result.get("title") or result.get("video_title"))
-        channel = clean_text(result.get("channel"))
-        if not video_id:
-            messagebox.showwarning("Missing video", "No video_id found for this row.")
-            return
-
-        VIDEOS_TO_DELETE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        if VIDEOS_TO_DELETE_PATH.exists():
-            delete_df = pd.read_csv(VIDEOS_TO_DELETE_PATH)
-        else:
-            delete_df = pd.DataFrame(columns=["video_id", "video_title", "channel"])
-
-        if "video_id" not in delete_df.columns:
-            first_col = delete_df.columns[0] if len(delete_df.columns) > 0 else None
-            if first_col:
-                delete_df = delete_df.rename(columns={first_col: "video_id"})
-            else:
-                delete_df["video_id"] = ""
-
-        for required_col in ("video_title", "channel"):
-            if required_col not in delete_df.columns:
-                delete_df[required_col] = ""
-
-        delete_df["video_id"] = delete_df["video_id"].map(clean_text)
-        if (delete_df["video_id"] == video_id).any():
-            self.status_var.set(f"{video_id} is already in videos_to_delete.csv")
-            return
-
-        delete_df = pd.concat(
-            [
-                delete_df,
-                pd.DataFrame(
-                    [
-                        {
-                            "video_id": video_id,
-                            "video_title": video_title,
-                            "channel": channel,
-                        }
-                    ]
-                ),
-            ],
-            ignore_index=True,
-        )
-        delete_df.to_csv(VIDEOS_TO_DELETE_PATH, index=False)
-        self.status_var.set(f"Appended {video_id} to videos_to_delete.csv")
 
     def _clear_for_new_step_selection(self) -> None:
         """Clear UI when loading a new step, preserving notes from qa.csv."""
@@ -4977,6 +4948,16 @@ def _toggle_dup_review_mode(self) -> None:
     )
 
 
+def _toggle_query_text_visibility(self) -> None:
+    self.query_text_visible = not self.query_text_visible
+    if self.query_text_visible:
+        self.query_text_body.grid()
+        self.query_text_toggle_btn.config(text="Hide Query Text")
+    else:
+        self.query_text_body.grid_remove()
+        self.query_text_toggle_btn.config(text="Show Query Text")
+
+
 def _jump_to_next_dup_hotspot(self) -> None:
     if not self.dup_scores:
         messagebox.showinfo("No dup scores", "Dup scores have not been computed yet (precomputed CSV may not be loaded).")
@@ -5118,6 +5099,7 @@ ImprovePickQAGUI._save_dup_flagged_steps = _save_dup_flagged_steps
 ImprovePickQAGUI._flag_current_step_redundant = _flag_current_step_redundant
 ImprovePickQAGUI._unflag_current_step_redundant = _unflag_current_step_redundant
 ImprovePickQAGUI._toggle_dup_review_mode = _toggle_dup_review_mode
+ImprovePickQAGUI._toggle_query_text_visibility = _toggle_query_text_visibility
 ImprovePickQAGUI._jump_to_next_dup_hotspot = _jump_to_next_dup_hotspot
 ImprovePickQAGUI._update_dup_score_display = _update_dup_score_display
 ImprovePickQAGUI._populate_dup_neighbours = _populate_dup_neighbours

@@ -69,6 +69,7 @@ QA_COMMAND_LOG_PATH = project_root / "qa" / "logs" / "qa_command_log.txt"
 TOP_K = 3
 CANDIDATE_DISPLAY_K = 10
 LOW_CANDIDATE_RATING_THRESHOLD = 7
+DELETE_EVERYWHERE_JOB_NAME = "Delete Everywhere"
 SEMANTIC_PREVIEW_K = 5
 SEMANTIC_PREVIEW_CHUNKS = 40
 SEMANTIC_PREVIEW_DEBOUNCE_MS = 550
@@ -448,6 +449,8 @@ class ImprovePickQAGUI:
         self.precomputed_score_labels: list[ttk.Label] = []
         self.precomputed_open_buttons: list[ttk.Button] = []
         self.precomputed_delete_buttons: list[ttk.Button] = []
+        self.precomputed_delete_everywhere_buttons: list[ttk.Button] = []
+        self.pending_delete_everywhere_id = ""
         self.precomputed_knockout_buttons: list[ttk.Button] = []
         self.precomputed_rating_vars: list[tk.StringVar] = []
         self.precomputed_rating_dropdowns: list[tk.OptionMenu] = []
@@ -498,6 +501,9 @@ class ImprovePickQAGUI:
         self.show_unavailable_only_var = tk.BooleanVar(value=False)
         self.filter_deleted_var = tk.BooleanVar(value=True)
         self.filter_embedding_var = tk.BooleanVar(value=False)
+        self.filter_local_deleted_var = tk.BooleanVar(value=True)
+        # {small_step_id: {"deleted": n, "embedding": n, "local": n}} for steps whose effective picks are affected
+        self.unavailable_step_map: dict[str, dict[str, int]] = {}
         self.availability_summary_var = tk.StringVar(value="")
         self.all_step_options: list[str] = []  # Unfiltered list of all steps
 
@@ -558,36 +564,54 @@ class ImprovePickQAGUI:
         selector_frame.grid(row=1, column=0, sticky="ew", pady=(0, 4))
         selector_frame.columnconfigure(1, weight=1)
 
-        ttk.Label(selector_frame, text="Small step:").grid(row=0, column=0, sticky="w", padx=(0, 8))
+        # Row 0: cascade filters (Age -> Term -> Topic) narrowing the Small step list
+        filter_row = ttk.Frame(selector_frame)
+        filter_row.grid(row=0, column=0, columnspan=6, sticky="w", pady=(0, 4))
+        self.age_filter_var = tk.StringVar(value="All")
+        self.term_filter_var = tk.StringVar(value="All")
+        self.topic_filter_var = tk.StringVar(value="All")
+        self.cascade_filter_combos: dict[str, ttk.Combobox] = {}
+        for col, (field, label, var, width) in enumerate([
+            ("age", "Age:", self.age_filter_var, 8),
+            ("term", "Term:", self.term_filter_var, 10),
+            ("topic", "Topic:", self.topic_filter_var, 40),
+        ]):
+            ttk.Label(filter_row, text=label).grid(row=0, column=col * 2, sticky="w", padx=(0 if col == 0 else 12, 4))
+            combo = ttk.Combobox(filter_row, textvariable=var, state="readonly", width=width, values=["All"])
+            combo.grid(row=0, column=col * 2 + 1, sticky="w")
+            combo.bind("<<ComboboxSelected>>", self._on_cascade_filter_changed)
+            self.cascade_filter_combos[field] = combo
+
+        ttk.Label(selector_frame, text="Small step:").grid(row=1, column=0, sticky="w", padx=(0, 8))
         self.step_combo = ttk.Combobox(selector_frame, textvariable=self.step_var, state="readonly")
-        self.step_combo.grid(row=0, column=1, sticky="ew")
+        self.step_combo.grid(row=1, column=1, sticky="ew")
         self.step_combo.bind("<<ComboboxSelected>>", self._on_step_selected)
 
-        ttk.Label(selector_frame, text="Scenario label:").grid(row=0, column=2, sticky="w", padx=(12, 8))
+        ttk.Label(selector_frame, text="Scenario label:").grid(row=1, column=2, sticky="w", padx=(12, 8))
         self.scenario_entry = ttk.Entry(selector_frame, textvariable=self.scenario_var, width=24)
-        self.scenario_entry.grid(row=0, column=3, sticky="w")
+        self.scenario_entry.grid(row=1, column=3, sticky="w")
 
-        ttk.Label(selector_frame, textvariable=self.progress_var, foreground="#1f7a1f").grid(row=1, column=0, sticky="w", pady=(4, 0))
+        ttk.Label(selector_frame, textvariable=self.progress_var, foreground="#1f7a1f").grid(row=2, column=0, sticky="w", pady=(4, 0))
         self.jump_unsaved_btn = ttk.Button(
             selector_frame,
             text="Jump to Next Unsaved",
             command=self._jump_to_next_unsaved,
         )
-        self.jump_unsaved_btn.grid(row=1, column=1, sticky="w", pady=(4, 0))
+        self.jump_unsaved_btn.grid(row=2, column=1, sticky="w", pady=(4, 0))
 
         self.next_small_step_btn = ttk.Button(
             selector_frame,
             text="Next Small Step",
             command=self._jump_to_next_small_step,
         )
-        self.next_small_step_btn.grid(row=1, column=2, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.next_small_step_btn.grid(row=2, column=2, sticky="w", padx=(12, 0), pady=(4, 0))
 
         self.jump_low_candidate_btn = ttk.Button(
             selector_frame,
             text=f"Jump to Next Candidate <= {LOW_CANDIDATE_RATING_THRESHOLD}",
             command=self._jump_to_next_low_candidate_rating,
         )
-        self.jump_low_candidate_btn.grid(row=1, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.jump_low_candidate_btn.grid(row=2, column=3, sticky="w", padx=(12, 0), pady=(4, 0))
 
         self.jump_ignore_default_five_check = ttk.Checkbutton(
             selector_frame,
@@ -595,12 +619,12 @@ class ImprovePickQAGUI:
             variable=self.low_rating_jump_ignore_default_five_var,
             command=self._on_jump_filter_changed,
         )
-        self.jump_ignore_default_five_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
+        self.jump_ignore_default_five_check.grid(row=2, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
         # Row 2: Unavailable video navigation and filtering
         unavailable_frame = ttk.LabelFrame(selector_frame, text="Unavailable videos", padding=4)
-        unavailable_frame.grid(row=2, column=0, columnspan=6, sticky="ew", pady=(6, 0))
-        unavailable_frame.columnconfigure(4, weight=1)
+        unavailable_frame.grid(row=3, column=0, columnspan=6, sticky="ew", pady=(6, 0))
+        unavailable_frame.columnconfigure(6, weight=1)
 
         self.jump_unavailable_btn = ttk.Button(
             unavailable_frame,
@@ -631,11 +655,35 @@ class ImprovePickQAGUI:
             command=self._on_filter_unavailable_changed,
         ).grid(row=0, column=3, sticky="w", padx=(8, 0))
 
+        local_deleted_check = ttk.Checkbutton(
+            unavailable_frame,
+            text="Removed locally",
+            variable=self.filter_local_deleted_var,
+            command=self._on_filter_unavailable_changed,
+        )
+        local_deleted_check.grid(row=0, column=4, sticky="w", padx=(8, 0))
+        self._attach_tooltip(
+            local_deleted_check,
+            "Steps whose current picks include a video soft-deleted with delete_content.py "
+            "(still available on YouTube, but removed from Flipper).",
+        )
+
+        refresh_deleted_btn = ttk.Button(
+            unavailable_frame,
+            text="Refresh deleted list",
+            command=self._command_refresh_deleted_list,
+        )
+        refresh_deleted_btn.grid(row=0, column=5, sticky="w", padx=(12, 0))
+        self._attach_tooltip(
+            refresh_deleted_btn,
+            "Reload data/deleted_videos.json after running delete_content.py, without restarting the GUI.",
+        )
+
         ttk.Label(
             unavailable_frame,
             textvariable=self.availability_summary_var,
             foreground="#cc0000",  # Red for warnings
-        ).grid(row=0, column=4, sticky="w", padx=(12, 0))
+        ).grid(row=0, column=6, sticky="w", padx=(12, 0))
 
         if SHOW_SHOW_UNSAVED_ONLY_CONTROL:
             self.show_unsaved_check = ttk.Checkbutton(
@@ -644,7 +692,7 @@ class ImprovePickQAGUI:
                 variable=self.show_unsaved_only_var,
                 command=self._on_show_unsaved_only_changed,
             )
-            self.show_unsaved_check.grid(row=1, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
+            self.show_unsaved_check.grid(row=2, column=4, sticky="w", padx=(12, 0), pady=(4, 0))
 
         # Row 3: Dup Review Mode toggle; the rest of the dup controls only show when ON
         self.dup_review_btn = ttk.Button(
@@ -652,10 +700,10 @@ class ImprovePickQAGUI:
             text="High-Dup Review: OFF",
             command=self._toggle_dup_review_mode,
         )
-        self.dup_review_btn.grid(row=3, column=0, sticky="w", pady=(6, 0))
+        self.dup_review_btn.grid(row=4, column=0, sticky="w", pady=(6, 0))
 
         self.dup_controls_frame = ttk.Frame(selector_frame)
-        self.dup_controls_frame.grid(row=3, column=1, columnspan=5, sticky="w", padx=(12, 0), pady=(6, 0))
+        self.dup_controls_frame.grid(row=4, column=1, columnspan=5, sticky="w", padx=(12, 0), pady=(6, 0))
 
         ttk.Label(self.dup_controls_frame, text="Hotspot top %:").grid(row=0, column=0, sticky="e", padx=(0, 4))
         self.dup_threshold_spin = tk.Spinbox(
@@ -956,7 +1004,7 @@ class ImprovePickQAGUI:
             foreground="#555555",
         ).grid(row=0, column=0, columnspan=9, sticky="w", padx=4, pady=(0, 4))
 
-        precomp_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "Rt"]
+        precomp_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "DE", "Rt"]
         candidate_headers = ["#", "Title", "Ch", "Sc", "MR", "O", "D", "X", "Rt"]
         for col, header in enumerate(precomp_headers):
             ttk.Label(precomp_frame, text=header, font=("Segoe UI", 10, "bold")).grid(row=1, column=col, sticky="w", padx=4, pady=(0, 4))
@@ -1014,10 +1062,24 @@ class ImprovePickQAGUI:
             p_knockout.grid(row=row_num + 1, column=7, sticky="w", padx=2, pady=2)
             self.precomputed_knockout_buttons.append(p_knockout)
 
+            p_delete_everywhere = ttk.Button(
+                precomp_frame,
+                text="Del all",
+                command=lambda idx=i: self._delete_precomputed_video_everywhere(idx),
+                state=tk.DISABLED,
+            )
+            p_delete_everywhere.grid(row=row_num + 1, column=8, sticky="w", padx=2, pady=2)
+            self._attach_tooltip(
+                p_delete_everywhere,
+                "Delete everywhere: soft-delete this video from Flipper now (delete_content.py --video ID --yes). "
+                "It is then flagged 'removed locally' in every step so Jump to Next Unavailable can find it.",
+            )
+            self.precomputed_delete_everywhere_buttons.append(p_delete_everywhere)
+
             p_rating_var = tk.StringVar(value="5")
             self.precomputed_rating_vars.append(p_rating_var)
             p_menu = tk.OptionMenu(precomp_frame, p_rating_var, *rating_options, command=lambda _v, idx=i: self._on_precomputed_rating_change(idx))
-            p_menu.grid(row=row_num + 1, column=8, sticky="w", padx=2, pady=2)
+            p_menu.grid(row=row_num + 1, column=9, sticky="w", padx=2, pady=2)
             p_menu.config(width=2)
             self.precomputed_rating_dropdowns.append(p_menu)
             self._apply_precomputed_rating_color(i)
@@ -1506,9 +1568,11 @@ class ImprovePickQAGUI:
         self.status_var.set(f"{job_name} completed.")
         self.last_failed_subprocess_spec = None
         if reload_assets:
-            if job_name == "Apply Delete Queue":
+            if job_name in ("Apply Delete Queue", DELETE_EVERYWHERE_JOB_NAME):
                 self.status_var.set(f"{job_name} completed. Soft delete finished; refreshing deleted-video state...")
                 self._refresh_after_soft_delete()
+                if job_name == DELETE_EVERYWHERE_JOB_NAME:
+                    self._report_delete_everywhere_result()
             else:
                 self.status_var.set(f"{job_name} completed. Reloading retrieval assets...")
                 worker = threading.Thread(target=self._load_heavy_assets, daemon=True)
@@ -2495,6 +2559,7 @@ class ImprovePickQAGUI:
                         precomp_df[col] = precomp_df[col].map(clean_text)
                 self.precomputed_df = precomp_df
 
+            self._build_unavailable_step_map()
             selected_step_id = self._selected_small_step_id()
             if selected_step_id:
                 self._populate_precomputed(selected_step_id)
@@ -2564,9 +2629,12 @@ class ImprovePickQAGUI:
             override_map = load_validated_override_map(CANONICAL_OVERRIDE_PATH)
             self.promoted_step_ids = set(override_map.keys())
             
-            # Load video availability report
+            # Load video availability report and locally deleted videos (cheap JSON read; heavy assets reload it too)
             self._load_availability_report()
+            self.deleted_videos = DeletionTracker().get_deleted_video_ids()
+            self._build_unavailable_step_map()
             
+            self._update_cascade_filter_options()
             self._refresh_step_combo_labels()
 
             # Build global step number lookup and compute dup proximity scores
@@ -2621,6 +2689,10 @@ class ImprovePickQAGUI:
         self.fallback_lookup = fallback_lookup
         self.video_lookup = video_lookup
         self.deleted_videos = deleted_videos
+        self._build_unavailable_step_map()
+        selected_step_id = self._selected_small_step_id()
+        if selected_step_id:
+            self._update_availability_summary_for_step(selected_step_id)
         self.embedder = embedder
         self.scorer = scorer
         self.search_btn.config(state=tk.NORMAL)
@@ -2696,6 +2768,53 @@ class ImprovePickQAGUI:
 
         return set(qa_df.loc[persisted_mask, "small_step_id"].map(clean_text).tolist())
 
+    def _cascade_filter_values(self) -> dict[str, str]:
+        return {
+            "age": self.age_filter_var.get(),
+            "term": self.term_filter_var.get(),
+            "topic": self.topic_filter_var.get(),
+        }
+
+    def _cascade_matches(self, small_step_id: str, filters: dict[str, str]) -> bool:
+        row = self.curriculum_by_id.get(small_step_id, {})
+        return all(
+            value == "All" or clean_text(row.get(field)) == value
+            for field, value in filters.items()
+        )
+
+    def _update_cascade_filter_options(self) -> None:
+        fields = ["age", "term", "topic"]
+        filter_vars = {"age": self.age_filter_var, "term": self.term_filter_var, "topic": self.topic_filter_var}
+        for level, field in enumerate(fields):
+            upstream = {f: filter_vars[f].get() for f in fields[:level]}
+            options: list[str] = []
+            for sid in self.sorted_step_ids:
+                if not self._cascade_matches(sid, upstream):
+                    continue
+                value = clean_text(self.curriculum_by_id.get(sid, {}).get(field))
+                if value and value not in options:
+                    options.append(value)
+            self.cascade_filter_combos[field]["values"] = ["All"] + options
+            if filter_vars[field].get() not in options:
+                filter_vars[field].set("All")
+
+    def _on_cascade_filter_changed(self, event=None) -> None:
+        current_step_id = self._selected_small_step_id()
+        downstream = {"age": [self.term_filter_var, self.topic_filter_var], "term": [self.topic_filter_var]}
+        changed_field = next((f for f, cb in self.cascade_filter_combos.items() if event and cb is event.widget), "")
+        for var in downstream.get(changed_field, []):
+            var.set("All")
+        self._update_cascade_filter_options()
+        self._refresh_step_combo_labels(preserve_step_id=current_step_id)
+        if self.show_unavailable_only_var.get():
+            self._on_filter_unavailable_changed()
+            return
+        values = list(self.step_combo["values"])
+        if values and self.step_var.get() not in values:
+            self.step_var.set(values[0])
+        if self.step_var.get():
+            self._on_step_selected(None)
+
     def _refresh_step_combo_labels(self, preserve_step_id: str = "") -> None:
         self.step_labels_by_id = {}
         self.step_label_to_id = {}
@@ -2717,6 +2836,7 @@ class ImprovePickQAGUI:
             rest_in_order = [sid for sid in visible_step_ids if sid not in top_set]
             visible_step_ids = top_first + rest_in_order
 
+        cascade_filters = self._cascade_filter_values()
         labels: list[str] = []
         for small_step_id in visible_step_ids:
             if small_step_id in self.dup_flagged_steps:
@@ -2730,9 +2850,10 @@ class ImprovePickQAGUI:
             label = f"{marker} {small_step_id}"
             self.step_labels_by_id[small_step_id] = label
             self.step_label_to_id[label] = small_step_id
-            labels.append(label)
+            if self._cascade_matches(small_step_id, cascade_filters):
+                labels.append(label)
 
-        self.all_step_options = labels  # Store unfiltered list
+        self.all_step_options = labels  # Store list before unavailable-video filtering
         self.step_combo["values"] = labels
 
         selected_step_id = preserve_step_id or self._selected_small_step_id()
@@ -2947,59 +3068,120 @@ class ImprovePickQAGUI:
         except Exception as exc:
             print(f"Warning: Could not load availability report: {exc}")
 
-    def _step_has_unavailable_videos(self, step_id: str) -> tuple[bool, int, int]:
-        """Check if step has unavailable videos.
-        Returns: (has_unavailable, deleted_count, embedding_count)"""
-        deleted_count = 0
-        embedding_count = 0
-        
-        for video_id, info in self.unavailable_videos.items():
-            if info["source_step"] != step_id:
-                continue
-            status = info["status"]
-            if status in ("deleted", "private"):
-                deleted_count += 1
-            elif status == "embedding_disabled":
-                embedding_count += 1
-        
-        has_unavailable = deleted_count > 0 or embedding_count > 0
-        return has_unavailable, deleted_count, embedding_count
+    def _classify_pick_availability(self, video_id: str) -> str:
+        """Returns 'local', 'deleted', 'embedding', or '' (available) for a pick's video_id."""
+        if not video_id:
+            return ""
+        if video_id in self.deleted_videos:
+            return "local"
+        info = self.unavailable_videos.get(video_id)
+        if not info:
+            return ""
+        status = info["status"]
+        if status in ("deleted", "private"):
+            return "deleted"
+        if status == "embedding_disabled":
+            return "embedding"
+        return ""
+
+    def _set_unavailable_step_counts(self, step_id: str, video_ids: list[str]) -> None:
+        counts = {"deleted": 0, "embedding": 0, "local": 0}
+        for video_id in video_ids[:TOP_K]:
+            kind = self._classify_pick_availability(video_id)
+            if kind:
+                counts[kind] += 1
+        if any(counts.values()):
+            self.unavailable_step_map[step_id] = counts
+        else:
+            self.unavailable_step_map.pop(step_id, None)
+
+    def _build_unavailable_step_map(self) -> None:
+        """Scan every step's effective current picks (precomputed base, manual override, wildcard rank-1)
+        so a video is flagged in every step it appears in, not just the first one."""
+        self.unavailable_step_map = {}
+        if not self.unavailable_videos and not self.deleted_videos:
+            return
+
+        # Mirrors _build_effective_precomputed_results_for_step, but reads each source once.
+        ids_by_step: dict[str, list[str]] = {}
+        precomp = self.precomputed_df
+        if not precomp.empty and {"small_step_id", "video_id"}.issubset(precomp.columns):
+            if "rank" in precomp.columns:
+                precomp = precomp.sort_values("rank", kind="stable")
+            for step_id, group in precomp.groupby("small_step_id", sort=False):
+                ids_by_step[step_id] = [clean_text(v) for v in group["video_id"].head(TOP_K)]
+
+        overrides_df = self._load_manual_precomputed_overrides_df()
+        active_overrides = overrides_df[overrides_df["status"].str.lower() != "inactive"]
+        active_overrides = active_overrides.sort_values(["rank", "updated_at"], kind="stable")
+        for step_id, group in active_overrides.groupby("small_step_id", sort=False):
+            if step_id:
+                ids_by_step[step_id] = [clean_text(v) for v in group["video_id"].head(TOP_K)]
+
+        if not self.wildcard_df.empty and "small_step_id" in self.wildcard_df.columns:
+            for step_id in self.wildcard_df["small_step_id"].map(clean_text).unique():
+                wildcard = self._get_wildcard_for_step(step_id)
+                if not step_id or not wildcard:
+                    continue
+                wildcard_id = clean_text(wildcard.get("video_id"))
+                demoted = [v for v in ids_by_step.get(step_id, []) if v != wildcard_id]
+                ids_by_step[step_id] = [wildcard_id, *demoted[: TOP_K - 1]]
+
+        for step_id, video_ids in ids_by_step.items():
+            self._set_unavailable_step_counts(step_id, video_ids)
+
+    def _step_matches_unavailable_filters(self, counts: dict[str, int]) -> bool:
+        return (
+            (counts.get("deleted", 0) > 0 and self.filter_deleted_var.get())
+            or (counts.get("embedding", 0) > 0 and self.filter_embedding_var.get())
+            or (counts.get("local", 0) > 0 and self.filter_local_deleted_var.get())
+        )
+
+    def _unavailable_filter_labels(self) -> list[str]:
+        labels = []
+        if self.filter_deleted_var.get():
+            labels.append("deleted/private")
+        if self.filter_embedding_var.get():
+            labels.append("embedding-disabled")
+        if self.filter_local_deleted_var.get():
+            labels.append("removed locally")
+        return labels
+
+    def _get_filtered_unavailable_step_ids(self) -> list[str]:
+        return [
+            step_id
+            for step_id in self.sorted_step_ids
+            if self._step_matches_unavailable_filters(self.unavailable_step_map.get(step_id, {}))
+        ]
+
+    def _command_refresh_deleted_list(self) -> None:
+        """Reload locally deleted videos (e.g. after running delete_content.py in a terminal)."""
+        self._refresh_after_soft_delete()
+        local_steps = sum(1 for counts in self.unavailable_step_map.values() if counts.get("local", 0) > 0)
+        self.status_var.set(
+            f"Deleted list refreshed: {len(self.deleted_videos)} deleted video(s); "
+            f"{local_steps} step(s) still show a removed-locally pick"
+        )
+        if self.show_unavailable_only_var.get():
+            self._on_filter_unavailable_changed()
 
     def _jump_to_next_unavailable(self) -> None:
         """Navigate to next small step with unavailable videos."""
         if not self.sorted_step_ids:
             return
         
-        if not self.unavailable_videos:
+        if not self.unavailable_videos and not self.deleted_videos:
             messagebox.showinfo(
-                "No availability report",
-                "No availability report found. Run check_video_availability.py first."
+                "Nothing to check",
+                "No availability report and no locally deleted videos found.\n"
+                "Run check_video_availability.py or delete_content.py first."
             )
             return
         
-        # Build list of steps with unavailable videos matching current filters
-        affected_steps = []
-        for step_id in self.sorted_step_ids:
-            has_unavailable, deleted_count, embedding_count = self._step_has_unavailable_videos(step_id)
-            if not has_unavailable:
-                continue
-            
-            # Apply filters
-            include = False
-            if deleted_count > 0 and self.filter_deleted_var.get():
-                include = True
-            if embedding_count > 0 and self.filter_embedding_var.get():
-                include = True
-            
-            if include:
-                affected_steps.append(step_id)
+        affected_steps = self._get_filtered_unavailable_step_ids()
         
         if not affected_steps:
-            filter_desc = []
-            if self.filter_deleted_var.get():
-                filter_desc.append("deleted/private")
-            if self.filter_embedding_var.get():
-                filter_desc.append("embedding-disabled")
+            filter_desc = self._unavailable_filter_labels()
             filter_text = " or ".join(filter_desc) if filter_desc else "selected types"
             
             messagebox.showinfo(
@@ -3015,11 +3197,12 @@ class ImprovePickQAGUI:
         else:
             current_idx = -1
         
+        affected_set = set(affected_steps)
         next_step_id = ""
         for offset in range(1, len(self.sorted_step_ids) + 1):
             candidate_idx = (current_idx + offset) % len(self.sorted_step_ids)
             candidate_step_id = self.sorted_step_ids[candidate_idx]
-            if candidate_step_id in affected_steps:
+            if candidate_step_id in affected_set:
                 next_step_id = candidate_step_id
                 break
         
@@ -3046,19 +3229,7 @@ class ImprovePickQAGUI:
                 self._set_selected_step_by_id(current_step_id)
             return
         
-        # Build list of affected step IDs based on filters
-        affected_steps = set()
-        for video_id, info in self.unavailable_videos.items():
-            status = info["status"]
-            
-            include = False
-            if status in ("deleted", "private") and self.filter_deleted_var.get():
-                include = True
-            if status == "embedding_disabled" and self.filter_embedding_var.get():
-                include = True
-            
-            if include:
-                affected_steps.add(info["source_step"])
+        affected_steps = set(self._get_filtered_unavailable_step_ids())
         
         # Filter dropdown options to only show affected steps
         filtered_options = [
@@ -3069,11 +3240,7 @@ class ImprovePickQAGUI:
         self.step_combo["values"] = filtered_options
         
         # Update progress indicator
-        filter_desc = []
-        if self.filter_deleted_var.get():
-            filter_desc.append("deleted")
-        if self.filter_embedding_var.get():
-            filter_desc.append("embedding-disabled")
+        filter_desc = self._unavailable_filter_labels()
         filter_text = "+".join(filter_desc) if filter_desc else "none"
         
         total_affected = len(affected_steps)
@@ -3094,22 +3261,19 @@ class ImprovePickQAGUI:
 
     def _update_availability_summary_for_step(self, step_id: str) -> None:
         """Update the availability summary display for current step."""
-        if not step_id or not self.unavailable_videos:
-            self.availability_summary_var.set("")
-            return
-        
-        has_unavailable, deleted_count, embedding_count = self._step_has_unavailable_videos(step_id)
-        
-        if not has_unavailable:
+        counts = self.unavailable_step_map.get(step_id, {}) if step_id else {}
+        if not counts:
             self.availability_summary_var.set("")
             return
         
         # Build warning message
         warnings = []
-        if deleted_count > 0:
-            warnings.append(f"❌ {deleted_count} deleted/private")
-        if embedding_count > 0:
-            warnings.append(f"🚫 {embedding_count} embedding-disabled")
+        if counts.get("deleted", 0) > 0:
+            warnings.append(f"❌ {counts['deleted']} deleted/private")
+        if counts.get("embedding", 0) > 0:
+            warnings.append(f"🚫 {counts['embedding']} embedding-disabled")
+        if counts.get("local", 0) > 0:
+            warnings.append(f"🗑 {counts['local']} removed locally")
         
         summary = " | ".join(warnings)
         self.availability_summary_var.set(f"⚠️ {summary}")
@@ -3959,6 +4123,12 @@ class ImprovePickQAGUI:
     def _populate_precomputed(self, small_step_id: str) -> None:
         self.precomputed_results, source_label = self._build_effective_precomputed_results_for_step(small_step_id)
         self.precomputed_panel_state_var.set(f"Current picks source: {source_label}")
+        self._set_unavailable_step_counts(
+            small_step_id,
+            [clean_text(result.get("video_id")) for result in self.precomputed_results],
+        )
+        if small_step_id == self._selected_small_step_id():
+            self._update_availability_summary_for_step(small_step_id)
         if "manual override" in source_label:
             self.status_var.set("Manual precomputed override is active for this step")
 
@@ -3968,6 +4138,7 @@ class ImprovePickQAGUI:
             self.precomputed_score_labels[i].config(text="")
             self.precomputed_open_buttons[i].config(state=tk.DISABLED)
             self.precomputed_delete_buttons[i].config(state=tk.DISABLED)
+            self.precomputed_delete_everywhere_buttons[i].config(state=tk.DISABLED)
             self.precomputed_rank_vars[i].set(str(i + 1))
             self.precomputed_rank_dropdowns[i].config(state=tk.DISABLED)
             self.precomputed_rating_vars[i].set("5")
@@ -3986,14 +4157,16 @@ class ImprovePickQAGUI:
             # Check if video is unavailable and add emoji prefix + background color
             emoji_prefix = ""
             bg_color = "white"
-            if video_id in self.unavailable_videos:
-                status = self.unavailable_videos[video_id]["status"]
-                if status in ("deleted", "private"):
-                    emoji_prefix = "❌ "
-                    bg_color = "#ffcccc"  # Red background
-                elif status == "embedding_disabled":
-                    emoji_prefix = "🚫 "
-                    bg_color = "#fff9cc"  # Yellow background
+            availability = self._classify_pick_availability(video_id)
+            if availability == "local":
+                emoji_prefix = "🗑 "
+                bg_color = "#dddddd"  # Grey background
+            elif availability == "deleted":
+                emoji_prefix = "❌ "
+                bg_color = "#ffcccc"  # Red background
+            elif availability == "embedding":
+                emoji_prefix = "🚫 "
+                bg_color = "#fff9cc"  # Yellow background
             
             self.precomputed_title_labels[i].config(
                 text=f"{emoji_prefix}{title} ({video_id})",
@@ -4003,6 +4176,9 @@ class ImprovePickQAGUI:
             self.precomputed_score_labels[i].config(text=f"{combined_score:.4f}", background=bg_color)
             self.precomputed_open_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
             self.precomputed_delete_buttons[i].config(state=tk.NORMAL if video_id else tk.DISABLED)
+            self.precomputed_delete_everywhere_buttons[i].config(
+                state=tk.NORMAL if video_id and availability != "local" else tk.DISABLED
+            )
             self.precomputed_rank_vars[i].set(str(i + 1))
             self.precomputed_rank_dropdowns[i].config(state=tk.NORMAL)
             self.precomputed_rating_vars[i].set("5")
@@ -4347,6 +4523,69 @@ class ImprovePickQAGUI:
             f"Candidate written to canonical overrides:\n{CANONICAL_OVERRIDE_PATH}\n\n"
             f"Run precompute_curriculum_recommendations.py to rebuild recommendations.",
         )
+
+    def _delete_precomputed_video_everywhere(self, index_num: int) -> None:
+        if index_num < 0 or index_num >= len(self.precomputed_results):
+            return
+        if self.active_job_state == JOB_STATE_RUNNING:
+            messagebox.showwarning("Job running", "Another QA command is already running.")
+            return
+
+        result = self.precomputed_results[index_num]
+        video_id = clean_text(result.get("video_id"))
+        title = clean_text(result.get("title")) or "(untitled)"
+        if not video_id:
+            messagebox.showwarning("Missing video", "No video_id found for this row.")
+            return
+        if video_id in self.deleted_videos:
+            messagebox.showinfo(
+                "Already deleted",
+                f"{title} ({video_id}) is already deleted.\n\n"
+                "Use 'Jump to Next Unavailable Video' with 'Removed locally' ticked to replace it in the remaining steps.",
+            )
+            return
+
+        step_count = 0
+        if not self.precomputed_df.empty and {"small_step_id", "video_id"}.issubset(self.precomputed_df.columns):
+            step_count = self.precomputed_df.loc[
+                self.precomputed_df["video_id"] == video_id, "small_step_id"
+            ].nunique()
+
+        if not messagebox.askyesno(
+            "Delete everywhere",
+            f"Delete this video from Flipper?\n\n{title} ({video_id})\n\n"
+            f"It appears in {step_count} step(s) of the precomputed recommendations.\n\n"
+            "This runs delete_content.py --video (same as deleting it in the terminal): captions, chunks, "
+            "embeddings and metadata are removed and the video is excluded from search. "
+            "Afterwards every step still showing it is flagged 'removed locally' for replacement.\n\n"
+            "Other videos in videos_to_delete.csv are not touched.",
+        ):
+            return
+
+        self.pending_delete_everywhere_id = video_id
+        command = self._python_cmd_prefix() + ["delete_content.py", "--video", video_id, "--yes"]
+        self.status_var.set(f"Deleting {video_id} everywhere...")
+        self._start_subprocess_job(DELETE_EVERYWHERE_JOB_NAME, command, reload_assets=True)
+
+    def _report_delete_everywhere_result(self) -> None:
+        video_id = self.pending_delete_everywhere_id
+        self.pending_delete_everywhere_id = ""
+        if not video_id:
+            return
+        if video_id not in self.deleted_videos:
+            messagebox.showerror(
+                "Delete everywhere",
+                f"delete_content.py finished but {video_id} is not in the deleted list.\n\nSee {QA_COMMAND_LOG_PATH} for details.",
+            )
+            return
+
+        flagged_steps = sum(1 for counts in self.unavailable_step_map.values() if counts.get("local", 0) > 0)
+        self.status_var.set(
+            f"Deleted {video_id}. {flagged_steps} step(s) now show a removed-locally pick; "
+            "use 'Jump to Next Unavailable Video' to replace them."
+        )
+        if self.show_unavailable_only_var.get():
+            self._on_filter_unavailable_changed()
 
     def _append_result_to_videos_to_delete(self, source: str, index_num: int) -> None:
         results = self.precomputed_results if source == "current" else self.latest_results

@@ -35,6 +35,10 @@ IMPORTS = [
     "data_pipeline.deletion_tracker",
     "data_pipeline.instruction_quality_scorer",
     "query_embedder",
+    "shared.email_sender",
+    "shared.step_selection",
+    "thoughtprompt.visual_generator",
+    "flipper_search.search_engine",
 ]
 
 GUI_MODULES = [
@@ -50,6 +54,7 @@ CLI_HELP = [
     ["Curriculum/Maths/ss_desc_summariser/summariser.py", "--help"],
     ["Curriculum/Maths/pdf_extractor/merge_backfill_ss_wr_desc.py", "--help"],
     ["data_pipeline/run_pipeline.py", "--help"],
+    ["analytics/analytics_webhook_server.py", "--help"],
 ]
 
 DEPLOY_FILES = [

@@ -29,7 +29,7 @@ if not exist ".venv\Scripts\python.exe" (
 REM Run the availability checker using venv Python directly
 echo Starting video availability check...
 echo.
-.venv\Scripts\python.exe check_video_availability.py --source qa --output reports\video_availability_check.csv
+.venv\Scripts\python.exe quality_assurance\check_video_availability.py --source qa --output reports\video_availability_check.csv
 
 if errorlevel 1 (
     echo.

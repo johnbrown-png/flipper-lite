@@ -4,13 +4,13 @@ Identifies Y7-Y10 Summer small steps that:
   - have a non-empty ss_wr_desc in the canonical curriculum
   - are NOT already present in precomputed_recommendations_flat.csv
 
-Writes a filtered canonical CSV to use as --curriculum input for precompute_curriculum_recommendations.py.
+Writes a filtered canonical CSV to use as --curriculum input for quality_assurance/precompute_curriculum_recommendations.py.
 
 Usage (run from workspace root):
     python Curriculum/Maths/pdf_extractor/prepare_precompute_staging.py
 
 Then run precompute against the staging file:
-    python precompute_curriculum_recommendations.py \
+    python quality_assurance/precompute_curriculum_recommendations.py \
         --curriculum Curriculum/Maths/pdf_extractor/curriculum_newdesc_staging.csv \
         --output precomputed_recommendations_staging_newdesc.csv
 """
@@ -94,7 +94,7 @@ def main() -> None:
     print(f"   Rows in staging file: {len(staging_rows)}")
     print("\nNext step — run precompute against the staging file:")
     print(
-        f"  python precompute_curriculum_recommendations.py"
+        f"  python quality_assurance/precompute_curriculum_recommendations.py"
         f" --curriculum \"{STAGING_CSV.relative_to(WORKSPACE_ROOT)}\""
         f" --output precomputed_recommendations_staging_newdesc.csv"
     )

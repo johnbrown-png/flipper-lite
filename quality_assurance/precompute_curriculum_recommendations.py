@@ -1,6 +1,9 @@
 """
-Pre-compute all curriculum recommendations for Flipper Lite.
+Pre-compute all curriculum recommendations for Flipper Lite (Module C, see docs/quality_assurance.md).
 Runs the full FAISS + LLM system once per curriculum small step and saves results to CSV.
+
+Run from the project root (default paths are relative to it):
+    python quality_assurance/precompute_curriculum_recommendations.py [--curriculum CSV] [--output CSV]
 """
 
 import pandas as pd
@@ -9,13 +12,17 @@ import faiss
 import json
 import hashlib
 from pathlib import Path
-from query_embedder import QueryEmbedder
-from data_pipeline.instruction_quality_scorer import InstructionQualityScorer
-from data_pipeline.deletion_tracker import DeletionTracker
 import sys
 import asyncio
 import argparse
 
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from query_embedder import QueryEmbedder
+from data_pipeline.instruction_quality_scorer import InstructionQualityScorer
+from data_pipeline.deletion_tracker import DeletionTracker
 from shared.curriculum_schema import curriculum_to_long_df, build_recommendation_id
 from shared.pick_engine import (
     build_query_text,
@@ -25,10 +32,6 @@ from shared.pick_engine import (
     resolve_validated_desc,
     run_pick_pipeline_async,
 )
-
-# Add search_app to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
 
 
 FAISS_PRE_AGGREGATION_CHUNKS = 20

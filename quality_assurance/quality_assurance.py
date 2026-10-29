@@ -1,12 +1,13 @@
-"""Standalone GUI for targeted ss_wr_desc QA experiments.
+"""Quality Assurance GUI (formerly Improve_pick/gui_precompute_recommendation_qa.py).
 
-This MVP focuses on fast manual iteration:
-- choose a curriculum small step
-- view current ss_wr_desc
-- test a candidate wording
-- inspect top-3 results with quick open links
-- score each result with a color-coded 1-10 rating
-- save candidate text and ratings to qa.csv outputs
+Module C, see docs/quality_assurance.md. Per curriculum small step:
+- review the precomputed top-3 picks and rate them 1-10
+- re-word the step text (ss_wr_desc) and re-search FAISS with constraints
+- override picks manually, add wildcards, knock out videos for a step
+- review adjacent-step duplication and unavailable (removed/non-embeddable) videos
+- publish the reviewed picks to precomputed_recommendations_flat_qa.csv for flipper_lite
+
+Launch from the project root: launch_quality_assurance.bat
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ import pandas as pd
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, ttk
 
-# Ensure imports work when script is launched from Improve_pick/
+# Ensure imports work when script is launched from quality_assurance/
 project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
@@ -495,7 +496,7 @@ class ToolTip:
 class ImprovePickQAGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("Improve Pick - Targeted ss_wr_desc QA")
+        self.root.title("Flipper - Quality Assurance")
         self.root.geometry("1400x860")
 
         self.status_var = tk.StringVar(value="Loading data...")
@@ -692,7 +693,7 @@ class ImprovePickQAGUI:
 
         title = ttk.Label(
             header,
-            text="Improve Pick - Manual Candidate QA",
+            text="Quality Assurance - Manual Candidate QA",
             font=("Segoe UI", 13, "bold"),
         )
         title.grid(row=0, column=0, sticky="w")
@@ -963,7 +964,7 @@ class ImprovePickQAGUI:
             self.promote_canonical_btn,
             "Makes the candidate wording the canonical ss_wr_desc for this step by writing it to "
             "qa/ss_desc_validated_overrides.csv (read by precompute). Shown only when the candidate "
-            "wording differs from the current canonical text. Re-run precompute_curriculum_recommendations.py "
+            "wording differs from the current canonical text. Re-run quality_assurance/precompute_curriculum_recommendations.py "
             "afterwards to rebuild recommendations.",
         )
         self.candidate_text = scrolledtext.ScrolledText(candidate_frame, wrap=tk.WORD, height=9)
@@ -1884,7 +1885,7 @@ class ImprovePickQAGUI:
             return
 
         command = self._python_cmd_prefix() + [
-            "check_video_availability.py",
+            "quality_assurance/check_video_availability.py",
             "--source",
             "precomputed",
             "--output",
@@ -3501,7 +3502,7 @@ class ImprovePickQAGUI:
             messagebox.showinfo(
                 "Nothing to check",
                 "No availability report and no locally deleted videos found.\n"
-                "Run check_video_availability.py or delete_content.py first."
+                "Run quality_assurance/check_video_availability.py or acquisition/delete_content.py first."
             )
             return
         
@@ -4857,7 +4858,7 @@ class ImprovePickQAGUI:
         messagebox.showinfo(
             "Promoted",
             f"Candidate written to canonical overrides:\n{CANONICAL_OVERRIDE_PATH}\n\n"
-            f"Run precompute_curriculum_recommendations.py to rebuild recommendations.",
+            f"Run quality_assurance/precompute_curriculum_recommendations.py to rebuild recommendations.",
         )
 
     def _delete_video_everywhere(self, source: str, index_num: int) -> None:

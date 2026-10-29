@@ -34,14 +34,16 @@ IMPORTS = [
 
 GUI_MODULES = [
     "acquisition/video_acquisition.py",
-    "Improve_pick/gui_precompute_recommendation_qa.py",
+    "quality_assurance/quality_assurance.py",
 ]
 
 CLI_HELP = [
     ["acquisition/delete_content.py", "--help"],
     ["acquisition/export_channel_playlists.py", "--help"],
-    ["check_video_availability.py", "--help"],
-    ["precompute_curriculum_recommendations.py", "--help"],
+    ["quality_assurance/check_video_availability.py", "--help"],
+    ["quality_assurance/precompute_curriculum_recommendations.py", "--help"],
+    ["Curriculum/Maths/ss_desc_summariser/summariser.py", "--help"],
+    ["Curriculum/Maths/pdf_extractor/merge_backfill_ss_wr_desc.py", "--help"],
     ["data_pipeline/run_pipeline.py", "--help"],
 ]
 

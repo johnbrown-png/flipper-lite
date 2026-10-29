@@ -5,15 +5,15 @@ This script checks whether videos are still accessible on YouTube by querying th
 YouTube Data API v3. It detects deleted, private, embedding-disabled, and region-restricted
 videos.
 
-Usage:
-    python check_video_availability.py --source qa
-    python check_video_availability.py --source precomputed
-    python check_video_availability.py --source qa --output reports/availability_check.csv
+Usage (from the project root, or check_video_availability.bat):
+    python quality_assurance/check_video_availability.py --source qa
+    python quality_assurance/check_video_availability.py --source precomputed
 
-Output files:
-    - video_availability_report.csv: Full report with status for all videos
-    - unavailable_videos.csv: Only videos that are unavailable (for quick action)
-    - videos_to_delete_additions.csv: Videos to append to videos_to_delete.csv
+Output files (default folder reports/):
+    - video_availability_check.csv: Full report with status for all videos
+    - unavailable_video_availability_check.csv: All problem videos
+    - deletion_candidates_video_availability_check.csv: Deleted/private videos to replace
+    - embedding_disabled_video_availability_check.csv: Watchable on YouTube but won't embed
 
 API Quota Usage:
     - Batches 50 videos per request (1 quota unit per request)
@@ -38,7 +38,7 @@ from googleapiclient.errors import HttpError
 
 
 # Project paths
-PROJECT_ROOT = Path(__file__).parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 QA_CSV = PROJECT_ROOT / "qa" / "qa.csv"
 PRECOMPUTED_CSV = PROJECT_ROOT / "precomputed_recommendations_flat_qa.csv"
 VIDEOS_TO_DELETE_CSV = PROJECT_ROOT / "videos_to_delete" / "videos_to_delete.csv"
@@ -415,7 +415,7 @@ def main():
     parser.add_argument(
         "--output",
         type=Path,
-        default=PROJECT_ROOT / "video_availability_report.csv",
+        default=PROJECT_ROOT / "reports" / "video_availability_check.csv",
         help="Output path for full report CSV"
     )
     parser.add_argument(

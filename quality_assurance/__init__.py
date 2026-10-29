@@ -1,1 +1,1 @@
-# Improve_pick - Video selection QA and optimization tools
+# Module C: Matching and Quality Assurance - see docs/quality_assurance.md

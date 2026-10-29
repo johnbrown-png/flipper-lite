@@ -26,11 +26,11 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 
-DEFAULT_MISSING_PATH = Path("Curriculum/Maths/missing_ss_desc/missing_ss_desc.csv")
+DEFAULT_MISSING_PATH = Path("Curriculum/Maths/ss_desc_summariser/missing_ss_desc.csv")
 DEFAULT_CANONICAL_PATH = Path("Curriculum/Maths/curriculum_08052026_small_steps.csv")
-DEFAULT_CANDIDATES_PATH = Path("Curriculum/Maths/missing_ss_desc/ss_desc_candidates_generated.csv")
-DEFAULT_MERGE_REPORT_PATH = Path("Curriculum/Maths/missing_ss_desc/ss_desc_merge_report.csv")
-DEFAULT_MERGED_OUTPUT_PATH = Path("Curriculum/Maths/curriculum_08052026_small_steps.with_ss_desc_generated.csv")
+DEFAULT_CANDIDATES_PATH = Path("Curriculum/Maths/ss_desc_summariser/ss_desc_candidates_generated.csv")
+DEFAULT_MERGE_REPORT_PATH = Path("Curriculum/Maths/ss_desc_summariser/ss_desc_merge_report.csv")
+DEFAULT_MERGED_OUTPUT_PATH = Path("Curriculum/Maths/ss_desc_summariser/curriculum_08052026_small_steps.with_ss_desc_generated.csv")
 
 
 @dataclass

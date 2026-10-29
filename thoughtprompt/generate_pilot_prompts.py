@@ -862,7 +862,7 @@ def generate_pilot_prompts():
     generator = ThoughtPromptGenerator()
     
     # Read curriculum CSV to get video IDs
-    curriculum_file = Path(__file__).parent.parent / "Curriculum" / "Maths" / "curriculum_08052026_small_steps.with_ss_desc_generated.csv"
+    curriculum_file = Path(__file__).parent.parent / "Curriculum" / "Maths" / "ss_desc_summariser" / "curriculum_08052026_small_steps.with_ss_desc_generated.csv"
     
     all_prompts = []
     

@@ -60,8 +60,6 @@ images/
 _archive/**/*.csv
 _archive/**/*.json
 
-curr_reorg/
-
 # Curriculum source PDFs (White Rose SOL PDFs, ~1 GB)
 Curriculum/source_pdfs/
 

@@ -27,6 +27,11 @@ IMPORTS = [
     "shared.curriculum_schema",
     "shared.pick_engine",
     "shared.analytics",
+    "shared.email_sender",
+    "shared.step_selection",
+    "search_app.curriculum_assistant",
+    "thoughtprompt.page",
+    "flipper_search.streamlit_ui",
     "data_pipeline.deletion_tracker",
     "data_pipeline.instruction_quality_scorer",
     "query_embedder",
@@ -56,6 +61,10 @@ DEPLOY_FILES = [
     "Curriculum/Maths/curriculum_08052026_small_steps.csv",
     "shared/styles/flipper_lite.css",
     "thoughtprompt/pilot_output/thought_prompts_multiplechoice.csv",
+    ".streamlit/config.toml",
+    "static/landing/teacher.jpg",
+    "static/landing/parent.jpg",
+    "static/landing/homeschool.jpg",
 ]
 
 

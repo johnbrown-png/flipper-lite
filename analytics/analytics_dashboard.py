@@ -13,7 +13,7 @@ import pandas as pd
 import streamlit as st
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EVENTS_JSONL = PROJECT_ROOT / "data" / "analytics" / "events.jsonl"
 EVENTS_DB = PROJECT_ROOT / "data" / "analytics" / "events.db"
 

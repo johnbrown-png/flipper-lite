@@ -1,15 +1,14 @@
 # Fly.io app config for the analytics webhook receiver only.
-# Deploy with: fly launch --config fly.analytics.toml --dockerfile Dockerfile.analytics
-# (then: fly volumes create analytics_data --size 1
-#        fly secrets set ANALYTICS_TOKEN=your_shared_token
-#        fly deploy --config fly.analytics.toml)
-#
-# Rename `app` below to a globally-unique name before first deploy.
+# Run all fly commands from inside this analytics/ folder (it is the build context):
+#   cd analytics
+#   fly deploy
+# First-time setup: fly launch --no-deploy; fly volumes create analytics_data --size 1;
+#                   fly secrets set ANALYTICS_TOKEN=your_shared_token
 app = "flipper-analytics-collector"
 primary_region = "lhr"
 
 [build]
-  dockerfile = "Dockerfile.analytics"
+  dockerfile = "Dockerfile"
 
 [mounts]
   source = "analytics_data"

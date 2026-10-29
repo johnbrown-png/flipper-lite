@@ -16,7 +16,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = PROJECT_ROOT / "data" / "analytics" / "events.db"
 
 

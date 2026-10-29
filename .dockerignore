@@ -1,3 +1,0 @@
-# Only analytics_webhook_server.py is needed for Dockerfile.analytics builds.
-*
-!analytics_webhook_server.py

@@ -84,7 +84,7 @@ VIDEO_AVAILABILITY_JOB_NAME = "Video Availability Check"
 KNOCKOUT_EXCLUDE_TEXT = "Exclude"
 KNOCKOUT_RESTORE_TEXT = "Restore"
 DELETE_EVERYWHERE_TOOLTIP = (
-    "Delete everywhere: soft-delete this video from Flipper now (delete_content.py --video ID --yes). "
+    "Delete everywhere: soft-delete this video from Flipper now (acquisition/delete_content.py --video ID --yes). "
     "It is then flagged 'removed locally' in every step so Jump to Next Unavailable can find it."
 )
 SEMANTIC_PREVIEW_K = 5
@@ -4892,7 +4892,7 @@ class ImprovePickQAGUI:
             "Delete everywhere",
             f"Delete this video from Flipper?\n\n{title} ({video_id})\n\n"
             f"It appears in {step_count} step(s) of the precomputed recommendations.\n\n"
-            "This runs delete_content.py --video (same as deleting it in the terminal): captions, chunks, "
+            "This runs acquisition/delete_content.py --video (same as deleting it in the terminal): captions, chunks, "
             "embeddings and metadata are removed and the video is excluded from search. "
             "Afterwards every step still showing it is flagged 'removed locally' for replacement.\n\n"
             "If it is only wrong for this step, use Exclude instead.",
@@ -4900,7 +4900,7 @@ class ImprovePickQAGUI:
             return
 
         self.pending_delete_everywhere_id = video_id
-        command = self._python_cmd_prefix() + ["delete_content.py", "--video", video_id, "--yes"]
+        command = self._python_cmd_prefix() + ["acquisition/delete_content.py", "--video", video_id, "--yes"]
         self.status_var.set(f"Deleting {video_id} everywhere...")
         self._start_subprocess_job(DELETE_EVERYWHERE_JOB_NAME, command, reload_assets=True)
 

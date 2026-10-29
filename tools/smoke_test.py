@@ -32,8 +32,14 @@ IMPORTS = [
     "query_embedder",
 ]
 
+GUI_MODULES = [
+    "acquisition/video_acquisition.py",
+    "Improve_pick/gui_precompute_recommendation_qa.py",
+]
+
 CLI_HELP = [
-    ["delete_content.py", "--help"],
+    ["acquisition/delete_content.py", "--help"],
+    ["acquisition/export_channel_playlists.py", "--help"],
     ["check_video_availability.py", "--help"],
     ["precompute_curriculum_recommendations.py", "--help"],
     ["data_pipeline/run_pipeline.py", "--help"],
@@ -75,7 +81,19 @@ def main() -> int:
             __import__(module)
         except Exception as exc:
             failures.append(f"import: {module}: {exc!r}")
-    print(f"[2] imported {len(IMPORTS)} modules")
+    for rel in GUI_MODULES:
+        # Load in a child process: GUI modules may chdir or mutate sys.path at import time.
+        loader = (
+            "import importlib.util, sys; "
+            f"spec = importlib.util.spec_from_file_location('gui_check', r'{ROOT / rel}'); "
+            "module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", loader], cwd=ROOT, capture_output=True, text=True, timeout=300
+        )
+        if result.returncode != 0:
+            failures.append(f"gui import: {rel}: {result.stderr.strip()[-300:]}")
+    print(f"[2] imported {len(IMPORTS)} modules and {len(GUI_MODULES)} GUI modules (no window)")
 
     for cmd in CLI_HELP:
         script = ROOT / cmd[0]

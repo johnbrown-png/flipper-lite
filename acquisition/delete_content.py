@@ -1,18 +1,23 @@
 """
 Interactive script for deleting videos or channels from Flipper
 
-Usage:
-    python delete_content.py
+Usage (from the project root):
+    python acquisition/delete_content.py
     
 Or use command-line options:
-    python delete_content.py --video VIDEO_ID [--dry-run] [--rebuild-index]
-    python delete_content.py --channel CHANNEL_ID [--dry-run] [--rebuild-index]
-    python delete_content.py --batch CSV_FILE [--dry-run] [--rebuild-index]
+    python acquisition/delete_content.py --video VIDEO_ID [--dry-run] [--rebuild-index]
+    python acquisition/delete_content.py --channel CHANNEL_ID [--dry-run] [--rebuild-index]
+    python acquisition/delete_content.py --batch CSV_FILE [--dry-run] [--rebuild-index]
 """
 
 import sys
 import pandas as pd
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from data_pipeline.deletion_manager import DataDeletionManager
 
 
@@ -164,7 +169,7 @@ def batch_delete_from_csv(csv_file: str, dry_run: bool = False,
     elif not dry_run:
         print("💡 TIP: Deletions use soft-delete (videos removed from metadata, not index)")
         print("   Index rebuild will be suggested when 5% of videos are deleted.")
-        print("   To force rebuild now: python delete_content.py --batch FILE --rebuild-index")
+        print("   To force rebuild now: python acquisition/delete_content.py --batch FILE --rebuild-index")
 
 
 def interactive_mode():
@@ -214,7 +219,7 @@ def interactive_mode():
                 manager.rebuild_faiss_index()
             else:
                 print("\n⚠️  Remember to rebuild the index later:")
-                print("   python delete_content.py --rebuild-index")
+                print("   python acquisition/delete_content.py --rebuild-index")
         else:
             print("\n❌ Deletion cancelled")
     
@@ -250,7 +255,7 @@ def interactive_mode():
                 manager.rebuild_faiss_index()
             else:
                 print("\n⚠️  Remember to rebuild the index later:")
-                print("   python delete_content.py --rebuild-index")
+                print("   python acquisition/delete_content.py --rebuild-index")
         else:
             print("\n❌ Deletion cancelled")
     

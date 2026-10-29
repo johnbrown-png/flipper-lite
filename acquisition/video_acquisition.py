@@ -1,6 +1,11 @@
 ﻿"""
-GUI Frontend for YouTube Caption Extraction Pipeline (Unified Interface)
-Combines channel extraction, video ID extraction, and topic search in tabbed interface
+Video Acquisition GUI (formerly gui_main.py) - Module A, see docs/acquisition.md.
+
+Tabs: Channel Extraction (channels.csv), Video IDs, Topic Search (find YouTube
+videos by title/keywords). Extracts captions, then chunks, embeds and adds them to
+the local FAISS index.
+
+Launch from the project root: launch_video_acquisition.bat
 """
 
 import os
@@ -14,7 +19,11 @@ from pathlib import Path
 from datetime import datetime
 import sys
 import winsound  # For auditory alerts on completion
-sys.path.insert(0, str(Path(__file__).parent))
+
+# Data paths below (channels.csv, data/..., extraction_state.json) are relative to the project root.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+os.chdir(PROJECT_ROOT)
 
 # Lazy-loaded imports and API key - don't load at startup
 _youtube_api_key = None
@@ -44,7 +53,7 @@ class PipelineGUI:
     
     def __init__(self, root):
         self.root = root
-        self.root.title("YouTube Caption Extraction Pipeline")
+        self.root.title("Flipper - Video Acquisition")
         self.root.geometry("1200x850")
         
         # Common variables

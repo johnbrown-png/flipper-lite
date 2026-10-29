@@ -9,7 +9,8 @@ This script generates a CSV report of all video holdings with the following colu
 - is_song: Boolean flag indicating if video is a song
 - duration: Total video duration in seconds
 
-Output: video_inventory.csv in the project root folder
+Usage (from the project root): python acquisition/export_video_inventory.py
+Output: video_inventory/video_inventory.csv (read by precompute and the QA GUI)
 """
 
 import os
@@ -17,6 +18,8 @@ import csv
 import json
 from pathlib import Path
 from datetime import datetime
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def format_duration(seconds: int) -> str:
@@ -89,9 +92,9 @@ def export_video_inventory():
     print("=" * 70)
     
     # Find all caption files - check data/captions_output first (primary location)
-    captions_dir = Path('data/captions_output')
+    captions_dir = PROJECT_ROOT / 'data' / 'captions_output'
     if not captions_dir.exists():
-        captions_dir = Path('captions_output')
+        captions_dir = PROJECT_ROOT / 'captions_output'
     
     if not captions_dir.exists():
         print(f"✗ ERROR: Caption directory not found: {captions_dir}")
@@ -107,7 +110,7 @@ def export_video_inventory():
     print(f"\n📄 Found {len(json_files)} video caption files")
     
     # Load channel mapping (optional)
-    channels_mapping = load_channels_mapping(Path('channels.csv'))
+    channels_mapping = load_channels_mapping(PROJECT_ROOT / 'channels.csv')
     
     # Collect video data
     print("\n📊 Processing video data...")
@@ -144,7 +147,8 @@ def export_video_inventory():
     print(f"✓ Processed {len(videos)} videos")
     
     # Write CSV
-    output_file = Path(__file__).parent / 'video_inventory.csv'
+    output_file = PROJECT_ROOT / 'video_inventory' / 'video_inventory.csv'
+    output_file.parent.mkdir(exist_ok=True)
     print(f"\n💾 Writing to {output_file}...")
     
     try:

@@ -1,9 +1,8 @@
 @echo off
-REM Launcher for YouTube Caption Extraction GUI
-echo Starting YouTube Caption Extraction GUI...
-echo.
+REM Launcher for the Video Acquisition GUI (Module A, see docs\acquisition.md)
+setlocal
+cd /d "%~dp0"
 
-REM Check if virtual environment exists
 if not exist ".venv\Scripts\python.exe" (
     echo Error: Virtual environment not found!
     echo Please create a virtual environment first:
@@ -14,18 +13,17 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-REM Check if .env file exists
 if not exist ".env" (
     echo Warning: .env file not found!
     echo Please create .env with your YOUTUBE_API_KEY
     echo.
 )
 
-REM Run the GUI
-".venv\Scripts\python.exe" gui_main.py
+".venv\Scripts\python.exe" acquisition\video_acquisition.py
 
 if errorlevel 1 (
     echo.
     echo GUI exited with an error.
     pause
 )
+endlocal

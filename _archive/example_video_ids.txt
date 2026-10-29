@@ -1,0 +1,25 @@
+# Example Video IDs File
+# This is an example file showing how to format video IDs for batch extraction
+# Lines starting with # are comments and will be ignored
+
+# Format 1: Just video IDs (simplest)
+SfxULALs_u8
+ocWCzDAH5lI
+JrVd-czHl_g
+
+# Format 2: Full YouTube URLs (also works)
+# https://www.youtube.com/watch?v=SfxULALs_u8
+# https://www.youtube.com/watch?v=ocWCzDAH5lI
+
+# Format 3: Short URLs (also works)
+# https://youtu.be/SfxULALs_u8
+# https://youtu.be/ocWCzDAH5lI
+
+# Usage:
+# 1. Open GUI (launch_gui_tabbed.bat)
+# 2. Go to "Video IDs" tab
+# 3. Click "Load from File" and select this file
+# 4. Or copy/paste the video IDs directly
+# 5. Click "Extract Captions"
+
+# For curriculum tracking, use CSV format instead (see example_curriculum_gaps.csv)
